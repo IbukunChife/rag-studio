@@ -3,1727 +3,256 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Janela de Contexto e Recuperação para RAG</title>
+  <title>Portfólio RAG — Ibukun C. Didier</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <style>
-    /* @MIRA:THEME:START */
     :root {
-      --mira-primary: #FF904D;
-      --mira-bg: #000000;
-      --mira-text: #ffffff;
-      --mira-text-soft: rgba(255,255,255,0.70);
-      --mira-text-softer: rgba(255,255,255,0.50);
-      --mira-card-bg: rgba(255,255,255,0.05);
-      --mira-card-border: rgba(255,255,255,0.10);
-      --mira-glow-soft: rgba(255,144,77,0.15);
-      --mira-glow-strong: rgba(255,144,77,0.25);
-      --mira-icon-bg: rgba(255,144,77,0.15);
-      --mira-icon-border: rgba(255,144,77,0.30);
-      --mira-pill-bg: rgba(255,255,255,0.04);
-      --mira-pill-border: rgba(255,255,255,0.08);
-      --mira-stage-glow: rgba(255,144,77,0.06);
-      --mira-accent-2: #FFC766;
+      --primary: #FF904D;
+      --primary-glow: rgba(255,144,77,0.20);
+      --primary-border: rgba(255,144,77,0.35);
+      --accent: #FFC766;
     }
-    body { background:var(--mira-bg); min-height:100vh; color:var(--mira-text); font-family:'Inter',sans-serif; }
-    .primary-color { color:var(--mira-primary); }
-    .glass-card {
-      background:var(--mira-card-bg);
-      backdrop-filter:blur(10px);
-      border:1px solid var(--mira-card-border);
-      box-shadow:0 10px 30px var(--mira-glow-soft);
-      border-radius:0.75rem;
-      transition:all 0.3s ease;
+    * { box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      margin: 0;
     }
-    .glass-card:hover { transform:translateY(-4px); box-shadow:0 20px 40px var(--mira-glow-strong); }
-    .icon-hero {
-      width:48px; height:48px; border-radius:14px; flex:0 0 auto;
-      display:flex; align-items:center; justify-content:center;
-      background:var(--mira-icon-bg); border:1px solid var(--mira-icon-border);
+    .glow-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 20%, rgba(255,144,77,0.08), transparent),
+        radial-gradient(ellipse 50% 50% at 80% 80%, rgba(255,144,77,0.05), transparent);
     }
-    .attribute-pill {
-      background:var(--mira-pill-bg); border:1px solid var(--mira-pill-border);
-      border-radius:9999px; transition:all 0.25s ease;
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      transition: all 0.35s ease;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      display: block;
+      color: inherit;
     }
-    .attribute-pill:hover { background:var(--mira-icon-bg); border-color:var(--mira-icon-border); transform:translateY(-3px); }
-    .anim-stage {
-      width:100%; height:clamp(280px,45vh,420px);
-      background:radial-gradient(circle at 50% 50%, var(--mira-stage-glow), transparent 70%);
-      border-radius:8px; overflow:hidden; position:relative;
+    .card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, var(--primary-glow), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.35s ease;
     }
-    .anim-stage svg { display:block; width:100%; height:100%; }
-    .replay-btn {
-      position:absolute; top:12px; right:12px; z-index:10;
-      background:var(--mira-pill-bg); border:1px solid var(--mira-pill-border);
-      color:var(--mira-text-soft); border-radius:9999px; padding:6px 14px;
-      font-size:12px; cursor:pointer; transition:all 0.25s ease;
+    .card:hover { transform: translateY(-6px); border-color: var(--primary-border); box-shadow: 0 20px 60px var(--primary-glow); }
+    .card:hover::before { opacity: 1; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,144,77,0.12); border: 1px solid var(--primary-border);
+      color: var(--primary); border-radius: 9999px;
+      padding: 4px 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em;
     }
-    .replay-btn:hover { background:var(--mira-icon-bg); color:var(--mira-primary); }
-    .text-soft { color:var(--mira-text-soft); }
-    .text-softer { color:var(--mira-text-softer); }
-    .info-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; width:100%; max-width:64rem; }
-    .info-item { background:var(--mira-card-bg); border:1px solid var(--mira-card-border); border-radius:0.5rem; padding:10px 14px; }
-    .info-fonte { border-left:3px solid var(--mira-primary); }
-    .info-label { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--mira-text-softer); margin-bottom:4px; font-weight:600; }
-    .info-value { font-size:12px; color:var(--mira-text-soft); line-height:1.45; }
-    .mbadge {
-      display:inline-block; background:var(--mira-glow-soft);
-      border:1px solid var(--mira-icon-border); border-radius:8px;
-      padding:6px 14px; font-size:13px; font-weight:600; color:var(--mira-primary);
+    .tag {
+      display: inline-block;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.6); border-radius: 9999px;
+      padding: 3px 10px; font-size: 11px;
     }
-    .prc { display:flex; gap:10px; align-items:flex-start; }
-    .prc .dot { width:8px; height:8px; border-radius:50%; background:var(--mira-primary); flex:0 0 auto; margin-top:6px; }
-    /* @MIRA:THEME:END */
-
-    html { scroll-behavior:smooth; }
-    #mira-progress {
-      position:fixed; top:0; left:0; height:3px; width:0%;
-      background:linear-gradient(90deg,var(--mira-primary),var(--mira-accent-2),var(--mira-primary));
-      background-size:200% 100%; z-index:9999; transition:width 0.1s linear;
-      box-shadow:0 0 10px var(--mira-glow-strong);
-      animation:mira-shimmer 2s linear infinite;
+    .stat { text-align: center; }
+    .stat-num { font-size: 28px; font-weight: 900; color: var(--primary); line-height: 1; }
+    .stat-lbl { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0; }
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
     }
-    @keyframes mira-shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
-    #mira-next {
-      position:fixed; bottom:32px; right:32px; width:48px; height:48px;
-      border-radius:50%; background:var(--mira-primary); color:#000;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; border:none; opacity:0; transform:translateY(20px);
-      transition:all 0.3s ease; z-index:9998;
-      box-shadow:0 4px 20px var(--mira-glow-strong);
+    .gradient-text {
+      background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s linear infinite;
     }
-    #mira-next.visible { opacity:1; transform:translateY(0); }
-    #mira-next:hover { transform:translateY(-3px) scale(1.1); }
+    canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
   </style>
 </head>
 <body>
-  <div id="mira-progress"></div>
-  <button id="mira-next" aria-label="Próximo slide">
-    <i data-lucide="chevron-down" class="w-6 h-6"></i>
-  </button>
+  <div class="glow-bg"></div>
+  <canvas id="bg-canvas"></canvas>
 
-  <main id="main-deck">
+  <div class="relative z-10 max-w-5xl mx-auto px-6 py-20">
 
-    <!-- ======= CW01: CAPA ======= -->
-    <div id="cw-m1" class="flex flex-col items-center justify-center min-h-screen px-6 py-16 relative">
-      <div class="anim-stage absolute inset-0 pointer-events-none" style="height:100%;border-radius:0;"></div>
-      <div class="relative z-10 text-center max-w-4xl" data-aos="fade-up">
-        <span class="attribute-pill inline-block px-5 py-2 text-sm tracking-widest uppercase text-soft mb-8">Série · Context Window &amp; Retrieval para RAG</span>
-        <h1 class="text-6xl md:text-7xl font-black leading-tight mb-6">
-          Janela de Contexto<br><span class="primary-color">e Recuperação</span>
-        </h1>
-        <p class="text-xl text-soft max-w-2xl mx-auto mb-10">Como LLMs usam, perdem e recuperam informação dentro do limite de tokens — do CWU ao RAG Seletivo.</p>
-        <div class="flex flex-wrap justify-center gap-3 mb-10">
-          <span class="attribute-pill px-4 py-2 text-sm">6 artigos científicos</span>
-          <span class="attribute-pill px-4 py-2 text-sm">20 metáforas animadas</span>
-          <span class="attribute-pill px-4 py-2 text-sm">ICLR · ACL · ICML 2024-2025</span>
-        </div>
-        <div class="flex items-center justify-center gap-3 text-softer text-sm">
-          <i data-lucide="user" class="w-4 h-4 primary-color"></i> Ibukun C. Didier
-          <span class="opacity-40">|</span>
-          <i data-lucide="calendar" class="w-4 h-4 primary-color"></i> 2026
-        </div>
+    <!-- Header -->
+    <header class="text-center mb-20">
+      <div class="inline-flex items-center gap-2 badge mb-8">
+        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+        Série Acadêmica · Recuperação Aumentada por Geração
       </div>
+      <h1 class="text-6xl md:text-7xl font-black leading-tight mb-6">
+        Chunking <span class="gradient-text">&amp; Contexto</span><br>para RAG
+      </h1>
+      <p class="text-xl text-white/60 max-w-2xl mx-auto mb-8">
+        Apresentações animadas sobre as estratégias que definem como LLMs recuperam, organizam e usam informação. Baseado em 10 artigos científicos de ICLR, ACL e ICML 2024-2025.
+      </p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <span class="tag">Ibukun C. Didier</span>
+        <span class="tag">10 artigos científicos</span>
+        <span class="tag">47 slides animados</span>
+        <span class="tag">D3.js · Metáforas</span>
+      </div>
+    </header>
+
+    <!-- Decks -->
+    <div class="grid md:grid-cols-2 gap-6 mb-16">
+
+      <!-- Deck 1: Chunking Strategies -->
+      <a href="chunking-strategies/index.html" class="card p-8">
+        <div class="relative z-10">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(255,144,77,0.15);border:1px solid rgba(255,144,77,0.3);">
+              <i data-lucide="scissors" style="color:#FF904D;" class="w-7 h-7"></i>
+            </div>
+            <span class="badge text-xs">Módulo 01</span>
+          </div>
+          <h2 class="text-3xl font-black mb-3">Chunking Strategies</h2>
+          <p class="text-white/55 text-sm leading-relaxed mb-6">
+            23 métodos de chunking avaliados: Fixed-size, Recursive, Semantic, LumberChunker, DenseX, MoG e multimodal. Comparativos de Recall e geração de chunks em D3 animado.
+          </p>
+          <hr class="divider mb-6">
+          <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="stat"><div class="stat-num">27</div><div class="stat-lbl">slides</div></div>
+            <div class="stat"><div class="stat-num">10</div><div class="stat-lbl">artigos</div></div>
+            <div class="stat"><div class="stat-num">23</div><div class="stat-lbl">métodos</div></div>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-6">
+            <span class="tag">Fixed-size</span>
+            <span class="tag">Semantic</span>
+            <span class="tag">LumberChunker</span>
+            <span class="tag">DenseX</span>
+            <span class="tag">Multimodal</span>
+          </div>
+          <div class="flex items-center gap-2 font-semibold text-sm" style="color:#FF904D;">
+            Abrir apresentação <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </div>
+        </div>
+      </a>
+
+      <!-- Deck 2: Context Window -->
+      <a href="context-window/index.html" class="card p-8">
+        <div class="relative z-10">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(255,144,77,0.15);border:1px solid rgba(255,144,77,0.3);">
+              <i data-lucide="layout-panel-left" style="color:#FF904D;" class="w-7 h-7"></i>
+            </div>
+            <span class="badge text-xs">Módulo 02</span>
+          </div>
+          <h2 class="text-3xl font-black mb-3">Context Window &amp; Retrieval</h2>
+          <p class="text-white/55 text-sm leading-relaxed mb-6">
+            Como LLMs usam, perdem e recuperam informação dentro da janela de tokens. CWU, Lost in the Middle, OP-RAG, SINR, CRAG e RAG Seletivo com metáforas animadas.
+          </p>
+          <hr class="divider mb-6">
+          <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="stat"><div class="stat-num">20</div><div class="stat-lbl">slides</div></div>
+            <div class="stat"><div class="stat-num">6</div><div class="stat-lbl">artigos</div></div>
+            <div class="stat"><div class="stat-num">8</div><div class="stat-lbl">técnicas</div></div>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-6">
+            <span class="tag">CWU</span>
+            <span class="tag">OP-RAG</span>
+            <span class="tag">SINR</span>
+            <span class="tag">CRAG</span>
+            <span class="tag">Repoformer</span>
+          </div>
+          <div class="flex items-center gap-2 font-semibold text-sm" style="color:#FF904D;">
+            Abrir apresentação <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </div>
+        </div>
+      </a>
+
     </div>
 
-    <!-- ======= CW02: MESA DE TRABALHO (Context Window) ======= -->
-    <div id="cw-m2" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="layout-panel-left" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">A Mesa de Trabalho do Modelo</h2>
+    <!-- Linha do Tempo / Roadmap -->
+    <section class="card p-8 mb-16">
+      <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
+        <i data-lucide="milestone" style="color:#FF904D;" class="w-5 h-5"></i>
+        Roadmap da Série
+      </h3>
+      <div class="space-y-4">
+        <div class="flex items-start gap-4">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style="background:rgba(255,144,77,0.2);border:1px solid rgba(255,144,77,0.4);">
+            <i data-lucide="check" style="color:#FF904D;" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="font-semibold">Módulo 01 · Chunking Strategies</div>
+            <div class="text-white/50 text-sm">Fixed-size, Recursive, Semantic, LumberChunker, DenseX, MoG, Multimodal — 23 métodos em 27 slides</div>
+          </div>
         </div>
-        <p class="text-soft text-lg">A janela de contexto é o espaço físico onde o LLM trabalha: só cabe o que está sobre a mesa.</p>
+        <div class="flex items-start gap-4">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style="background:rgba(255,144,77,0.2);border:1px solid rgba(255,144,77,0.4);">
+            <i data-lucide="check" style="color:#FF904D;" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="font-semibold">Módulo 02 · Context Window &amp; Retrieval</div>
+            <div class="text-white/50 text-sm">CWU, Lost in the Middle, OP-RAG, SINR, CRAG, Repoformer — 8 técnicas em 20 slides</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-4">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);">
+            <i data-lucide="clock" class="w-4 h-4" style="color:rgba(255,255,255,0.3);"></i>
+          </div>
+          <div>
+            <div class="font-semibold text-white/40">Módulo 03 · Reranking &amp; Geração</div>
+            <div class="text-white/30 text-sm">Em desenvolvimento</div>
+          </div>
+        </div>
       </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(2)">↻ replay</button>
-        <div class="anim-stage" id="stage-m2"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF01 · Context Window Utilization (Llama3-70B)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">O LLM só enxerga o que está na janela — como gerenciar esse espaço limitado de tokens?</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">Cada chunk recuperado ocupa tokens da janela. O chunking define quantos fragmentos cabem e com que qualidade.</div>
-        </div>
-      </div>
-    </div>
+    </section>
 
-    <!-- ======= CW03: GAUGE CWU ======= -->
-    <div id="cw-m3" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="gauge" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">O Ponto Certo de Uso</h2>
-        </div>
-        <p class="text-soft text-lg">CWU ideal: 40-70%. Muito vazio é desperdício; muito cheio é perda de qualidade.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(3)">↻ replay</button>
-        <div class="anim-stage" id="stage-m3"></div>
-      </div>
-      <div class="grid grid-cols-3 gap-4 mt-4 w-full max-w-5xl" data-aos="fade-up">
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">512-1024</div><div class="text-soft text-sm">tokens ideais por chunk</div></div>
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">40-70%</div><div class="text-soft text-sm">faixa de CWU ótima</div></div>
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">CWU=U/L</div><div class="text-soft text-sm">tokens usados / limite</div></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF01 · Context Window Utilization</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Usar menos de 40% da janela é desperdício; mais de 70% aumenta ruído e baixa a qualidade da resposta.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">Chunks de 512-1024 tok. atingem o sweet spot — nem grandes demais (ruído), nem pequenos demais (contexto pobre).</div>
-        </div>
-      </div>
-    </div>
+    <!-- Footer -->
+    <footer class="text-center">
+      <p class="text-white/30 text-sm">Ibukun C. Didier &middot; Série RAG · ICLR · ACL · ICML 2024-2025</p>
+      <a href="https://github.com/IbukunChife/context-window-rag" target="_blank"
+         class="inline-flex items-center gap-2 mt-4 text-white/40 hover:text-white/70 text-sm transition-colors">
+        <i data-lucide="github" class="w-4 h-4"></i>
+        IbukunChife/context-window-rag
+      </a>
+    </footer>
 
-    <!-- ======= CW04: LOST IN THE MIDDLE ======= -->
-    <div id="cw-m4" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="spotlight" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Perdido no Meio</h2>
-        </div>
-        <p class="text-soft text-lg">O modelo presta mais atenção ao início e ao fim do contexto. O meio some na sombra.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(4)">↻ replay</button>
-        <div class="anim-stage" id="stage-m4"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">Liu et al. 2023 · Lost in the Middle (conceito extra aos PDFs)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Chunks relevantes colocados no meio do contexto são ignorados pelo modelo — a atenção cai até 60% no centro.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">Na montagem do prompt RAG, coloque os chunks mais importantes no início ou no fim da janela — nunca no meio.</div>
-        </div>
-      </div>
-    </div>
+  </div>
 
-    <!-- ======= CW05: VIÉS DE POSIÇÃO ======= -->
-    <div id="cw-m5" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="theater" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Teatro com Lugares Numerados</h2>
-        </div>
-        <p class="text-soft text-lg">Cada token sabe seu lugar no contexto — mas o modelo dedica mais atenção às primeiras e últimas fileiras.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(5)">↻ replay</button>
-        <div class="anim-stage" id="stage-m5"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">Arquitetura Transformer · RoPE (Su et al.) e ALiBi (Press et al.)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">O Transformer base não tem noção de ordem — sem posição, "gato comeu rato" equivale a "rato comeu gato".</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">RoPE e ALiBi ensinam o modelo a perceber distância entre chunks — fragmentos mais distantes recebem menos atenção.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW06: PARADOXO CONTEXTO LONGO ======= -->
-    <div id="cw-m6" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="trending-up" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Mais Contexto, Menos Qualidade</h2>
-        </div>
-        <p class="text-soft text-lg">Existe um pico ótimo. Antes dele, mais contexto ajuda. Depois, a qualidade cai em curva invertida.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(6)">↻ replay</button>
-        <div class="anim-stage" id="stage-m6"></div>
-      </div>
-      <div class="grid grid-cols-2 gap-4 mt-4 w-full max-w-5xl" data-aos="fade-up">
-        <div class="glass-card p-4">
-          <div class="text-lg font-bold primary-color mb-2">OP-RAG 16K</div>
-          <div class="text-soft text-sm">F1 = 44.43 — contexto ordenado, tamanho certo</div>
-        </div>
-        <div class="glass-card p-4">
-          <div class="text-lg font-bold text-soft mb-2">Long Context 117K</div>
-          <div class="text-soft text-sm">F1 = 34.26 — janela enorme, mas qualidade menor</div>
-        </div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF02 · In Defense of RAG (Ke et al. 2024)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Ampliar a janela indefinidamente não melhora a qualidade — o modelo se perde em contexto excessivo.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">OP-RAG com 16K tok. (chunks ordenados e selecionados) supera Long Context de 117K. Menos chunks, mas os certos.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW07: RAG vs LONG CONTEXT ======= -->
-    <div id="cw-m7" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="zap" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Mochila vs Carroça</h2>
-        </div>
-        <p class="text-soft text-lg">RAG carrega apenas o essencial (mochila). Long Context arrasta tudo (carroça). Quem chega primeiro?</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(7)">↻ replay</button>
-        <div class="anim-stage" id="stage-m7"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF02 · In Defense of RAG</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Long Context ingere o documento inteiro, custando 5-10x mais compute por uma qualidade inferior à do RAG seletivo.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">O chunking RAG filtra os fragmentos relevantes antes de preencher a janela — evita encher o contexto com ruído.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW08: OP-RAG: ORDEM IMPORTA ======= -->
-    <div id="cw-m8" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="list-ordered" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">A Ordem dos Fragmentos Importa</h2>
-        </div>
-        <p class="text-soft text-lg">OP-RAG preserva a sequência original do documento. Fragmentos fora de ordem confundem o modelo.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(8)">↻ replay</button>
-        <div class="anim-stage" id="stage-m8"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF02 · In Defense of RAG — Order-Preserve RAG</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Chunks recuperados por similaridade chegam em ordem aleatória — o modelo perde a narrativa e coerência do documento.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">OP-RAG reordena os chunks pela posição original no texto antes de inserí-los na janela. F1 sobe 10+ pontos.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW09: SINR — BUSCA vs RECUPERAÇÃO ======= -->
-    <div id="cw-m9" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="binoculars" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Binóculos vs Livro Aberto</h2>
-        </div>
-        <p class="text-soft text-lg">SINR separa quem localiza (chunk pequeno, 100-200 tokens) de quem entrega contexto (chunk grande, 600-1000 tokens).</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(9)">↻ replay</button>
-        <div class="anim-stage" id="stage-m9"></div>
-      </div>
-      <div class="grid grid-cols-3 gap-4 mt-4 w-full max-w-5xl" data-aos="fade-up">
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">+15-25%</div><div class="text-soft text-sm">recall@20</div></div>
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">+30%</div><div class="text-soft text-sm">coerência</div></div>
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">-50%</div><div class="text-soft text-sm">tamanho do índice</div></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF03 · Search Is Not Retrieval (SINR)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">O chunk ideal para ENCONTRAR informação (pequeno, preciso) não é o mesmo ideal para GERAR resposta (grande, coerente).</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">Dois tamanhos de chunk: 100-200 tok. para localizar no índice; 600-1000 tok. para preencher a janela do LLM.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW10: PIPELINE SINR ======= -->
-    <div id="cw-m10" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="workflow" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Pipeline de Dupla Camada</h2>
-        </div>
-        <p class="text-soft text-lg">A consulta percorre quatro etapas: indexação, busca, expansão e geração.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(10)">↻ replay</button>
-        <div class="anim-stage" id="stage-m10"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF03 · Search Is Not Retrieval (SINR)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">RAG ingênuo usa o mesmo chunk para busca e para contexto — sacrifica precisão (chunk grande) ou coerência (chunk pequeno).</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">Pipeline: indexar pequeno → buscar → expandir para chunk grande → inserir na janela. Separa busca de entrega.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW11: COMPRESSÃO VIA PERGUNTAS ======= -->
-    <div id="cw-m11" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="book-open" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Livro Vira Ficha de Perguntas</h2>
-        </div>
-        <p class="text-soft text-lg">Em vez de guardar o texto, guarde perguntas que o texto responde. Recall@3 = 0.84 com 80% menos espaço.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(11)">↻ replay</button>
-        <div class="anim-stage" id="stage-m11"></div>
-      </div>
-      <div class="grid grid-cols-2 gap-4 mt-4 w-full max-w-5xl" data-aos="fade-up">
-        <div class="glass-card p-4">
-          <div class="text-lg font-bold primary-color mb-2">Paper-Cards</div>
-          <div class="prc mb-2"><div class="dot"></div><div class="text-soft text-sm">Maximo 300 caracteres por cartao</div></div>
-          <div class="prc"><div class="dot"></div><div class="text-soft text-sm">Codifica o documento como perguntas</div></div>
-        </div>
-        <div class="glass-card p-4">
-          <div class="text-lg font-bold primary-color mb-2">Resultado</div>
-          <div class="prc mb-2"><div class="dot"></div><div class="text-soft text-sm">Recall@3 = 0.84</div></div>
-          <div class="prc"><div class="dot"></div><div class="text-soft text-sm">80% menos armazenamento</div></div>
-        </div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF04 · Knowledge Compression Multi-hop (Wang et al. 2024)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Documentos longos não cabem na janela e perdem precisão quando truncados. Como comprimir sem perder recuperação?</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">Em vez de chunks de texto, o documento é codificado como perguntas (Paper-Cards, ≤300 chars) — cabe muito mais na janela.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW12: CRAG — ROTEADOR ======= -->
-    <div id="cw-m12" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="git-fork" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">O Porteiro que Avalia Documentos</h2>
-        </div>
-        <p class="text-soft text-lg">CRAG usa um avaliador leve (T5, 0.77B) para decidir o que fazer com cada documento recuperado.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(12)">↻ replay</button>
-        <div class="anim-stage" id="stage-m12"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF05 · CRAG — Corrective RAG (Yan et al. 2024)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">RAG ingênuo passa qualquer chunk ao LLM sem avaliar relevância — "garbage in, garbage out" dentro da janela.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">O avaliador T5 (0.77B) filtra e classifica cada chunk ANTES de colocá-lo na janela — só conteúdo validado entra.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW13: SEMÁFORO CRAG ======= -->
-    <div id="cw-m13" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="traffic-cone" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">O Semaforo dos Três Estados</h2>
-        </div>
-        <p class="text-soft text-lg">Verde = usar. Vermelho = descartar e buscar na web. Amarelo = duvida, combinar os dois caminhos.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(13)">↻ replay</button>
-        <div class="anim-stage" id="stage-m13"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF05 · CRAG — Corrective RAG</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">O que fazer quando o chunk recuperado é de qualidade incerta? Usar e arriscar, ou descartar e buscar novamente?</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">3 decisões por chunk: refinar e usar (verde), descartar e buscar na web (vermelho), combinar ambos (amarelo). +19% no PopQA.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW14: FILTRO DE CAFÉ ======= -->
-    <div id="cw-m14" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="filter" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">O Filtro de Café do Conhecimento</h2>
-        </div>
-        <p class="text-soft text-lg">Documentos brutos entram pelo filtro; apenas as informacoes mais relevantes gotejam para o contexto.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(14)">↻ replay</button>
-        <div class="anim-stage" id="stage-m14"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF05 · CRAG — Corrective RAG</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Chunks recuperados contêm texto irrelevante (ruído) que contamina a resposta do modelo quando inseridos na janela.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">CRAG aplica "strip-and-filter" no chunk: remove sentenças irrelevantes e extrai só os fatos úteis antes de entregar ao LLM.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW15: RAG SELETIVO ======= -->
-    <div id="cw-m15" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="stethoscope" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">O Medico que Decide Quando Pedir Exame</h2>
-        </div>
-        <p class="text-soft text-lg">80% das consultas nao precisam de exame. O modelo decide sozinho quando recuperar — igual ao medico experiente.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(15)">↻ replay</button>
-        <div class="anim-stage" id="stage-m15"></div>
-      </div>
-      <div class="grid grid-cols-3 gap-4 mt-4 w-full max-w-5xl" data-aos="fade-up">
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">80%</div><div class="text-soft text-sm">recuperacoes evitadas</div></div>
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">70%</div><div class="text-soft text-sm">inferencia mais rapida</div></div>
-        <div class="glass-card p-4 text-center"><div class="text-2xl font-black primary-color">&lt;cc&gt;</div><div class="text-soft text-sm">token de auto-gatilho</div></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF06 · Repoformer — Selective RAG (ICML 2024)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">RAG recupera chunks para toda pergunta, mesmo quando o modelo já sabe a resposta — latência e custo desnecessários.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">O modelo auto-avalia se precisa de chunks externos via token &lt;cc&gt;. 80% das vezes responde sem ocupar a janela com recuperações.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW16: 8 DE 10 DESPERDICADAS ======= -->
-    <div id="cw-m16" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="bell-off" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">8 em 10 Alarmes Sao Falsos</h2>
-        </div>
-        <p class="text-soft text-lg">Repoformer mostra que 80% das recuperacoes em RAG tradicional sao desnecessarias. O modelo ja sabe a resposta.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(16)">↻ replay</button>
-        <div class="anim-stage" id="stage-m16"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">PDF06 · Repoformer (ICML 2024)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Cada recuperação de chunk custa latência, compute e tokens da janela — RAG tradicional desperdiça 80% dessas chamadas.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">RAG Seletivo elimina 80% das recuperações desnecessárias, liberando a janela apenas para chunks que realmente mudam a resposta.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW17: CODIFICAÇÃO POSICIONAL ======= -->
-    <div id="cw-m17" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="hash" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Assentos Numerados no Teatro</h2>
-        </div>
-        <p class="text-soft text-lg">Cada token tem um numero de assento. RoPE e ALiBi dizem ao modelo quao longe dois tokens estao um do outro.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(17)">↻ replay</button>
-        <div class="anim-stage" id="stage-m17"></div>
-      </div>
-      <div class="grid grid-cols-2 gap-4 mt-4 w-full max-w-5xl" data-aos="fade-up">
-        <div class="glass-card p-4">
-          <div class="text-lg font-bold primary-color mb-2">RoPE</div>
-          <div class="text-soft text-sm">Rotary Position Embedding. Encoda posicao relativa via rotacao de vetores. Usado em Llama, Mistral.</div>
-        </div>
-        <div class="glass-card p-4">
-          <div class="text-lg font-bold primary-color mb-2">ALiBi</div>
-          <div class="text-soft text-sm">Attention with Linear Biases. Penaliza atencao pela distancia entre tokens. Generalizacao mais suave.</div>
-        </div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">Arquitetura Transformer · RoPE (Su et al.) / ALiBi (Press et al.)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">O Transformer base trata todos os tokens como equidistantes — sem posição, perde a noção de proximidade entre chunks.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">A posição do chunk na janela afeta a atenção: chunks do início (primacy) e do fim (recency) são mais valorizados que os do meio.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW18: COMPRESSÃO DE CONTEXTO ======= -->
-    <div id="cw-m18" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="compress" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">A Prensa Hidraulica do Contexto</h2>
-        </div>
-        <p class="text-soft text-lg">Context Compression comprime ativamente o contexto relevante para caber mais informacao dentro da janela.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(18)">↻ replay</button>
-        <div class="anim-stage" id="stage-m18"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">Conceito transversal · LLMLingua, Selective Context, AutoCompressor</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">O contexto RAG relevante muitas vezes excede o limite da janela — truncar perde informação, ignorar perde qualidade.</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">Context Compression destila os chunks: seleciona sentenças-chave, resume e comprime para caber mais informação por token na janela.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW19: COMPARATIVO DE ESTRATEGIAS ======= -->
-    <div id="cw-m19" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="scatter-chart" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">Custo vs Qualidade por Estrategia</h2>
-        </div>
-        <p class="text-soft text-lg">Cada ponto e uma estrategia. O objetivo e maximizar qualidade minimizando custo computacional.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(19)">↻ replay</button>
-        <div class="anim-stage" id="stage-m19"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">Síntese dos 6 artigos (PDFs 01-06)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Qual estratégia de preenchimento da janela de contexto entrega o melhor equilíbrio qualidade vs custo computacional?</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">RAG Seletivo (Repoformer) ocupa o quadrante ótimo: máxima qualidade com mínima recuperação de chunks desnecessários.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= CW20: TIMELINE DO CAMPO ======= -->
-    <div id="cw-m20" class="flex flex-col items-center justify-center min-h-screen px-6 py-16">
-      <div class="text-center mb-8" data-aos="fade-up">
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <div class="icon-hero"><i data-lucide="milestone" class="primary-color w-6 h-6"></i></div>
-          <h2 class="text-4xl font-black">A Evolucao do Campo em 5 Anos</h2>
-        </div>
-        <p class="text-soft text-lg">De RAG ingênuo (2020) ate RAG seletivo e compressao contextual (2025+). Uma linha do tempo de inovacoes.</p>
-      </div>
-      <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
-        <button class="replay-btn" onclick="cwReplay(20)">↻ replay</button>
-        <div class="anim-stage" id="stage-m20"></div>
-      </div>
-      <div class="info-bar" data-aos="fade-up">
-        <div class="info-item info-fonte">
-          <div class="info-label">Artigo-Fonte</div>
-          <div class="info-value">Evolução do campo · PDFs 01-06 (2020-2025)</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Problema Central</div>
-          <div class="info-value">Como o campo evoluiu de "colocar tudo na janela" para "usar só o que importa, na ordem certa, no tamanho certo"?</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Chunk → Janela RAG</div>
-          <div class="info-value">Cada marco representa uma inovação em como chunks se relacionam à janela: tamanho, ordem, seleção, compressão e auto-gatilho.</div>
-        </div>
-      </div>
-      <div class="flex flex-wrap justify-center gap-3 mt-4" data-aos="fade-up">
-        <span class="attribute-pill px-4 py-2 text-sm">2020: RAG classico</span>
-        <span class="attribute-pill px-4 py-2 text-sm">2022: SINR dual-layer</span>
-        <span class="attribute-pill px-4 py-2 text-sm">2024: CRAG + Repoformer</span>
-        <span class="attribute-pill px-4 py-2 text-sm">2025+: RAG adaptativo</span>
-      </div>
-    </div>
-
-  </main>
-
-  <footer class="py-12 text-center border-t border-white/10">
-    <p class="text-softer text-sm">Ibukun C. Didier &middot; Serie Context Window &amp; Retrieval para RAG</p>
-    <p class="text-softer text-xs mt-2">Baseado em artigos ICLR, ACL e ICML 2024-2025</p>
-  </footer>
-
-<script>
-// ============================================================
-// NAVEGACAO CARD-A-CARD
-// ============================================================
-function setupFullScreenWrappers(){
-  var main=document.getElementById('main-deck');
-  var children=Array.from(main.children);
-  children.forEach(function(c){
-    var w=document.createElement('div');
-    w.className='mira-slide-wrapper';
-    w.style.cssText='display:flex;align-items:center;justify-content:center;min-height:100vh;';
-    main.insertBefore(w,c);
-    w.appendChild(c);
-  });
-}
-
-(function(){
-  setupFullScreenWrappers();
-  var wrappers=document.querySelectorAll('.mira-slide-wrapper');
-  var total=wrappers.length;
-  var current=0;
-  var prog=document.getElementById('mira-progress');
-  var btn=document.getElementById('mira-next');
-
-  function goTo(i){
-    if(i<0)i=0;
-    if(i>=total)i=total-1;
-    current=i;
-    wrappers[i].scrollIntoView({behavior:'smooth',block:'start'});
-    prog.style.width=((i/(total-1))*100)+'%';
-    btn.querySelector('[data-lucide]').setAttribute('data-lucide',i>=total-1?'chevron-up':'chevron-down');
+  <script>
     lucide.createIcons();
-  }
 
-  window.addEventListener('scroll',function(){
-    var s=window.scrollY;
-    btn.classList.toggle('visible',s>300);
-    var best=0, bd=Infinity;
-    wrappers.forEach(function(w,i){
-      var d=Math.abs(w.getBoundingClientRect().top);
-      if(d<bd){bd=d;best=i;}
+    // Partículas de fundo
+    var canvas = document.getElementById('bg-canvas');
+    var ctx = canvas.getContext('2d');
+    function resize(){ canvas.width=innerWidth; canvas.height=innerHeight; }
+    resize(); window.addEventListener('resize', resize);
+    var pts = Array.from({length:50}, function(){
+      return {x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+              vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+              r:Math.random()*2+1, op:Math.random()*.25+.05};
     });
-    current=best;
-    prog.style.width=((current/(total-1))*100)+'%';
-  });
-
-  btn.addEventListener('click',function(){
-    goTo(current>=total-1?0:current+1);
-  });
-
-  document.addEventListener('keydown',function(e){
-    if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key==='PageDown')goTo(current+1);
-    if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp')goTo(current-1);
-  });
-})();
-
-// ============================================================
-// REPLAY GLOBAL
-// ============================================================
-var cwFns={};
-function cwReplay(n){ if(cwFns[n])cwFns[n](); }
-
-// ============================================================
-// UTILITÁRIOS D3
-// ============================================================
-var P='#FF904D', PA='rgba(255,144,77,', ST='rgba(255,255,255,0.06)', TS='rgba(255,255,255,0.5)';
-
-function mkSvg(id){
-  d3.select(id).select('svg').remove();
-  return d3.select(id).append('svg')
-    .attr('viewBox','0 0 1000 280')
-    .attr('width','100%').attr('height','100%');
-}
-
-// ============================================================
-// ANIMACOES
-// ============================================================
-
-// --- CW01: CAPA (partículas flutuantes) ---
-(function(){
-  if(!window.__cwM1)window.__cwM1=0;
-  var g=++window.__cwM1;
-  var el=document.getElementById('cw-m1');
-  var stage=el.querySelector('.anim-stage');
-  var svg=d3.select(stage).append('svg')
-    .attr('viewBox','0 0 1000 500').attr('width','100%').attr('height','100%');
-  var pts=d3.range(60).map(function(){
-    return{x:Math.random()*1000,y:Math.random()*500,r:Math.random()*3+1,
-      vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4,op:Math.random()*0.4+0.1};
-  });
-  var circles=svg.selectAll('circle').data(pts).join('circle')
-    .attr('cx',function(d){return d.x;}).attr('cy',function(d){return d.y;})
-    .attr('r',function(d){return d.r;}).attr('fill',P).attr('opacity',function(d){return d.op;});
-  setInterval(function(){
-    if(g!==window.__cwM1)return;
-    pts.forEach(function(d){
-      d.x+=d.vx; d.y+=d.vy;
-      if(d.x<0||d.x>1000)d.vx*=-1;
-      if(d.y<0||d.y>500)d.vy*=-1;
-    });
-    circles.attr('cx',function(d){return d.x;}).attr('cy',function(d){return d.y;});
-  },30);
-})();
-
-// --- CW02: MESA DE TRABALHO ---
-(function(){
-  if(!window.__cwM2)window.__cwM2=0;
-  var g=++window.__cwM2;
-  cwFns[2]=function(){window.__cwM2++;g=window.__cwM2;run();};
-  function run(){
-    var svg=mkSvg('#stage-m2');
-    var papers=['Token 1','Token 2','Token 3','Token 4','Token 5','Token 6'];
-    var cols=PA+'0.15)';
-    // Mesa
-    svg.append('rect').attr('x',50).attr('y',180).attr('width',900).attr('height',70)
-      .attr('fill',ST).attr('rx',8);
-    svg.append('text').attr('x',500).attr('y',230).attr('text-anchor','middle')
-      .attr('fill',TS).attr('font-size',14).text('JANELA DE CONTEXTO — espaço limitado');
-    // Papéis iniciais
-    var rects=svg.selectAll('.paper').data(papers).join('rect')
-      .attr('class','paper').attr('x',function(d,i){return 60+i*145;})
-      .attr('y',100).attr('width',130).attr('height',70).attr('rx',8)
-      .attr('fill',cols).attr('stroke',P).attr('stroke-width',1.5).attr('opacity',0);
-    var labels=svg.selectAll('.plabel').data(papers).join('text')
-      .attr('class','plabel').attr('x',function(d,i){return 125+i*145;})
-      .attr('y',140).attr('text-anchor','middle').attr('fill','white').attr('font-size',13)
-      .attr('opacity',0).text(function(d){return d;});
-    // Entrada
-    rects.transition().delay(function(d,i){return i*150;}).duration(400).attr('opacity',1);
-    labels.transition().delay(function(d,i){return i*150;}).duration(400).attr('opacity',1);
-    // Loop: novo papel entra, empurra os existentes, mais antigo sai
-    var idx=0;
-    var newLabels=['Token 7','Token 8','Token 9','Token 10'];
-    var loopTimer=setInterval(function(){
-      if(g!==window.__cwM2){clearInterval(loopTimer);return;}
-      var lbl=newLabels[idx%newLabels.length]; idx++;
-      // Mover todos para a esquerda
-      rects.transition().duration(500)
-        .attr('x',function(d,i){return 60+i*145-145;}).attr('opacity',function(d,i){return i===0?0:1;});
-      labels.transition().duration(500)
-        .attr('x',function(d,i){return 125+i*145-145;}).attr('opacity',function(d,i){return i===0?0:1;});
-      // Novo papel entra da direita
-      setTimeout(function(){
-        if(g!==window.__cwM2)return;
-        rects.data(function(){
-          var d=papers.slice();d.shift();d.push(lbl);return d;
-        });
-        rects.attr('x',function(d,i){return 60+i*145;}).attr('opacity',1);
-        labels.text(function(d){return d;})
-          .attr('x',function(d,i){return 125+i*145;}).attr('opacity',1);
-      },520);
-    },2000);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m2'));
-})();
-
-// --- CW03: GAUGE CWU ---
-(function(){
-  if(!window.__cwM3)window.__cwM3=0;
-  var g=++window.__cwM3;
-  cwFns[3]=function(){window.__cwM3++;g=window.__cwM3;run();};
-  function run(){
-    var svg=mkSvg('#stage-m3');
-    var cx=500,cy=230,r=160;
-    // Arco de fundo
-    var arc=d3.arc().innerRadius(r-28).outerRadius(r).startAngle(-Math.PI/2*1.3).endAngle(Math.PI/2*1.3);
-    svg.append('path').attr('transform','translate('+cx+','+cy+')').attr('d',arc()).attr('fill',ST);
-    // Zonas coloridas
-    function colorArc(a1,a2,col){
-      var ca=d3.arc().innerRadius(r-28).outerRadius(r).startAngle(a1).endAngle(a2);
-      svg.append('path').attr('transform','translate('+cx+','+cy+')').attr('d',ca()).attr('fill',col).attr('opacity',0.7);
-    }
-    var base=-Math.PI/2*1.3, range=Math.PI*1.3;
-    colorArc(base, base+range*0.4,'rgba(255,100,100,0.6)');
-    colorArc(base+range*0.4, base+range*0.7,'rgba(100,220,100,0.7)');
-    colorArc(base+range*0.7, base+range,'rgba(255,100,100,0.6)');
-    // Labels
-    svg.append('text').attr('x',cx-130).attr('y',cy+30).attr('fill',TS).attr('font-size',13).text('0%');
-    svg.append('text').attr('x',cx+100).attr('y',cy+30).attr('fill',TS).attr('font-size',13).text('100%');
-    svg.append('text').attr('x',cx-20).attr('y',cy-90).attr('fill','rgba(100,220,100,1)').attr('font-size',13).text('40-70%');
-    // Agulha
-    var needle=svg.append('line').attr('x1',cx).attr('y1',cy)
-      .attr('stroke',P).attr('stroke-width',4).attr('stroke-linecap','round');
-    var pct=svg.append('text').attr('x',cx).attr('y',cy+50).attr('text-anchor','middle')
-      .attr('fill','white').attr('font-size',28).attr('font-weight','bold');
-    var valueTxt=svg.append('text').attr('x',cx).attr('y',cy+80).attr('text-anchor','middle')
-      .attr('fill',TS).attr('font-size',14).text('CWU = U / L');
-    function setAngle(prc){
-      var ang=base+range*prc-Math.PI/2;
-      var x2=cx+Math.cos(ang)*(r-14);
-      var y2=cy+Math.sin(ang)*(r-14);
-      needle.attr('x2',x2).attr('y2',y2);
-      pct.text(Math.round(prc*100)+'%');
-    }
-    // Entrada: varrer de 0 a 55%
-    var enterPrc=0;
-    var enterT=setInterval(function(){
-      if(g!==window.__cwM3){clearInterval(enterT);return;}
-      enterPrc+=0.02;
-      if(enterPrc>=0.55){clearInterval(enterT);enterPrc=0.55;startLoop();}
-      setAngle(enterPrc);
-    },20);
-    function startLoop(){
-      var dir=1; var val=0.55;
-      setInterval(function(){
-        if(g!==window.__cwM3)return;
-        val+=dir*0.003;
-        if(val>0.68){dir=-1;}
-        if(val<0.42){dir=1;}
-        setAngle(val);
-      },30);
-    }
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m3'));
-})();
-
-// --- CW04: LOST IN THE MIDDLE ---
-(function(){
-  if(!window.__cwM4)window.__cwM4=0;
-  var g=++window.__cwM4;
-  cwFns[4]=function(){window.__cwM4++;g=window.__cwM4;run();};
-  function run(){
-    var svg=mkSvg('#stage-m4');
-    var n=20, w=42, gap=4, startX=50, y=110;
-    var segs=d3.range(n).map(function(i){return{i:i};});
-    var rects=svg.selectAll('.seg').data(segs).join('rect').attr('class','seg')
-      .attr('x',function(d){return startX+d.i*(w+gap);}).attr('y',y)
-      .attr('width',w).attr('height',60).attr('rx',5).attr('fill',P).attr('opacity',0);
-    // Label acima
-    svg.append('text').attr('x',startX).attr('y',y-20).attr('fill',TS).attr('font-size',13).text('Início do contexto');
-    svg.append('text').attr('x',startX+(n-4)*(w+gap)).attr('y',y-20).attr('fill',TS).attr('font-size',13).text('Fim');
-    svg.append('text').attr('x',500).attr('y',220).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Zona do meio: atenção cai até 60%');
-    // Entrada
-    rects.transition().delay(function(d){return d.i*60;}).duration(300).attr('opacity',function(d){
-      if(d.i<3||d.i>n-4)return 0.9;
-      return 0.15;
-    });
-    // Loop: atenção pulsa nas bordas
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM4)return;
-      t+=0.05;
-      rects.attr('opacity',function(d){
-        if(d.i<3)return 0.7+0.2*Math.sin(t);
-        if(d.i>n-4)return 0.7+0.2*Math.sin(t+1);
-        return 0.08+0.07*Math.abs(Math.sin(t*0.3+d.i));
+    function frame(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      pts.forEach(function(p){
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<0||p.x>canvas.width) p.vx*=-1;
+        if(p.y<0||p.y>canvas.height) p.vy*=-1;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,144,77,'+p.op+')';
+        ctx.fill();
       });
-    },40);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m4'));
-})();
-
-// --- CW05: TEATRO / POSICIONAL ---
-(function(){
-  if(!window.__cwM5)window.__cwM5=0;
-  var g=++window.__cwM5;
-  cwFns[5]=function(){window.__cwM5++;g=window.__cwM5;run();};
-  function run(){
-    var svg=mkSvg('#stage-m5');
-    var seats=d3.range(12).map(function(i){return{i:i,x:80+i*76,y:130};});
-    // Assentos
-    var rects=svg.selectAll('.seat').data(seats).join('rect').attr('class','seat')
-      .attr('x',function(d){return d.x-25;}).attr('y',function(d){return d.y-30;})
-      .attr('width',50).attr('height',55).attr('rx',6).attr('fill',ST)
-      .attr('stroke',function(d,i){return(i<2||i>9)?P:'rgba(255,255,255,0.1)';})
-      .attr('stroke-width',2).attr('opacity',0);
-    var nums=svg.selectAll('.snum').data(seats).join('text').attr('class','snum')
-      .attr('x',function(d){return d.x;}).attr('y',function(d){return d.y+5;})
-      .attr('text-anchor','middle').attr('fill','white').attr('font-size',13)
-      .attr('opacity',0).text(function(d){return d.i+1;});
-    // Arcos de atenção
-    var arcs=[];
-    [[0,1],[1,2],[9,10],[10,11],[0,11]].forEach(function(pair){
-      var a=svg.append('path').attr('fill','none').attr('stroke',P).attr('stroke-width',2)
-        .attr('stroke-dasharray','6,4').attr('opacity',0);
-      arcs.push({el:a,a:pair[0],b:pair[1]});
-    });
-    function drawArc(el,a,b,op){
-      var x1=seats[a].x, y1=seats[a].y-30;
-      var x2=seats[b].x, y2=seats[b].y-30;
-      var mx=(x1+x2)/2, my=Math.min(y1,y2)-50;
-      el.attr('d','M'+x1+','+y1+' Q'+mx+','+my+' '+x2+','+y2).attr('opacity',op);
+      requestAnimationFrame(frame);
     }
-    rects.transition().delay(function(d,i){return i*80;}).duration(300).attr('opacity',1);
-    nums.transition().delay(function(d,i){return i*80;}).duration(300).attr('opacity',1);
-    setTimeout(function(){
-      arcs.forEach(function(ar,i){
-        setTimeout(function(){drawArc(ar.el,ar.a,ar.b,0.7);},i*200);
-      });
-    },1200);
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM5)return;
-      t+=0.04;
-      arcs.forEach(function(ar,i){drawArc(ar.el,ar.a,ar.b,0.4+0.35*Math.abs(Math.sin(t+i*0.7)));});
-      rects.attr('opacity',function(d,i){
-        if(i<2||i>9)return 0.7+0.2*Math.sin(t+i);
-        return 0.2+0.05*Math.sin(t*0.5+i);
-      });
-    },40);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m5'));
-})();
-
-// --- CW06: CURVA INVERTIDA ---
-(function(){
-  if(!window.__cwM6)window.__cwM6=0;
-  var g=++window.__cwM6;
-  cwFns[6]=function(){window.__cwM6++;g=window.__cwM6;run();};
-  function run(){
-    var svg=mkSvg('#stage-m6');
-    var margin={left:80,right:40,top:30,bottom:60};
-    var W=1000-margin.left-margin.right, H=280-margin.top-margin.bottom;
-    var grp=svg.append('g').attr('transform','translate('+margin.left+','+margin.top+')');
-    var xs=d3.scaleLinear().domain([0,1]).range([0,W]);
-    var ys=d3.scaleLinear().domain([0,1]).range([H,0]);
-    // Curva invertida U
-    var pts=d3.range(0,1.01,0.02).map(function(x){return{x:x,y:Math.max(0,4*x*(1-x)-0.1)};});
-    var line=d3.line().x(function(d){return xs(d.x);}).y(function(d){return ys(d.y);}).curve(d3.curveCatmullRom);
-    grp.append('path').attr('d',line(pts)).attr('fill','none').attr('stroke',P).attr('stroke-width',3).attr('opacity',0)
-      .transition().duration(1200).attr('opacity',1);
-    // Eixos
-    grp.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H).attr('stroke',TS).attr('stroke-width',1);
-    grp.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',H).attr('stroke',TS).attr('stroke-width',1);
-    grp.append('text').attr('x',W/2).attr('y',H+40).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Tamanho do contexto (tokens)');
-    grp.append('text').attr('transform','rotate(-90)').attr('x',-H/2).attr('y',-55).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Qualidade F1');
-    // Ponto
-    var dot=grp.append('circle').attr('r',10).attr('fill',P).attr('cy',ys(0));
-    var t=0; var dir=1;
-    setTimeout(function(){
-      var iv=setInterval(function(){
-        if(g!==window.__cwM6){clearInterval(iv);return;}
-        t+=dir*0.008;
-        if(t>=1){dir=-1;}
-        if(t<=0){dir=1;}
-        var y=Math.max(0,4*t*(1-t)-0.1);
-        dot.attr('cx',xs(t)).attr('cy',ys(y));
-      },30);
-    },1300);
-    // Labels key
-    grp.append('text').attr('x',xs(0.5)).attr('y',ys(0.95)-15).attr('text-anchor','middle').attr('fill','rgba(100,220,100,1)').attr('font-size',13).text('Pico OP-RAG 16K (F1=44)');
-    grp.append('text').attr('x',xs(0.9)).attr('y',ys(0.2)+10).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('Long Context 117K (F1=34)');
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m6'));
-})();
-
-// --- CW07: MOCHILA vs CARROÇA ---
-(function(){
-  if(!window.__cwM7)window.__cwM7=0;
-  var g=++window.__cwM7;
-  cwFns[7]=function(){window.__cwM7++;g=window.__cwM7;run();};
-  function run(){
-    var svg=mkSvg('#stage-m7');
-    svg.append('line').attr('x1',900).attr('y1',40).attr('x2',900).attr('y2',240)
-      .attr('stroke',P).attr('stroke-width',3).attr('stroke-dasharray','8,4');
-    svg.append('text').attr('x',910).attr('y',145).attr('fill',P).attr('font-size',14).text('META');
-    // RAG (mochila)
-    svg.append('text').attr('x',50).attr('y',100).attr('fill',TS).attr('font-size',13).text('RAG (mochila)');
-    var ragDot=svg.append('circle').attr('cx',100).attr('cy',120).attr('r',18).attr('fill',P);
-    svg.append('text').attr('x',100).attr('y',100).attr('text-anchor','middle').attr('fill','white').attr('font-size',11);
-    // Long Context (carroça)
-    svg.append('text').attr('x',50).attr('y',190).attr('fill',TS).attr('font-size',13).text('Long Context (carroça)');
-    var lcRect=svg.append('rect').attr('x',82).attr('y',188).attr('width',55).attr('height',30)
-      .attr('fill',PA+'0.3)').attr('stroke',TS).attr('rx',4);
-    var lx=100;
-    var dir=1; var phase=0;
-    setInterval(function(){
-      if(g!==window.__cwM7)return;
-      lx+=dir*(phase===0?3.5:1.2);
-      if(lx>880){lx=100; phase=(phase+1)%2;}
-      ragDot.attr('cx',lx);
-      var lcX=lx-(phase===0?0:140);
-      if(lcX<82)lcX=82;
-      lcRect.attr('x',lcX-28);
-    },30);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m7'));
-})();
-
-// --- CW08: OP-RAG ORDEM ---
-(function(){
-  if(!window.__cwM8)window.__cwM8=0;
-  var g=++window.__cwM8;
-  cwFns[8]=function(){window.__cwM8++;g=window.__cwM8;run();};
-  function run(){
-    var svg=mkSvg('#stage-m8');
-    var tiles=[{n:3,label:'§3'},{n:1,label:'§1'},{n:4,label:'§4'},{n:2,label:'§2'},{n:5,label:'§5'}];
-    var sorted=[{n:1,label:'§1'},{n:2,label:'§2'},{n:3,label:'§3'},{n:4,label:'§4'},{n:5,label:'§5'}];
-    svg.append('text').attr('x',500).attr('y',30).attr('text-anchor','middle').attr('fill',TS).attr('font-size',14).text('Fragmentos recuperados — ordem aleatória vs ordem original');
-    function drawTiles(data,y,col){
-      var grp=svg.append('g');
-      data.forEach(function(d,i){
-        grp.append('rect').attr('x',150+i*140).attr('y',y).attr('width',110).attr('height',70).attr('rx',8)
-          .attr('fill',col).attr('stroke',P).attr('stroke-width',1.5);
-        grp.append('text').attr('x',205+i*140).attr('y',y+42).attr('text-anchor','middle')
-          .attr('fill','white').attr('font-size',22).attr('font-weight','bold').text(d.label);
-      });
-      return grp;
-    }
-    var g1=drawTiles(tiles,60,PA+'0.1)');
-    var g2=drawTiles(sorted,170,PA+'0.22)');
-    svg.append('text').attr('x',130).attr('y',100).attr('fill','rgba(255,100,100,0.8)').attr('font-size',12).text('RAG ingênuo');
-    svg.append('text').attr('x',130).attr('y',210).attr('fill','rgba(100,220,100,0.9)').attr('font-size',12).text('OP-RAG');
-    // Arrow animada mostrando "sort"
-    var arrowY=155;
-    var arrow=svg.append('text').attr('x',500).attr('y',arrowY).attr('text-anchor','middle')
-      .attr('fill',P).attr('font-size',18).attr('opacity',0).text('ordenar ↓');
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM8)return;
-      t+=0.04;
-      arrow.attr('opacity',0.5+0.5*Math.sin(t)).attr('y',arrowY+4*Math.sin(t));
-    },30);
-    setTimeout(function(){arrow.attr('opacity',1);},500);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m8'));
-})();
-
-// --- CW09: BINÓCULOS vs LIVRO (SINR) ---
-(function(){
-  if(!window.__cwM9)window.__cwM9=0;
-  var g=++window.__cwM9;
-  cwFns[9]=function(){window.__cwM9++;g=window.__cwM9;run();};
-  function run(){
-    var svg=mkSvg('#stage-m9');
-    // Dois lados: Search chunk (pequeno) e Retrieve chunk (grande)
-    svg.append('rect').attr('x',80).attr('y',60).attr('width',340).attr('height',160).attr('rx',12)
-      .attr('fill',PA+'0.1)').attr('stroke',P).attr('stroke-width',2);
-    svg.append('text').attr('x',250).attr('y',95).attr('text-anchor','middle').attr('fill',P).attr('font-size',15).attr('font-weight','bold').text('Chunk de BUSCA');
-    svg.append('text').attr('x',250).attr('y',125).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('100-200 tokens');
-    svg.append('text').attr('x',250).attr('y',150).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('Pequeno, preciso');
-    svg.append('text').attr('x',250).attr('y',175).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('Fácil de corresponder');
-
-    svg.append('rect').attr('x',570).attr('y',40).attr('width',360).attr('height',200).attr('rx',12)
-      .attr('fill',PA+'0.18)').attr('stroke',P).attr('stroke-width',2.5);
-    svg.append('text').attr('x',750).attr('y',80).attr('text-anchor','middle').attr('fill',P).attr('font-size',15).attr('font-weight','bold').text('Chunk de RECUPERAÇÃO');
-    svg.append('text').attr('x',750).attr('y',110).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('600-1000 tokens');
-    svg.append('text').attr('x',750).attr('y',140).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('Grande, contexto rico');
-    svg.append('text').attr('x',750).attr('y',165).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('Entregue ao LLM');
-    svg.append('text').attr('x',750).attr('y',190).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('Garante coerência');
-
-    // Seta
-    var arr=svg.append('line').attr('x1',420).attr('y1',140).attr('x2',570).attr('y2',140)
-      .attr('stroke',P).attr('stroke-width',2.5).attr('marker-end','url(#arrowM9)');
-    svg.append('defs').append('marker').attr('id','arrowM9').attr('markerWidth',10).attr('markerHeight',7)
-      .attr('refX',10).attr('refY',3.5).attr('orient','auto')
-      .append('polygon').attr('points','0 0, 10 3.5, 0 7').attr('fill',P);
-    svg.append('text').attr('x',495).attr('y',130).attr('text-anchor','middle').attr('fill',P).attr('font-size',12).text('expand');
-    // Ponto animado percorrendo a seta
-    var dot=svg.append('circle').attr('r',7).attr('fill',P).attr('cx',420).attr('cy',140);
-    var tx=420;
-    setInterval(function(){
-      if(g!==window.__cwM9)return;
-      tx+=2.5;
-      if(tx>570)tx=420;
-      dot.attr('cx',tx);
-    },30);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m9'));
-})();
-
-// --- CW10: PIPELINE SINR ---
-(function(){
-  if(!window.__cwM10)window.__cwM10=0;
-  var g=++window.__cwM10;
-  cwFns[10]=function(){window.__cwM10++;g=window.__cwM10;run();};
-  function run(){
-    var svg=mkSvg('#stage-m10');
-    var steps=[{label:'Indexar',sub:'chunks pequenos',x:120},{label:'Buscar',sub:'por similaridade',x:350},{label:'Expandir',sub:'chunk grande',x:580},{label:'Gerar',sub:'resposta final',x:810}];
-    steps.forEach(function(s,i){
-      svg.append('rect').attr('x',s.x-80).attr('y',80).attr('width',150).attr('height',90).attr('rx',10)
-        .attr('fill',PA+'0.12)').attr('stroke',P).attr('stroke-width',1.5).attr('opacity',0)
-        .transition().delay(i*200).duration(400).attr('opacity',1);
-      svg.append('text').attr('x',s.x).attr('y',118).attr('text-anchor','middle')
-        .attr('fill',P).attr('font-size',15).attr('font-weight','bold').attr('opacity',0)
-        .transition().delay(i*200).duration(400).attr('opacity',1).text(s.label);
-      svg.append('text').attr('x',s.x).attr('y',140).attr('text-anchor','middle')
-        .attr('fill',TS).attr('font-size',12).attr('opacity',0)
-        .transition().delay(i*200).duration(400).attr('opacity',1).text(s.sub);
-      if(i<steps.length-1){
-        svg.append('line').attr('x1',s.x+70).attr('y1',125).attr('x2',steps[i+1].x-80).attr('y2',125)
-          .attr('stroke',P).attr('stroke-width',2).attr('stroke-dasharray','5,3');
-      }
-    });
-    // Partícula
-    var dot=svg.append('circle').attr('r',8).attr('fill',P).attr('cx',40).attr('cy',125);
-    var dx=40;
-    setInterval(function(){
-      if(g!==window.__cwM10)return;
-      dx+=2.5;
-      if(dx>930)dx=40;
-      dot.attr('cx',dx);
-    },30);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m10'));
-})();
-
-// --- CW11: LIVRO → PERGUNTAS → CARTAO ---
-(function(){
-  if(!window.__cwM11)window.__cwM11=0;
-  var g=++window.__cwM11;
-  cwFns[11]=function(){window.__cwM11++;g=window.__cwM11;run();};
-  function run(){
-    var svg=mkSvg('#stage-m11');
-    // Livro grande
-    var book=svg.append('rect').attr('x',60).attr('y',60).attr('width',200).attr('height',160).attr('rx',10)
-      .attr('fill',PA+'0.1)').attr('stroke',TS).attr('stroke-width',1.5);
-    svg.append('text').attr('x',160).attr('y',145).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Documento');
-    svg.append('text').attr('x',160).attr('y',165).attr('text-anchor','middle').attr('fill',TS).attr('font-size',11).text('original');
-    // Seta
-    svg.append('line').attr('x1',260).attr('y1',140).attr('x2',370).attr('y2',140).attr('stroke',P).attr('stroke-width',2).attr('stroke-dasharray','5,3');
-    svg.append('text').attr('x',315).attr('y',130).attr('text-anchor','middle').attr('fill',P).attr('font-size',12).text('encode');
-    // Perguntas
-    ['O que é X?','Quando ocorre Y?','Por que Z?'].forEach(function(q,i){
-      svg.append('rect').attr('x',380).attr('y',70+i*62).attr('width',200).attr('height',48).attr('rx',8)
-        .attr('fill',PA+'0.15)').attr('stroke',P).attr('stroke-width',1.5).attr('opacity',0)
-        .transition().delay(800+i*200).duration(400).attr('opacity',1);
-      svg.append('text').attr('x',480).attr('y',100+i*62).attr('text-anchor','middle').attr('fill','white').attr('font-size',13).attr('opacity',0)
-        .transition().delay(800+i*200).duration(400).attr('opacity',1).text(q);
-    });
-    // Seta 2
-    svg.append('line').attr('x1',580).attr('y1',140).attr('x2',680).attr('y2',140).attr('stroke',P).attr('stroke-width',2).attr('stroke-dasharray','5,3');
-    svg.append('text').attr('x',630).attr('y',130).attr('text-anchor','middle').attr('fill',P).attr('font-size',12).text('cartao');
-    // Card pequeno
-    var card=svg.append('rect').attr('x',690).attr('y',100).attr('width',240).attr('height',80).attr('rx',10)
-      .attr('fill',PA+'0.25)').attr('stroke',P).attr('stroke-width',2).attr('opacity',0)
-      .transition().delay(1500).duration(500).attr('opacity',1);
-    svg.append('text').attr('x',810).attr('y',135).attr('text-anchor','middle').attr('fill',P).attr('font-size',14).attr('font-weight','bold').attr('opacity',0)
-      .transition().delay(1500).duration(500).attr('opacity',1).text('Paper-Card');
-    svg.append('text').attr('x',810).attr('y',158).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).attr('opacity',0)
-      .transition().delay(1500).duration(500).attr('opacity',1).text('max 300 chars');
-    svg.append('text').attr('x',810).attr('y',240).attr('text-anchor','middle').attr('fill','rgba(100,220,100,0.9)').attr('font-size',13).text('Recall@3 = 0.84 | -80% armazenamento');
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM11)return;
-      t+=0.05;
-      book.attr('opacity',0.6+0.2*Math.abs(Math.sin(t)));
-    },30);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m11'));
-})();
-
-// --- CW12: CRAG ROTEADOR ---
-(function(){
-  if(!window.__cwM12)window.__cwM12=0;
-  var g=++window.__cwM12;
-  cwFns[12]=function(){window.__cwM12++;g=window.__cwM12;run();};
-  function run(){
-    var svg=mkSvg('#stage-m12');
-    // Avaliador T5
-    svg.append('rect').attr('x',390).attr('y',90).attr('width',220).attr('height',70).attr('rx',10)
-      .attr('fill',PA+'0.2)').attr('stroke',P).attr('stroke-width',2);
-    svg.append('text').attr('x',500).attr('y',122).attr('text-anchor','middle').attr('fill',P).attr('font-size',14).attr('font-weight','bold').text('Avaliador T5');
-    svg.append('text').attr('x',500).attr('y',145).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('0.77B params');
-    // Saídas
-    var outs=[{x:180,y:210,col:'rgba(100,220,100,0.8)',lbl:'Correto',sub:'Refinar'},{x:500,y:210,col:'rgba(255,200,50,0.8)',lbl:'Ambíguo',sub:'Ambos'},{x:820,y:210,col:'rgba(255,100,100,0.8)',lbl:'Incorreto',sub:'Busca web'}];
-    outs.forEach(function(o){
-      svg.append('rect').attr('x',o.x-80).attr('y',o.y-20).attr('width',160).attr('height',70).attr('rx',8)
-        .attr('fill','rgba(0,0,0,0.3)').attr('stroke',o.col).attr('stroke-width',2);
-      svg.append('text').attr('x',o.x).attr('y',o.y+8).attr('text-anchor','middle').attr('fill',o.col).attr('font-size',14).attr('font-weight','bold').text(o.lbl);
-      svg.append('text').attr('x',o.x).attr('y',o.y+28).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text(o.sub);
-      svg.append('line').attr('x1',500).attr('y1',160).attr('x2',o.x).attr('y2',o.y-20).attr('stroke',o.col).attr('stroke-width',1.5).attr('stroke-dasharray','5,3').attr('opacity',0.7);
-    });
-    // Documento animado
-    var docRect=svg.append('rect').attr('x',430).attr('y',20).attr('width',140).attr('height',50).attr('rx',6)
-      .attr('fill',PA+'0.1)').attr('stroke',TS).attr('stroke-width',1);
-    svg.append('text').attr('x',500).attr('y',50).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Documento');
-    svg.append('line').attr('x1',500).attr('y1',70).attr('x2',500).attr('y2',90).attr('stroke',P).attr('stroke-width',2);
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM12)return;
-      t+=0.04;
-      docRect.attr('y',20+3*Math.sin(t));
-    },30);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m12'));
-})();
-
-// --- CW13: SEMÁFORO ---
-(function(){
-  if(!window.__cwM13)window.__cwM13=0;
-  var g=++window.__cwM13;
-  cwFns[13]=function(){window.__cwM13++;g=window.__cwM13;run();};
-  function run(){
-    var svg=mkSvg('#stage-m13');
-    var lights=[
-      {x:200,col:'rgba(255,100,100,1)',lbl:'INCORRETO',sub:'Buscar na web',state:0},
-      {x:500,col:'rgba(255,210,50,1)',lbl:'AMBÍGUO',sub:'Refinar + buscar',state:1},
-      {x:800,col:'rgba(100,220,100,1)',lbl:'CORRETO',sub:'Refinar e usar',state:2}
-    ];
-    // Caixa do semáforo
-    lights.forEach(function(l){
-      svg.append('rect').attr('x',l.x-50).attr('y',50).attr('width',100).attr('height',160).attr('rx',12)
-        .attr('fill','rgba(30,30,30,0.6)').attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1);
-      svg.append('text').attr('x',l.x).attr('y',240).attr('text-anchor','middle').attr('fill',l.col).attr('font-size',14).attr('font-weight','bold').text(l.lbl);
-      svg.append('text').attr('x',l.x).attr('y',258).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text(l.sub);
-    });
-    var circles=lights.map(function(l){
-      return svg.append('circle').attr('cx',l.x).attr('cy',130).attr('r',36).attr('fill','rgba(30,30,30,0.8)').attr('stroke',l.col).attr('stroke-width',2);
-    });
-    // Animar ciclo
-    var active=2;
-    function light(i){
-      circles.forEach(function(c,j){
-        c.transition().duration(400).attr('fill',j===i?lights[j].col:'rgba(30,30,30,0.8)').attr('opacity',j===i?1:0.4);
-      });
-    }
-    light(active);
-    setInterval(function(){
-      if(g!==window.__cwM13)return;
-      active=(active+1)%3;
-      light(active);
-    },1400);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m13'));
-})();
-
-// --- CW14: FILTRO DE CAFÉ ---
-(function(){
-  if(!window.__cwM14)window.__cwM14=0;
-  var g=++window.__cwM14;
-  cwFns[14]=function(){window.__cwM14++;g=window.__cwM14;run();};
-  function run(){
-    var svg=mkSvg('#stage-m14');
-    // Funil (filtro)
-    svg.append('polygon').attr('points','340,40 660,40 560,160 440,160').attr('fill',PA+'0.2)').attr('stroke',P).attr('stroke-width',2);
-    svg.append('rect').attr('x',440).attr('y',160).attr('width',120).attr('height',20).attr('fill',PA+'0.3)').attr('stroke',P).attr('stroke-width',1.5);
-    svg.append('text').attr('x',500).attr('y',90).attr('text-anchor','middle').attr('fill',P).attr('font-size',14).attr('font-weight','bold').text('Avaliador CRAG');
-    // Label topo
-    svg.append('text').attr('x',500).attr('y',28).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Documentos brutos entram');
-    // Gotículas
-    var drops=d3.range(5).map(function(i){return{x:460+i*20,y:180,op:Math.random()};});
-    var dropEls=svg.selectAll('.drop').data(drops).join('circle').attr('class','drop')
-      .attr('r',5).attr('cx',function(d){return d.x;}).attr('cy',function(d){return d.y;})
-      .attr('fill',P).attr('opacity',0);
-    // Xícara
-    svg.append('rect').attr('x',420).attr('y',230).attr('width',160).attr('height',40).attr('rx',8)
-      .attr('fill',PA+'0.1)').attr('stroke',P).attr('stroke-width',1.5);
-    svg.append('text').attr('x',500).attr('y',256).attr('text-anchor','middle').attr('fill',P).attr('font-size',13).text('Contexto refinado');
-    // Partículas caindo pelo topo
-    var floaters=d3.range(4).map(function(i){return{x:350+i*90,y:0,speed:1+Math.random()};});
-    var fEls=svg.selectAll('.fl').data(floaters).join('circle').attr('class','fl')
-      .attr('r',7).attr('cx',function(d){return d.x;}).attr('cy',0)
-      .attr('fill',TS).attr('opacity',0.5);
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM14)return;
-      t+=0.04;
-      floaters.forEach(function(d){d.y+=d.speed*0.8; if(d.y>160)d.y=0;});
-      fEls.attr('cy',function(d){return d.y;}).attr('opacity',function(d){return d.y>30&&d.y<150?0.4:0;});
-      drops.forEach(function(d,i){d.y+=1.2; if(d.y>228)d.y=180;});
-      dropEls.attr('cy',function(d){return d.y;}).attr('opacity',function(d){return(d.y>185&&d.y<225)?0.8:0;});
-    },30);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m14'));
-})();
-
-// --- CW15: MÉDICO / RAG SELETIVO ---
-(function(){
-  if(!window.__cwM15)window.__cwM15=0;
-  var g=++window.__cwM15;
-  cwFns[15]=function(){window.__cwM15++;g=window.__cwM15;run();};
-  function run(){
-    var svg=mkSvg('#stage-m15');
-    // Médico (círculo)
-    svg.append('circle').attr('cx',200).attr('cy',130).attr('r',50).attr('fill',PA+'0.15)').attr('stroke',P).attr('stroke-width',2);
-    svg.append('text').attr('x',200).attr('y',125).attr('text-anchor','middle').attr('fill','white').attr('font-size',13).text('LLM');
-    svg.append('text').attr('x',200).attr('y',145).attr('text-anchor','middle').attr('fill',P).attr('font-size',12).text('Repoformer');
-    // Pergunta
-    svg.append('rect').attr('x',60).attr('y',30).attr('width',280).attr('height',50).attr('rx',8)
-      .attr('fill',PA+'0.08)').attr('stroke',TS).attr('stroke-width',1);
-    svg.append('text').attr('x',200).attr('y',60).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Pergunta do usuário');
-    svg.append('line').attr('x1',200).attr('y1',80).attr('x2',200).attr('y2',80).attr('stroke',TS).attr('stroke-width',1);
-    // Caminho 1: responde direto
-    var path1=svg.append('rect').attr('x',350).attr('y',60).attr('width',250).attr('height',60).attr('rx',8)
-      .attr('fill','rgba(100,220,100,0.1)').attr('stroke','rgba(100,220,100,0.7)').attr('stroke-width',1.5);
-    svg.append('text').attr('x',475).attr('y',87).attr('text-anchor','middle').attr('fill','rgba(100,220,100,1)').attr('font-size',13).text('Responde direto');
-    svg.append('text').attr('x',475).attr('y',107).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('80% dos casos');
-    // Caminho 2: recupera
-    var path2=svg.append('rect').attr('x',350).attr('y',165).attr('width',250).attr('height',60).attr('rx',8)
-      .attr('fill',PA+'0.1)').attr('stroke',P).attr('stroke-width',1.5);
-    svg.append('text').attr('x',475).attr('y',192).attr('text-anchor','middle').attr('fill',P).attr('font-size',13).text('Recupera documentos');
-    svg.append('text').attr('x',475).attr('y',212).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('20% dos casos');
-    // Setas
-    var arr1=svg.append('line').attr('x1',250).attr('y1',110).attr('x2',350).attr('y2',90).attr('stroke','rgba(100,220,100,0.7)').attr('stroke-width',2);
-    var arr2=svg.append('line').attr('x1',250).attr('y1',145).attr('x2',350).attr('y2',195).attr('stroke',P).attr('stroke-width',2);
-    // Token <cc>
-    svg.append('text').attr('x',620).attr('y',145).attr('text-anchor','middle').attr('fill',P).attr('font-size',24).attr('font-weight','bold').text('<cc>');
-    svg.append('text').attr('x',620).attr('y',168).attr('text-anchor','middle').attr('fill',TS).attr('font-size',12).text('token de auto-gatilho');
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM15)return;
-      t+=0.05;
-      path1.attr('opacity',0.6+0.4*Math.abs(Math.sin(t)));
-      path2.attr('opacity',0.4+0.3*Math.abs(Math.sin(t+1.5)));
-    },40);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m15'));
-})();
-
-// --- CW16: 8 EM 10 ALARMES FALSOS ---
-(function(){
-  if(!window.__cwM16)window.__cwM16=0;
-  var g=++window.__cwM16;
-  cwFns[16]=function(){window.__cwM16++;g=window.__cwM16;run();};
-  function run(){
-    var svg=mkSvg('#stage-m16');
-    var n=10, bells=d3.range(n).map(function(i){return{i:i,active:i>=8};});
-    var bx=90, by=100, bs=84;
-    // Desenha sinos como círculos com ícone
-    var groups=svg.selectAll('.bell').data(bells).join('g').attr('class','bell')
-      .attr('transform',function(d){return 'translate('+(bx+d.i*bs)+','+by+')';});
-    groups.append('circle').attr('r',32).attr('fill',function(d){return d.active?PA+'0.15)':'rgba(255,255,255,0.03)';})
-      .attr('stroke',function(d){return d.active?P:'rgba(255,255,255,0.1)';}).attr('stroke-width',2);
-    groups.append('text').attr('text-anchor','middle').attr('y',8).attr('font-size',24)
-      .attr('fill',function(d){return d.active?P:'rgba(255,255,255,0.2)';}).text('🔔');
-    // Labels
-    svg.append('text').attr('x',bx+1*bs).attr('y',by+80).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Desnecessárias (80%)');
-    svg.append('text').attr('x',bx+8.5*bs).attr('y',by+80).attr('text-anchor','middle').attr('fill',P).attr('font-size',13).text('Necessárias (20%)');
-    // Número
-    svg.append('text').attr('x',500).attr('y',220).attr('text-anchor','middle').attr('fill',P).attr('font-size',20).attr('font-weight','bold').text('8 em 10 recuperações são desnecessárias');
-    // Loop: piscar aleatoriamente os inativos
-    setInterval(function(){
-      if(g!==window.__cwM16)return;
-      var flashIdx=Math.floor(Math.random()*8);
-      groups.filter(function(d){return d.i===flashIdx;}).select('circle')
-        .transition().duration(200).attr('fill',PA+'0.25)').transition().duration(400).attr('fill','rgba(255,255,255,0.03)');
-    },800);
-    // Piscar os ativos
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM16)return;
-      t+=0.1;
-      groups.filter(function(d){return d.active;}).select('circle')
-        .attr('opacity',0.7+0.3*Math.abs(Math.sin(t)));
-    },40);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m16'));
-})();
-
-// --- CW17: ARCOS DE ATENÇÃO (Posicional) ---
-(function(){
-  if(!window.__cwM17)window.__cwM17=0;
-  var g=++window.__cwM17;
-  cwFns[17]=function(){window.__cwM17++;g=window.__cwM17;run();};
-  function run(){
-    var svg=mkSvg('#stage-m17');
-    var n=14, seats=d3.range(n).map(function(i){return{i:i,x:60+i*64,y:150};});
-    // Assentos
-    var rects=svg.selectAll('.st').data(seats).join('rect').attr('class','st')
-      .attr('x',function(d){return d.x-22;}).attr('y',120)
-      .attr('width',44).attr('height',50).attr('rx',6)
-      .attr('fill',function(d,i){return(i<2||i>n-3)?PA+'0.25)':ST;})
-      .attr('stroke',function(d,i){return(i<2||i>n-3)?P:'rgba(255,255,255,0.1)';}).attr('stroke-width',1.5);
-    svg.selectAll('.sn').data(seats).join('text').attr('class','sn')
-      .attr('x',function(d){return d.x;}).attr('y',150).attr('text-anchor','middle')
-      .attr('fill','white').attr('font-size',12).text(function(d){return d.i+1;});
-    // Arcos
-    var arcPairs=[[0,1],[1,2],[11,12],[12,13],[0,13]];
-    var arcEls=arcPairs.map(function(p){
-      return svg.append('path').attr('fill','none').attr('stroke',P).attr('stroke-width',1.5)
-        .attr('stroke-dasharray','4,3').attr('opacity',0.7);
-    });
-    function drawArcs(t){
-      arcEls.forEach(function(el,i){
-        var a=seats[arcPairs[i][0]], b=seats[arcPairs[i][1]];
-        var mx=(a.x+b.x)/2, my=110-Math.abs(a.x-b.x)*0.3;
-        el.attr('d','M'+a.x+','+(a.y-20)+' Q'+mx+','+my+' '+b.x+','+(b.y-20))
-          .attr('opacity',0.4+0.5*Math.abs(Math.sin(t+i*0.8)));
-      });
-    }
-    svg.append('text').attr('x',500).attr('y',220).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('RoPE / ALiBi: posição relativa determina força da atenção');
-    var t=0;
-    setTimeout(function(){
-      setInterval(function(){
-        if(g!==window.__cwM17)return;
-        t+=0.04;
-        drawArcs(t);
-        rects.attr('opacity',function(d,i){
-          if(i<2||i>n-3)return 0.7+0.2*Math.sin(t+i);
-          return 0.3;
-        });
-      },40);
-    },600);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m17'));
-})();
-
-// --- CW18: PRENSA HIDRÁULICA ---
-(function(){
-  if(!window.__cwM18)window.__cwM18=0;
-  var g=++window.__cwM18;
-  cwFns[18]=function(){window.__cwM18++;g=window.__cwM18;run();};
-  function run(){
-    var svg=mkSvg('#stage-m18');
-    // Bloco grande (contexto original)
-    var big=svg.append('rect').attr('x',200).attr('y',50).attr('width',600).attr('height',120).attr('rx',10)
-      .attr('fill',PA+'0.12)').attr('stroke',TS).attr('stroke-width',1.5);
-    svg.append('text').attr('x',500).attr('y',118).attr('text-anchor','middle').attr('fill',TS).attr('font-size',14).text('Contexto Original — 128K tokens');
-    // Prensa
-    var press=svg.append('rect').attr('x',200).attr('y',30).attr('width',600).attr('height',20).attr('rx',4)
-      .attr('fill',P).attr('opacity',0.7);
-    svg.append('text').attr('x',500).attr('y',25).attr('text-anchor','middle').attr('fill',P).attr('font-size',13).text('Context Compression');
-    // Bloco comprimido
-    var small=svg.append('rect').attr('x',340).attr('y',185).attr('width',320).attr('height',50).attr('rx',8)
-      .attr('fill',PA+'0.3)').attr('stroke',P).attr('stroke-width',2).attr('opacity',0);
-    var smallLbl=svg.append('text').attr('x',500).attr('y',215).attr('text-anchor','middle').attr('fill',P).attr('font-size',14).attr('opacity',0).text('Essencial — 8K tokens');
-    svg.append('text').attr('x',500).attr('y',260).attr('text-anchor','middle').attr('fill','rgba(100,220,100,0.9)').attr('font-size',13).text('Selecionar + Resumir + Destilar');
-    // Loop compressão
-    var py=30, bigh=120, compressing=true, waiting=false;
-    setInterval(function(){
-      if(g!==window.__cwM18)return;
-      if(waiting)return;
-      if(compressing){
-        py+=0.8; bigh-=0.8;
-        press.attr('y',py); big.attr('y',py+20).attr('height',Math.max(bigh,4));
-        if(py>=90){
-          compressing=false; waiting=true;
-          small.attr('opacity',1); smallLbl.attr('opacity',1);
-          setTimeout(function(){
-            if(g!==window.__cwM18)return;
-            small.attr('opacity',0); smallLbl.attr('opacity',0);
-            py=30; bigh=120; compressing=true; waiting=false;
-            press.attr('y',py); big.attr('y',py+20).attr('height',bigh);
-          },1200);
-        }
-      }
-    },30);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m18'));
-})();
-
-// --- CW19: SCATTER CUSTO x QUALIDADE ---
-(function(){
-  if(!window.__cwM19)window.__cwM19=0;
-  var g=++window.__cwM19;
-  cwFns[19]=function(){window.__cwM19++;g=window.__cwM19;run();};
-  function run(){
-    var svg=mkSvg('#stage-m19');
-    var margin={left:80,right:40,top:30,bottom:60};
-    var W=1000-margin.left-margin.right, H=280-margin.top-margin.bottom;
-    var grp=svg.append('g').attr('transform','translate('+margin.left+','+margin.top+')');
-    var xs=d3.scaleLinear().domain([0,1]).range([0,W]);
-    var ys=d3.scaleLinear().domain([0,1]).range([H,0]);
-    // Eixos
-    grp.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H).attr('stroke',TS).attr('stroke-width',1);
-    grp.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',H).attr('stroke',TS).attr('stroke-width',1);
-    grp.append('text').attr('x',W/2).attr('y',H+40).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Custo computacional');
-    grp.append('text').attr('transform','rotate(-90)').attr('x',-H/2).attr('y',-55).attr('text-anchor','middle').attr('fill',TS).attr('font-size',13).text('Qualidade');
-    // Pontos
-    var pts=[
-      {x:0.15,y:0.55,lbl:'RAG Clássico',col:'rgba(200,200,200,0.8)'},
-      {x:0.35,y:0.75,lbl:'OP-RAG',col:'rgba(100,220,100,0.9)'},
-      {x:0.30,y:0.80,lbl:'SINR',col:P},
-      {x:0.50,y:0.82,lbl:'CRAG',col:'rgba(100,180,255,0.9)'},
-      {x:0.12,y:0.70,lbl:'RAG Seletivo',col:'rgba(255,220,100,0.9)'},
-      {x:0.85,y:0.65,lbl:'Long Context',col:'rgba(200,100,100,0.8)'}
-    ];
-    var dots=grp.selectAll('.pt').data(pts).join('circle').attr('class','pt')
-      .attr('cx',function(d){return xs(d.x);}).attr('cy',function(d){return ys(d.y);})
-      .attr('r',0).attr('fill',function(d){return d.col;});
-    var labels=grp.selectAll('.ptl').data(pts).join('text').attr('class','ptl')
-      .attr('x',function(d){return xs(d.x)+12;}).attr('y',function(d){return ys(d.y)+4;})
-      .attr('fill',function(d){return d.col;}).attr('font-size',12).attr('opacity',0)
-      .text(function(d){return d.lbl;});
-    dots.transition().delay(function(d,i){return i*200;}).duration(400).attr('r',12);
-    labels.transition().delay(function(d,i){return i*200+300;}).duration(400).attr('opacity',1);
-    var t=0;
-    setInterval(function(){
-      if(g!==window.__cwM19)return;
-      t+=0.04;
-      dots.attr('r',function(d,i){return 10+3*Math.abs(Math.sin(t+i*0.7));});
-    },40);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m19'));
-})();
-
-// --- CW20: TIMELINE ---
-(function(){
-  if(!window.__cwM20)window.__cwM20=0;
-  var g=++window.__cwM20;
-  cwFns[20]=function(){window.__cwM20++;g=window.__cwM20;run();};
-  function run(){
-    var svg=mkSvg('#stage-m20');
-    var events=[
-      {x:100,y:140,year:'2020',lbl:'RAG Clássico',sub:'Lewis et al.'},
-      {x:270,y:140,year:'2022',lbl:'SINR Dual-Layer',sub:'Search vs Retrieval'},
-      {x:500,y:140,year:'2023',lbl:'Lost in the Middle',sub:'Liu et al.'},
-      {x:700,y:140,year:'2024',lbl:'CRAG + Repoformer',sub:'Corrective + Selective'},
-      {x:880,y:140,year:'2025+',lbl:'RAG Adaptativo',sub:'Compressao + Ordem'}
-    ];
-    // Linha do tempo
-    svg.append('line').attr('x1',80).attr('y1',140).attr('x2',920).attr('y2',140).attr('stroke',TS).attr('stroke-width',2);
-    // Eventos
-    events.forEach(function(ev,i){
-      svg.append('circle').attr('cx',ev.x).attr('cy',ev.y).attr('r',10).attr('fill',P).attr('opacity',0)
-        .transition().delay(i*300).duration(400).attr('opacity',1);
-      svg.append('text').attr('x',ev.x).attr('y',ev.y-20).attr('text-anchor','middle').attr('fill',P).attr('font-size',13).attr('font-weight','bold').attr('opacity',0)
-        .transition().delay(i*300).duration(400).attr('opacity',1).text(ev.year);
-      svg.append('text').attr('x',ev.x).attr('y',ev.y+28).attr('text-anchor','middle').attr('fill','white').attr('font-size',12).attr('opacity',0)
-        .transition().delay(i*300+200).duration(400).attr('opacity',1).text(ev.lbl);
-      svg.append('text').attr('x',ev.x).attr('y',ev.y+46).attr('text-anchor','middle').attr('fill',TS).attr('font-size',11).attr('opacity',0)
-        .transition().delay(i*300+200).duration(400).attr('opacity',1).text(ev.sub);
-    });
-    // Ponto animado percorrendo a linha
-    var dot=svg.append('circle').attr('r',8).attr('fill','white').attr('cx',80).attr('cy',140).attr('opacity',0.8);
-    var dx=80;
-    setTimeout(function(){
-      setInterval(function(){
-        if(g!==window.__cwM20)return;
-        dx+=1.5;
-        if(dx>920)dx=80;
-        dot.attr('cx',dx);
-      },30);
-    },1700);
-  }
-  var ob=new IntersectionObserver(function(en){
-    en.forEach(function(e){if(e.isIntersecting){run();ob.disconnect();}});
-  },{threshold:0.3});
-  ob.observe(document.getElementById('cw-m20'));
-})();
-
-// ============================================================
-// INICIALIZAR AOS + LUCIDE
-// ============================================================
-AOS.init({duration:700, once:true, offset:80});
-lucide.createIcons();
-</script>
+    frame();
+  </script>
 </body>
 </html>

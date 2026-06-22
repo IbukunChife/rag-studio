@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chunking Strategies · 20 Metáforas Animadas</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* @MIRA:THEME:START */
+:root{--mira-bg:#000;--mira-primary:#FF904D;--mira-accent2:#FFB785;--mira-card:rgba(255,255,255,.05);--mira-border:rgba(255,255,255,.1);--mira-pill-bg:rgba(255,144,77,.15);--mira-pill:rgba(255,144,77,.8);--mira-pill-b:rgba(255,144,77,.3);--mira-stage:rgba(255,144,77,.05);}
+/* @MIRA:THEME:END */
+body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;}
+.glass-card{background:rgba(255,255,255,.05);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);box-shadow:0 10px 30px rgba(255,144,77,.12);}
+.glass-card:hover{box-shadow:0 20px 40px rgba(255,144,77,.22);}
+#reading-progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#FF904D,#FFB785,#FF904D);background-size:200% 100%;animation:shim 2s linear infinite;z-index:9999;transition:width .1s linear;}
+@keyframes shim{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes by{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+#next-card{position:fixed;bottom:32px;right:32px;width:48px;height:48px;border-radius:50%;background:rgba(255,144,77,.9);color:#000;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9998;border:none;box-shadow:0 4px 20px rgba(255,144,77,.3);}
+#next-card.visible{opacity:1;transform:translateY(0);}
+#next-card:hover{transform:translateY(-3px) scale(1.1);}
+.anim-stage{width:100%;overflow:hidden;border-radius:12px;background:rgba(255,144,77,.04);border:1px solid rgba(255,144,77,.10);}
+.pill{display:inline-block;font-size:10px;padding:2px 10px;border-radius:999px;border:1px solid rgba(255,144,77,.3);color:rgba(255,144,77,.8);margin-right:4px;margin-bottom:4px;}
+.prc{color:#6ee7b7;font-size:11px;padding-left:14px;position:relative;line-height:1.65;margin-bottom:2px;}
+.prc::before{content:'✓';position:absolute;left:0;}
+.cnc{color:#fca5a5;font-size:11px;padding-left:14px;position:relative;line-height:1.65;margin-bottom:2px;}
+.cnc::before{content:'✗';position:absolute;left:0;}
+.mbadge{background:rgba(255,144,77,.1);border:1px solid rgba(255,144,77,.2);border-radius:6px;padding:3px 10px;font-size:11px;color:#FFB785;font-weight:600;display:inline-block;margin:2px;}
+.sec-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.25);font-weight:700;margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div id="reading-progress" style="width:0%;"></div>
+<button id="next-card" aria-label="Próximo card"><i data-lucide="chevron-down" class="w-6 h-6" id="next-card-icon"></i></button>
+
+<header class="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
+<div class="absolute inset-0 pointer-events-none" style="background-image:radial-gradient(circle at 20% 70%,rgba(255,144,77,.2) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(255,144,77,.12) 0%,transparent 50%);"></div>
+<div class="text-center relative z-10 px-4" data-aos="fade-down">
+  <span class="inline-block bg-[#FF904D] text-black text-sm font-bold px-6 py-2 rounded-full mb-8 tracking-widest uppercase">10 Artigos Científicos · RAG · ICLR 2025–2026</span>
+  <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight">Chunking Strategies<br><span style="color:#FF904D;">em 20 Metáforas</span></h1>
+  <p class="text-xl text-white/75 max-w-3xl mx-auto mb-6">Da pizza cortada a régua ao GPS que calcula rotas: cada estratégia de chunking tem sua dinâmica cotidiana que revela prós, contras e o momento ideal de usar.</p>
+  <p class="text-sm text-white/35 max-w-2xl mx-auto">Baseado em: Shaukat et al. 2026, Zhao et al. 2025, TurboRAG ICLR 2025, UncertaintyRAG ICLR 2025, Discourse-RAG ICLR 2026, Mix-of-Granularity ACL 2025, QChunker, Multimodal Chunking e mais.</p>
+</div>
+<button class="absolute bottom-8 right-8 flex flex-col items-center gap-2 bg-transparent border-none group cursor-pointer" id="header-next-btn" style="animation:by 2s ease-in-out infinite;">
+  <span class="text-[10px] uppercase tracking-[4px] text-white/30 font-medium group-hover:text-[#FF904D] transition-colors">Iniciar</span>
+  <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-[#FF904D]/20 transition-all">
+    <i data-lucide="chevron-down" class="w-5 h-5 text-white/40 group-hover:text-[#FF904D] transition-colors"></i>
+  </div>
+</button>
+</header>
+
+<main class="container mx-auto px-4 py-20 flex flex-col items-center gap-[60vh]">
+
+<!-- M1: O Cortador Industrial -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Cortador Industrial</h3>
+<p class="text-white/50 text-sm italic mb-2">Fixed-Size Chunking: corte a cada N tokens, independente do conteúdo</p>
+<p class="text-white/65 text-sm mb-3">A fatiadora industrial corta o pão em fatias iguais sem olhar o recheio. A faca cai a cada 100px, às vezes no meio do queijo, às vezes no ar. O <code style="color:#FF904D">chunk_size</code> é a régua, não o sabor. Resultado: <strong style="color:#fca5a5">pior estratégia avaliada</strong> com nDCG@5 = 0.244.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Implementação trivial, zero custo extra</div>
+    <div class="prc">Previsível: chunks sempre do mesmo tamanho</div>
+    <div class="prc">Rápido, sem dependência de modelos</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Corta frases e entidades no meio</div>
+    <div class="cnc">Pior nDCG@5 = 0.244 (Shaukat et al. 2026)</div>
+    <div class="cnc">Precision@1 de apenas 2–3% em domínios especializados</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">nDCG@5 = 0.244 (pior)</span><span class="mbadge">Precision@1 ≈ 2–3%</span><span class="mbadge">Uso: prototipagem rápida</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">CharacterTextSplitter</span><span class="pill">chunk_size fixo</span><span class="pill">sem contexto semântico</span></div>
+<div id="cs-m1" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM1)window.__csM1=0;var g=++window.__csM1;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r1();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m1'));
+function r1(){
+  if(g!==window.__csM1)return;
+  var s=d3.select('#cs-m1').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var loaf=s.append('g');
+  loaf.append('rect').attr('x',50).attr('y',100).attr('width',700).attr('height',100).attr('rx',8).attr('fill','#8B5E2A');
+  var fills=['#E8C07A','#C84040','#5AAA70','#E8C07A','#4070C8','#C84040','#5AAA70'];
+  var ws=[90,60,110,80,100,70,90],cx=50;
+  var segs=[];
+  ws.forEach(function(w,i){segs.push({x:cx,w:w,c:fills[i]});cx+=w;});
+  segs.forEach(function(d){loaf.append('rect').attr('x',d.x+2).attr('y',112).attr('width',d.w-4).attr('height',76).attr('rx',3).attr('fill',d.c).attr('opacity',0.75);});
+  var blade=s.append('g');
+  blade.append('rect').attr('x',-4).attr('y',55).attr('width',8).attr('height',55).attr('fill','rgba(200,210,230,0.85)').attr('rx',2);
+  blade.append('polygon').attr('points','-4,110 4,110 0,128').attr('fill','rgba(200,210,230,1)');
+  blade.attr('transform','translate(190,0)');
+  var cuts=[190,330,465,600,750],ci=0,dropping=false;
+  var cutLines=s.append('g');
+  s.append('text').attr('x',820).attr('y',105).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.25)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('chunks →');
+  var outG=s.append('g');
+  function doCut(){
+    if(g!==window.__csM1)return;
+    if(ci>=cuts.length){
+      setTimeout(function(){if(g!==window.__csM1)return;ci=0;cutLines.selectAll('*').remove();outG.selectAll('*').remove();doCut();},2200);
+      return;
+    }
+    var cx2=cuts[ci];
+    blade.attr('transform','translate('+cx2+',0)');
+    blade.transition().duration(130).attr('transform','translate('+cx2+',24)').transition().duration(130).attr('transform','translate('+cx2+',0)').on('end',function(){
+      if(g!==window.__csM1)return;
+      cutLines.append('line').attr('x1',cx2).attr('y1',98).attr('x2',cx2).attr('y2',202).attr('stroke','rgba(255,144,77,0.55)').attr('stroke-width',1.5);
+      var ox=815+(ci*40),oy=128;
+      outG.append('rect').attr('x',ox).attr('y',oy).attr('width',32).attr('height',32).attr('rx',4).attr('fill',fills[ci%fills.length]).attr('opacity',0).transition().duration(250).attr('opacity',0.8);
+      outG.append('text').attr('x',ox+16).attr('y',oy+20).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.6)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('c'+(ci+1));
+      ci++;setTimeout(doCut,900);
+    });
+  }
+  setTimeout(doCut,400);
+}})();</script>
+
+<!-- M2: A Lupa que Desliza -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Lupa que Desliza</h3>
+<p class="text-white/50 text-sm italic mb-2">Sliding Window: cada passo reutiliza parte do chunk anterior (overlap)</p>
+<p class="text-white/65 text-sm mb-3">A lupa nunca levanta completamente: avança 70% e os 30% finais do chunk anterior ficam no início do próximo. O overlap garante que nenhuma frase fique sem contexto na fronteira. Custo: volume de dados aumenta proporcionalmente ao overlap.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Contexto de fronteira sempre preservado</div>
+    <div class="prc">Simples de implementar, sem custo de modelo</div>
+    <div class="prc">Reduz perda de informação em cortes</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Volume de dados cresce com o overlap</div>
+    <div class="cnc">Chunks duplicados aumentam ruído no retrieval</div>
+    <div class="cnc">Não respeita fronteiras semânticas naturais</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">overlap 25–30% típico</span><span class="mbadge">Uso: textos corridos, artigos</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">stride &lt; chunk_size</span><span class="pill">chunk_overlap</span><span class="pill">fronteira preservada</span></div>
+<div id="cs-m2" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM2)window.__csM2=0;var g=++window.__csM2;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r2();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m2'));
+function r2(){
+  if(g!==window.__csM2)return;
+  var s=d3.select('#cs-m2').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  /* documento: 12 linhas horizontais */
+  var nRows=12,rowH=16,rowGap=4,docX=80,docW=840,docY=18;
+  var rowColors=['rgba(255,255,255,.07)','rgba(255,255,255,.05)','rgba(255,255,255,.09)','rgba(255,255,255,.06)','rgba(255,255,255,.08)','rgba(255,255,255,.05)','rgba(255,255,255,.07)','rgba(255,255,255,.09)','rgba(255,255,255,.06)','rgba(255,255,255,.08)','rgba(255,255,255,.05)','rgba(255,255,255,.07)'];
+  var rowEls=rowColors.map(function(c,i){
+    return s.append('rect').attr('x',docX).attr('y',docY+i*(rowH+rowGap)).attr('width',docW).attr('height',rowH).attr('rx',3).attr('fill',c);
+  });
+  /* parâmetros: chunk=5 rows, stride=3 rows, overlap=2 rows */
+  var chunkRows=5,strideRows=3,overlapRows=2;
+  var rowPx=rowH+rowGap; /* 20px por linha */
+  var chunkH=chunkRows*rowPx-rowGap; /* altura da janela */
+  var maxPos=nRows-chunkRows; /* posições Y válidas em linhas */
+  var positions=[];
+  for(var p=0;p<=maxPos;p+=strideRows)positions.push(p);
+  /* fantasma (posição anterior) */
+  var ghost=s.append('rect').attr('x',docX).attr('width',docW).attr('height',chunkH).attr('rx',6)
+    .attr('fill','rgba(255,144,77,.04)').attr('stroke','rgba(255,144,77,.18)').attr('stroke-dasharray','5,3').attr('y',docY).attr('opacity',0);
+  /* overlap highlight */
+  var overlapH=overlapRows*rowPx-rowGap;
+  var overEl=s.append('rect').attr('x',docX).attr('width',docW).attr('height',overlapH).attr('rx',0)
+    .attr('fill','rgba(255,200,80,.18)').attr('y',docY).attr('opacity',0);
+  /* janela principal */
+  var win=s.append('rect').attr('x',docX).attr('width',docW).attr('height',chunkH).attr('rx',6)
+    .attr('fill','rgba(255,144,77,.15)').attr('stroke','rgba(255,144,77,.75)').attr('stroke-width',2).attr('y',docY);
+  /* lupa (círculo) sobreposto */
+  var lupaX=docX+docW/2,lupaR=34;
+  var lupaCircle=s.append('circle').attr('cx',lupaX).attr('cy',docY+chunkH/2).attr('r',lupaR)
+    .attr('fill','rgba(255,144,77,.08)').attr('stroke','rgba(255,144,77,.5)').attr('stroke-width',2.5);
+  var lupaHandle=s.append('line').attr('stroke','rgba(255,144,77,.5)').attr('stroke-width',3).attr('stroke-linecap','round')
+    .attr('x1',lupaX+lupaR*0.7).attr('y1',docY+chunkH/2+lupaR*0.7)
+    .attr('x2',lupaX+lupaR*1.4).attr('y2',docY+chunkH/2+lupaR*1.4);
+  var lbl=s.append('text').attr('x',lupaX).attr('text-anchor','middle').attr('fill','rgba(255,144,77,.9)').attr('font-size',11).attr('font-family','Inter,sans-serif').attr('y',docY+chunkH/2+4);
+  /* legenda */
+  s.append('rect').attr('x',docX).attr('y',263).attr('width',14).attr('height',8).attr('rx',2).attr('fill','rgba(255,144,77,.5)');
+  s.append('text').attr('x',docX+18).attr('y',270).attr('fill','rgba(255,255,255,.3)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('chunk (5 linhas)');
+  s.append('rect').attr('x',docX+130).attr('y',263).attr('width',14).attr('height',8).attr('rx',2).attr('fill','rgba(255,200,80,.5)');
+  s.append('text').attr('x',docX+148).attr('y',270).attr('fill','rgba(255,255,255,.3)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('overlap (2 linhas, 40%)');
+  s.append('rect').attr('x',docX+340).attr('y',263).attr('width',14).attr('height',8).attr('rx',2).attr('fill','rgba(255,144,77,.12)').attr('stroke','rgba(255,144,77,.3)').attr('stroke-dasharray','3,2').attr('stroke-width',1);
+  s.append('text').attr('x',docX+358).attr('y',270).attr('fill','rgba(255,255,255,.3)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('posição anterior (ghost)');
+  var pi=0;
+  function step(){
+    if(g!==window.__csM2)return;
+    var prevPos=positions[pi];
+    pi=(pi+1)%positions.length;
+    var curPos=positions[pi];
+    var prevY=docY+prevPos*rowPx;
+    var curY=docY+curPos*rowPx;
+    /* ghost na posição anterior */
+    ghost.attr('y',prevY).attr('opacity',pi>0?1:0);
+    /* overlap: topo do chunk atual até o fim do ghost */
+    var ovY=curY;
+    overEl.attr('y',ovY).attr('opacity',pi>0?0.9:0);
+    /* janela desce com transition */
+    win.transition().duration(800).ease(d3.easeCubicInOut).attr('y',curY);
+    lupaCircle.transition().duration(800).ease(d3.easeCubicInOut).attr('cy',curY+chunkH/2);
+    lupaHandle.transition().duration(800).ease(d3.easeCubicInOut)
+      .attr('y1',curY+chunkH/2+lupaR*0.7).attr('y2',curY+chunkH/2+lupaR*1.4);
+    lbl.transition().duration(800).ease(d3.easeCubicInOut).attr('y',curY+chunkH/2+4);
+    setTimeout(function(){if(g===window.__csM2)lbl.text('C'+(pi+1));},400);
+  }
+  step();
+  var iv=setInterval(function(){if(g!==window.__csM2){clearInterval(iv);return;}step();},1800);
+}})();</script>
+
+<!-- M3: O Alfaiate do Significado -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Alfaiate do Significado</h3>
+<p class="text-white/50 text-sm italic mb-2">Semantic Chunking: corte onde a similaridade cosseno cai abaixo do limiar</p>
+<p class="text-white/65 text-sm mb-3">O bom alfaiate não corta no metro: ele sente onde as fibras mudam de padrão e corta ali. O chunker semântico calcula a similaridade entre sentenças consecutivas e corta onde ela despenca. Cada pedaço de tecido mantém uma coesão interna.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Chunks semanticamente coesos por design</div>
+    <div class="prc">Respeita mudanças de tópico naturais</div>
+    <div class="prc">Melhor qualidade de contexto por chunk</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Requer embedding a cada sentença (custo)</div>
+    <div class="cnc">Limiar τ sensível: precisa de ajuste por domínio</div>
+    <div class="cnc">Chunks de tamanho variável complicam indexação</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">cosine sim threshold τ</span><span class="mbadge">Uso: artigos mistos, blogs, e-mails longos</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">cosine similarity</span><span class="pill">TextTiling</span><span class="pill">limiar adaptativo</span></div>
+<div id="cs-m3" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM3)window.__csM3=0;var g=++window.__csM3;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r3();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m3'));
+function r3(){
+  if(g!==window.__csM3)return;
+  var s=d3.select('#cs-m3').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var margin={l:60,r:40,t:30,b:60},W=900,H=280;
+  var scores=[0.92,0.89,0.87,0.85,0.82,0.78,0.72,0.35,0.32,0.38,0.82,0.85,0.88,0.86,0.84,0.40,0.36,0.80,0.83,0.86];
+  var n=scores.length,xStep=(W-margin.l-margin.r)/(n-1);
+  var yS=d3.scaleLinear().domain([0,1]).range([H-margin.b,margin.t]);
+  var xS=function(i){return margin.l+i*xStep;};
+  var thresh=0.6;
+  s.append('line').attr('x1',margin.l).attr('x2',W-margin.r).attr('y1',yS(thresh)).attr('y2',yS(thresh)).attr('stroke','rgba(255,144,77,.4)').attr('stroke-dasharray','6,4').attr('stroke-width',1.5);
+  s.append('text').attr('x',W-margin.r+6).attr('y',yS(thresh)+4).attr('fill','rgba(255,144,77,.6)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('τ');
+  var path=d3.line().x(function(d,i){return xS(i);}).y(function(d){return yS(d);}).curve(d3.curveCatmullRom);
+  var area=d3.area().x(function(d,i){return xS(i);}).y0(H-margin.b).y1(function(d){return yS(d);}).curve(d3.curveCatmullRom);
+  var cuts=[7,15];
+  var segColors=['rgba(80,160,220,.18)','rgba(100,200,130,.18)','rgba(220,120,80,.18)'];
+  var segG=s.append('g');
+  var segs=[[0,7],[8,15],[16,19]];
+  segs.forEach(function(seg,si){
+    var pts=scores.slice(seg[0],seg[1]+1);
+    var xo=xS(seg[0]);
+    segG.append('path').datum(pts).attr('d',d3.area().x(function(d,i){return xS(seg[0]+i);}).y0(H-margin.b).y1(function(d){return yS(d);}).curve(d3.curveCatmullRom)).attr('fill',segColors[si]);
+  });
+  s.append('path').datum(scores).attr('d',path).attr('fill','none').attr('stroke','rgba(255,144,77,.7)').attr('stroke-width',2.5);
+  cuts.forEach(function(ci){
+    s.append('line').attr('x1',xS(ci)+xStep/2).attr('y1',margin.t).attr('x2',xS(ci)+xStep/2).attr('y2',H-margin.b).attr('stroke','rgba(255,255,255,.55)').attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+    s.append('text').attr('x',xS(ci)+xStep/2).attr('y',margin.t-8).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.4)').attr('font-size',18).text('✂');
+  });
+  var dot=s.append('circle').attr('r',5).attr('fill','#FF904D').attr('cx',xS(0)).attr('cy',yS(scores[0]));
+  var idx=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM3){clearInterval(iv);return;}
+    idx=(idx+1)%n;
+    dot.transition().duration(120).attr('cx',xS(idx)).attr('cy',yS(scores[idx]));
+  },180);
+}})();</script>
+
+<!-- M4: O Carteiro Eficiente (PGC – melhor geral) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Carteiro Eficiente</h3>
+<p class="text-white/50 text-sm italic mb-2">Paragraph Group Chunking (PGC): melhor estratégia geral em 1.080 configurações</p>
+<p class="text-white/65 text-sm mb-3">O carteiro não abre cada carta: ele lê o grupo de endereços, separa as pilhas por destino e entrega tudo de uma vez. O PGC agrupa parágrafos completos respeitando a estrutura natural do documento. Resultado: <strong style="color:#6ee7b7">melhor nDCG@5 = 0.459</strong> com RAM mínima de 873 MB.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Melhor nDCG@5 global = 0.459 (Shaukat 2026)</div>
+    <div class="prc">Precision@1 = 24%, Hit@5 = 59%</div>
+    <div class="prc">Eficiente: 873 MB RAM, 6.26 s chunking, 3.72 ms query</div>
+    <div class="prc">Excelente em domínios jurídico e matemático</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Depende de parágrafos bem definidos no texto</div>
+    <div class="cnc">Subótimo em biologia e física (DFC supera)</div>
+    <div class="cnc">Tamanho variável de chunk dificulta batching uniforme</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">nDCG@5 = 0.459 (1º)</span><span class="mbadge">873 MB RAM</span><span class="mbadge">3.72 ms/query</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">parágrafo como unidade</span><span class="pill">jurídico · matemático</span><span class="pill">bge-m3 embedding</span></div>
+<div id="cs-m4" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM4)window.__csM4=0;var g=++window.__csM4;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r4();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m4'));
+function r4(){
+  if(g!==window.__csM4)return;
+  var s=d3.select('#cs-m4').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var boxes=[{x:680,y:60,c:'rgba(80,160,220,.6)',lbl:'§ Intro'},{x:800,y:60,c:'rgba(100,200,130,.6)',lbl:'§ Método'},{x:680,y:160,c:'rgba(220,120,80,.6)',lbl:'§ Result.'},{x:800,y:160,c:'rgba(180,100,220,.6)',lbl:'§ Conclus.'}];
+  boxes.forEach(function(b){
+    s.append('rect').attr('x',b.x).attr('y',b.y).attr('width',100).attr('height',72).attr('rx',6).attr('fill',b.c).attr('stroke','rgba(255,255,255,.15)');
+    s.append('text').attr('x',b.x+50).attr('y',b.y+40).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.75)').attr('font-size',11).attr('font-family','Inter,sans-serif').text(b.lbl);
+  });
+  s.append('text').attr('x',900).attr('y',155).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('caixas');
+  var envData=[{c:'rgba(80,160,220,.8)',bi:0},{c:'rgba(100,200,130,.8)',bi:1},{c:'rgba(220,120,80,.8)',bi:2},{c:'rgba(180,100,220,.8)',bi:3},{c:'rgba(80,160,220,.8)',bi:0},{c:'rgba(100,200,130,.8)',bi:1}];
+  var envelopes=envData.map(function(d,i){
+    return {g:s.append('g').attr('opacity',0),tx:Math.random()*380+60,ty:Math.random()*160+40,bx:boxes[d.bi].x+50,by:boxes[d.bi].y+36,c:d.c};
+  });
+  envelopes.forEach(function(e){
+    e.g.append('rect').attr('x',-18).attr('y',-12).attr('width',36).attr('height',24).attr('rx',3).attr('fill',e.c);
+    e.g.attr('transform','translate('+e.tx+','+e.ty+')');
+  });
+  var ei=0;
+  function sendNext(){
+    if(g!==window.__csM4)return;
+    if(ei>=envelopes.length){setTimeout(function(){if(g!==window.__csM4)return;ei=0;envelopes.forEach(function(e){e.g.attr('opacity',0).attr('transform','translate('+e.tx+','+e.ty+')');});setTimeout(sendNext,500);},1200);return;}
+    var e=envelopes[ei];
+    e.g.attr('opacity',1).transition().duration(600).attr('transform','translate('+e.bx+','+e.by+')').transition().duration(200).attr('opacity',0.4);
+    ei++;setTimeout(sendNext,380);
+  }
+  setTimeout(sendNext,300);
+}})();</script>
+
+<!-- M5: A Boneca Matrioska (Recursive) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Boneca Matrioska</h3>
+<p class="text-white/50 text-sm italic mb-2">Recursive Chunking: subdivide por separadores hierárquicos até atingir o tamanho alvo</p>
+<p class="text-white/65 text-sm mb-3">A matrioska tem bonecas dentro de bonecas: o chunker recursivo tenta primeiro quebrar por parágrafo duplo, depois por parágrafo, depois por frase, depois por palavra, até que cada peça caiba no tamanho alvo. Cada nível preserva mais estrutura que o anterior.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Respeita hierarquia natural: capítulo → parágrafo → frase</div>
+    <div class="prc">Fallback inteligente: nível mais fino só se necessário</div>
+    <div class="prc">Chunks mais coesos que fixed-size na prática</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Chunks de tamanho variável por natureza</div>
+    <div class="cnc">Performance inferior ao PGC (Shaukat 2026)</div>
+    <div class="cnc">Custo de recursão em documentos muito longos</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">separadores: \\n\\n → \\n → . → " "</span><span class="mbadge">Uso: markdown, código, livros</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">RecursiveCharacterTextSplitter</span><span class="pill">hierarquia de separadores</span><span class="pill">fallback progressivo</span></div>
+<div id="cs-m5" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM5)window.__csM5=0;var g=++window.__csM5;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r5();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m5'));
+function r5(){
+  if(g!==window.__csM5)return;
+  var s=d3.select('#cs-m5').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var lvColors=['rgba(255,144,77,.7)','rgba(100,180,220,.7)','rgba(100,200,130,.7)','rgba(200,130,220,.7)'];
+  var lvLabels=['Documento','Seção','Parágrafo','Frase'];
+  var rg=s.append('g');
+  function drawLevel(lvl,x,y,w,h,delay){
+    if(lvl>3)return;
+    var c=lvColors[lvl];
+    rg.append('rect').attr('x',x).attr('y',y).attr('width',w).attr('height',h).attr('rx',5).attr('fill','none').attr('stroke',c).attr('stroke-width',2).attr('opacity',0)
+      .transition().delay(delay).duration(350).attr('opacity',1);
+    if(lvl===0){
+      rg.append('text').attr('x',x+w/2).attr('y',y-6).attr('text-anchor','middle').attr('fill',c).attr('font-size',10).attr('font-family','Inter,sans-serif').attr('opacity',0)
+        .transition().delay(delay).duration(350).attr('opacity',1).text(lvLabels[lvl]);
+    }
+    if(lvl<3){
+      var pad=lvl===0?8:5;
+      var half=Math.floor((w-pad*3)/2);
+      drawLevel(lvl+1,x+pad,y+16,half,h-30,delay+300);
+      drawLevel(lvl+1,x+pad+half+pad,y+16,half,h-30,delay+500);
+    }
+  }
+  function runAnim(){
+    if(g!==window.__csM5)return;
+    rg.selectAll('*').remove();
+    drawLevel(0,50,40,900,210,0);
+    setTimeout(runAnim,3500);
+  }
+  runAnim();
+}})();</script>
+
+<!-- M6: A Foto Panorâmica (Late Chunking) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Foto Panorâmica</h3>
+<p class="text-white/50 text-sm italic mb-2">Late Chunking (LCTS): embeddings gerados para o documento inteiro, divisão só depois</p>
+<p class="text-white/65 text-sm mb-3">Ampliar uma foto de alta resolução tira toda a qualidade: cada pixel já conhece seus vizinhos antes do recorte. O late chunking faz o embedding do documento completo antes de dividir: cada chunk carrega o contexto global, não só o local. As conexões cruzadas persistem mesmo após o corte.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Contexto global preservado em cada chunk</div>
+    <div class="prc">Referências cruzadas entre seções funcionam</div>
+    <div class="prc">Ranking próximo ao Pareto ideal (Shaukat 2026)</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Requer modelo com janela de contexto longa</div>
+    <div class="cnc">Documento inteiro precisa caber no encoder</div>
+    <div class="cnc">Mais lento que fixed-size no pré-processamento</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">LCTS: Pareto-ótimo (Shaukat 2026)</span><span class="mbadge">Uso: docs com referências cruzadas</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">embed first, split later</span><span class="pill">contexto global</span><span class="pill">janela longa</span></div>
+<div id="cs-m6" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM6)window.__csM6=0;var g=++window.__csM6;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r6();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m6'));
+function r6(){
+  if(g!==window.__csM6)return;
+  var s=d3.select('#cs-m6').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var docBar=s.append('g');
+  docBar.append('rect').attr('x',50).attr('y',100).attr('width',900).attr('height',60).attr('rx',6).attr('fill','rgba(255,255,255,.06)').attr('stroke','rgba(255,255,255,.12)');
+  s.append('text').attr('x',500).attr('y',92).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.25)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('documento completo → embedding global');
+  var nDots=18,dotG=s.append('g');
+  var dots=d3.range(nDots).map(function(i){return {x:80+i*(860/(nDots-1)),y:130+Math.sin(i*0.7)*14,i:i};});
+  dots.forEach(function(d){
+    dotG.append('circle').attr('cx',d.x).attr('cy',d.y).attr('r',4).attr('fill','rgba(255,144,77,.7)').attr('opacity',0).transition().delay(d.i*40).duration(300).attr('opacity',1);
+  });
+  var connG=s.append('g');
+  [[0,8],[3,12],[6,16],[1,14],[4,17]].forEach(function(pair,pi){
+    var a=dots[pair[0]],b=dots[pair[1]];
+    connG.append('path').attr('d','M'+a.x+','+a.y+' Q'+((a.x+b.x)/2)+','+(a.y-35)+' '+b.x+','+b.y).attr('fill','none').attr('stroke','rgba(255,144,77,.45)').attr('stroke-width',1.5).attr('stroke-dasharray','4,3').attr('opacity',0).transition().delay(800+pi*150).duration(400).attr('opacity',1);
+  });
+  var cutG=s.append('g');
+  var cutXs=[290,510,740];
+  cutXs.forEach(function(cx,ci){
+    cutG.append('line').attr('x1',cx).attr('y1',96).attr('x2',cx).attr('y2',165).attr('stroke','rgba(100,200,255,.7)').attr('stroke-width',2).attr('stroke-dasharray','5,3').attr('opacity',0).transition().delay(1800+ci*250).duration(350).attr('opacity',1);
+  });
+  s.append('text').attr('x',500).attr('y',200).attr('text-anchor','middle').attr('fill','rgba(100,200,255,.5)').attr('font-size',10).attr('font-family','Inter,sans-serif').attr('opacity',0).transition().delay(2500).duration(400).attr('opacity',1).text('corte ocorre depois do embedding: conexões cruzadas preservadas');
+  var iv=setInterval(function(){
+    if(g!==window.__csM6){clearInterval(iv);return;}
+    dotG.selectAll('circle').each(function(d,i){
+      d3.select(this).transition().duration(800+Math.random()*400).attr('cy',130+Math.sin(Date.now()/1000+i*0.7)*14);
+    });
+  },1200);
+}})();</script>
+
+<!-- M7: O Mapa de Zoom (Hierarchical Chunking) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Mapa de Zoom</h3>
+<p class="text-white/50 text-sm italic mb-2">Hierarchical Chunking: recuperação em múltiplos níveis de granularidade</p>
+<p class="text-white/65 text-sm mb-3">O Google Maps não exibe só uma escala: você escolhe entre satélite, cidade, bairro e rua. O hierarchical chunking indexa o mesmo documento em múltiplos níveis, do capítulo ao parágrafo. Queries de alto nível recebem chunks maiores; queries de detalhe, chunks menores.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Flexibilidade: mesma query escolhe o nível ideal</div>
+    <div class="prc">Parent-document retriever: recupera contexto amplo</div>
+    <div class="prc">Combina bem com MoG (Mix-of-Granularity)</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Overhead de armazenamento: N × documento indexado</div>
+    <div class="cnc">Lógica de seleção de nível adiciona complexidade</div>
+    <div class="cnc">Necessita heurística ou router para escolha do nível</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">MoG: 4 níveis = Global Avg 17.93%</span><span class="mbadge">Uso: wikis, manuais técnicos, relatórios</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">parent-document retriever</span><span class="pill">multi-granularity</span><span class="pill">LangChain</span></div>
+<div id="cs-m7" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM7)window.__csM7=0;var g=++window.__csM7;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r7();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m7'));
+function r7(){
+  if(g!==window.__csM7)return;
+  var s=d3.select('#cs-m7').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var lvls=[
+    {x:50,y:50,w:580,h:190,c:'rgba(255,144,77,.25)',lbl:'Capítulo (2.048 tok)'},
+    {x:70,y:70,w:360,h:150,c:'rgba(100,180,220,.25)',lbl:'Seção (512 tok)'},
+    {x:90,y:90,w:200,h:110,c:'rgba(100,200,130,.25)',lbl:'Parágrafo (128 tok)'}
+  ];
+  var rectEls=lvls.map(function(l,i){
+    var el=s.append('g');
+    el.append('rect').attr('x',l.x).attr('y',l.y).attr('width',l.w).attr('height',l.h).attr('rx',6).attr('fill',l.c).attr('stroke',l.c.replace(',.25',',1')).attr('stroke-width',1.5);
+    el.append('text').attr('x',l.x+8).attr('y',l.y+14).attr('fill',l.c.replace(',.25',',1')).attr('font-size',10).attr('font-family','Inter,sans-serif').text(l.lbl);
+    return el;
+  });
+  var queryG=s.append('g');
+  queryG.append('circle').attr('cx',0).attr('cy',0).attr('r',18).attr('fill','rgba(255,144,77,.3)').attr('stroke','rgba(255,144,77,.8)').attr('stroke-width',2);
+  queryG.append('text').attr('text-anchor','middle').attr('dy',5).attr('font-size',9).attr('fill','rgba(255,144,77,1)').attr('font-family','Inter,sans-serif').text('Q');
+  queryG.attr('transform','translate(820,140)');
+  var lv=0;
+  function highlightLevel(){
+    if(g!==window.__csM7)return;
+    rectEls.forEach(function(el,i){el.select('rect').transition().duration(300).attr('opacity',i===lv?1:0.4);});
+    var tl=lvls[lv];
+    queryG.transition().duration(600).attr('transform','translate('+(tl.x+tl.w/2)+','+(tl.y+tl.h/2)+')').transition().duration(400).attr('transform','translate(820,140)').on('end',function(){if(g!==window.__csM7)return;lv=(lv+1)%3;setTimeout(highlightLevel,400);});
+  }
+  setTimeout(highlightLevel,500);
+}})();</script>
+
+<!-- M8: O Maestro da Perplexidade (Meta-Chunking) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Maestro da Perplexidade</h3>
+<p class="text-white/50 text-sm italic mb-2">Meta-Chunking: usa perplexidade do LLM como sinal de fronteira lógica</p>
+<p class="text-white/65 text-sm mb-3">O maestro levanta a batuta exatamente onde a melodia muda de tema. O PPL Chunking usa a perplexidade do LLM como sinal: onde a perplexidade cai (o modelo "entende" a sequência), há coesão; onde sobe, há mudança de tema e a batuta corta. Funciona até em SLMs de 0,5 bilhão de parâmetros.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Fronteiras baseadas em sinal interno do LLM</div>
+    <div class="prc">BLEU = 0.2963, ROUGE-L = 0.4614, BERTScore = 0.8657</div>
+    <div class="prc">Funciona com Qwen2-0.5B (modelo leve)</div>
+    <div class="prc">Supera LumberChunker e Dense X Retrieval</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Requer inferência do LLM para chunking (custo)</div>
+    <div class="cnc">Velocidade mais lenta que métodos baseados em regras</div>
+    <div class="cnc">PPL pode ser ruidoso em domínios muito especializados</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">BLEU-Avg = 0.2963</span><span class="mbadge">ROUGE-L = 0.4614</span><span class="mbadge">BERTScore = 0.8657</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">PPL Chunking</span><span class="pill">MSP Chunking</span><span class="pill">perplexidade LLM</span><span class="pill">Qwen2</span></div>
+<div id="cs-m8" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM8)window.__csM8=0;var g=++window.__csM8;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r8();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m8'));
+function r8(){
+  if(g!==window.__csM8)return;
+  var s=d3.select('#cs-m8').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  s.append('text').attr('x',60).attr('y',28).attr('fill','rgba(255,255,255,.2)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('Perplexidade do LLM →  pico = nova ideia  ·  vale = coesão  ·  corte nos vales profundos');
+  var W=880,H=160,ox=60,oy=50;
+  function ppl(t){return 0.45+0.3*Math.sin(t*0.8)+0.15*Math.sin(t*2.1)+0.1*Math.sin(t*4.3);}
+  var nPts=80,data=d3.range(nPts).map(function(i){return ppl(i*0.18);});
+  var xS=d3.scaleLinear().domain([0,nPts-1]).range([ox,ox+W]);
+  var yS=d3.scaleLinear().domain([0,1]).range([oy+H,oy]);
+  var pathG=s.append('g');
+  var segG=s.append('g');
+  var cutG=s.append('g');
+  var offset=0;
+  var batonG=s.append('g');
+  batonG.append('line').attr('x1',0).attr('y1',-18).attr('x2',0).attr('y2',18).attr('stroke','rgba(255,144,77,.8)').attr('stroke-width',2);
+  batonG.append('text').attr('text-anchor','middle').attr('y',-26).attr('font-size',16).text('🎵');
+  var cutThreshold=0.35;
+  var iv=setInterval(function(){
+    if(g!==window.__csM8){clearInterval(iv);return;}
+    offset=(offset+0.4)%W;
+    var shifted=d3.range(nPts).map(function(i){return ppl((i*0.18)+(offset*0.015));});
+    var line=d3.line().x(function(d,i){return xS(i);}).y(function(d){return yS(d);}).curve(d3.curveCatmullRom);
+    pathG.selectAll('path').remove();
+    pathG.append('path').datum(shifted).attr('d',line).attr('fill','none').attr('stroke','rgba(255,144,77,.65)').attr('stroke-width',2);
+    cutG.selectAll('*').remove();
+    for(var i=1;i<nPts-1;i++){
+      if(shifted[i]<cutThreshold&&shifted[i-1]>shifted[i]&&shifted[i+1]>shifted[i]){
+        cutG.append('line').attr('x1',xS(i)).attr('y1',oy).attr('x2',xS(i)).attr('y2',oy+H).attr('stroke','rgba(100,200,255,.7)').attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+      }
+    }
+    var minI=shifted.indexOf(Math.min.apply(null,shifted.slice(10,60))+shifted[0])||30;
+    var bx=xS(Math.floor(nPts/3));
+    batonG.attr('transform','translate('+bx+','+(oy+H/2)+')');
+  },30);
+}})();</script>
+
+<!-- M9: A Chave e a Fechadura (Query-Aware / QChunker) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Chave e a Fechadura</h3>
+<p class="text-white/50 text-sm italic mb-2">QChunker / Query-Aware: os chunks são moldados para encaixar nas queries antecipadas</p>
+<p class="text-white/65 text-sm mb-3">O chaveiro corta a chave na forma exata da fechadura do cliente. O QChunker usa perguntas antecipadas para guiar como o documento será dividido: cada chunk é moldado para responder a um conjunto de queries esperadas. Relevância explodiu, mas generalização para queries desconhecidas é o calcanhar de Aquiles.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Chunks alinhados diretamente à intenção das queries</div>
+    <div class="prc">Alta relevância para queries esperadas (Accuracy@5 alto)</div>
+    <div class="prc">Reduz fragmentação de respostas em perguntas factuais</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Requer queries antecipadas: não generaliza bem</div>
+    <div class="cnc">Alto custo de pré-processamento com LLM</div>
+    <div class="cnc">Chunks ruins para queries fora da distribuição treino</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Uso: FAQ técnico, base de suporte, Q&amp;A educacional</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">QChunker</span><span class="pill">query-guided</span><span class="pill">questões antecipadas</span><span class="pill">alignment</span></div>
+<div id="cs-m9" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM9)window.__csM9=0;var g=++window.__csM9;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r9();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m9'));
+function r9(){
+  if(g!==window.__csM9)return;
+  var s=d3.select('#cs-m9').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var chunks=[
+    {x:580,y:55,w:120,h:60,c:'rgba(80,160,220,.5)',q:'O que é RAG?'},
+    {x:720,y:55,w:120,h:60,c:'rgba(100,200,130,.5)',q:'Como avaliar chunking?'},
+    {x:580,y:135,w:120,h:60,c:'rgba(220,120,80,.5)',q:'Qual o melhor embedding?'},
+    {x:720,y:135,w:120,h:60,c:'rgba(180,100,220,.5)',q:'Quando usar PGC?'}
+  ];
+  chunks.forEach(function(c){
+    s.append('rect').attr('x',c.x).attr('y',c.y).attr('width',c.w).attr('height',c.h).attr('rx',6).attr('fill',c.c).attr('stroke',c.c.replace(',','1,').replace('.5)',')')).attr('stroke-width',1.5);
+    s.append('text').attr('x',c.x+c.w/2).attr('y',c.y+28).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.65)').attr('font-size',9).attr('font-family','Inter,sans-serif').text(c.q);
+    s.append('text').attr('x',c.x+c.w/2).attr('y',c.y+44).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',8).attr('font-family','Inter,sans-serif').text('chunk moldado');
+  });
+  s.append('text').attr('x',840).attr('y',50).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('chunks');
+  var qG=s.append('g');
+  qG.append('circle').attr('cx',0).attr('cy',0).attr('r',22).attr('fill','rgba(255,144,77,.2)').attr('stroke','rgba(255,144,77,.7)').attr('stroke-width',2);
+  qG.append('text').attr('text-anchor','middle').attr('dy',4).attr('font-size',10).attr('fill','rgba(255,144,77,.9)').attr('font-family','Inter,sans-serif').text('Q');
+  var arrG=s.append('g');
+  var qi=0;
+  function fireQuery(){
+    if(g!==window.__csM9)return;
+    var ch=chunks[qi%chunks.length];
+    qG.attr('transform','translate(150,140)');
+    chunks.forEach(function(c2,i){s.selectAll('rect').filter(function(d,j){return j===i+1;}).transition().duration(200).attr('opacity',i===qi%chunks.length?1:0.3);});
+    arrG.selectAll('*').remove();
+    arrG.append('line').attr('x1',175).attr('y1',140).attr('x2',ch.x+ch.w/2).attr('y2',ch.y+ch.h/2).attr('stroke','rgba(255,144,77,.7)').attr('stroke-width',2).attr('opacity',0).transition().duration(500).attr('opacity',1);
+    qi++;setTimeout(function(){if(g!==window.__csM9)return;arrG.selectAll('*').remove();fireQuery();},1400);
+  }
+  setTimeout(fireQuery,400);
+}})();</script>
+
+<!-- M10: O Acordeão Inteligente (Adaptive / DFC) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Acordeão Inteligente</h3>
+<p class="text-white/50 text-sm italic mb-2">Dynamic Token Size (DFC): chunks maiores onde o conteúdo é denso, menores onde é simples</p>
+<p class="text-white/65 text-sm mb-3">O acordeão expande quando a música precisa de volume e fecha quando basta sussurrar. O DFC ajusta o tamanho do chunk dinamicamente: passagens densas em informação recebem chunks menores para preservar precisão; seções narrativas recebem chunks maiores. Segundo melhor geral com nDCG@5 = 0.441.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Segundo melhor geral: nDCG@5 = 0.441 (Shaukat 2026)</div>
+    <div class="prc">Melhor para biologia, física e saúde</div>
+    <div class="prc">Adapta-se à densidade informacional do texto</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Mais complexo que fixed-size para implementar</div>
+    <div class="cnc">Inferior ao PGC em domínios jurídico e matemático</div>
+    <div class="cnc">Parâmetros de adaptação precisam de ajuste por domínio</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">nDCG@5 = 0.441 (2º geral)</span><span class="mbadge">Melhor em: bio, física, saúde</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">Dynamic Token Size</span><span class="pill">densidade informacional</span><span class="pill">adaptativo</span></div>
+<div id="cs-m10" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM10)window.__csM10=0;var g=++window.__csM10;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r10();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m10'));
+function r10(){
+  if(g!==window.__csM10)return;
+  var s=d3.select('#cs-m10').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var segments=[
+    {label:'denso\n(bio/fís)',density:0.9,baseW:80},
+    {label:'médio',density:0.6,baseW:130},
+    {label:'narrativo',density:0.3,baseW:200},
+    {label:'denso',density:0.85,baseW:85},
+    {label:'médio',density:0.55,baseW:140},
+    {label:'leve',density:0.2,baseW:220}
+  ];
+  var cols=['rgba(255,144,77,.7)','rgba(100,180,220,.7)','rgba(100,200,130,.7)','rgba(255,144,77,.7)','rgba(100,180,220,.7)','rgba(180,100,220,.7)'];
+  var yC=140,barH=60,gap=6,ox=30;
+  var bars=[];
+  segments.forEach(function(seg,i){
+    var bg=s.append('g');
+    var rx=ox;
+    var br=bg.append('rect').attr('x',rx).attr('y',yC-barH/2).attr('width',seg.baseW).attr('height',barH).attr('rx',5).attr('fill',cols[i]);
+    var lb=bg.append('text').attr('x',rx+seg.baseW/2).attr('y',yC+5).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.75)').attr('font-size',9).attr('font-family','Inter,sans-serif').text(i+1);
+    var dt=bg.append('text').attr('x',rx+seg.baseW/2).attr('y',yC-barH/2-6).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',8).attr('font-family','Inter,sans-serif').text(Math.round(seg.density*100)+'%');
+    bars.push({rect:br,lbl:lb,denlbl:dt,seg:seg,x:ox});
+    ox+=seg.baseW+gap;
+  });
+  var t=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM10){clearInterval(iv);return;}
+    t+=0.02;
+    var curOx=30;
+    bars.forEach(function(b,i){
+      var pulse=1+0.12*Math.sin(t*2+i*0.8)*(1-b.seg.density);
+      var w=b.seg.baseW*pulse;
+      b.rect.attr('x',curOx).attr('width',w);
+      b.lbl.attr('x',curOx+w/2);
+      b.denlbl.attr('x',curOx+w/2);
+      curOx+=w+gap;
+    });
+  },30);
+}})();</script>
+
+<!-- M11: O Chef Michelin para Fatiar Pão (LLM-Based) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Chef Michelin para Fatiar Pão</h3>
+<p class="text-white/50 text-sm italic mb-2">LLM-Based Chunking: o próprio modelo de linguagem decide onde cortar</p>
+<p class="text-white/65 text-sm mb-3">Chamar um chef estrelado para fatiar um pão de forma é tecnicamente impecável, mas absurdo em custo. O chunking baseado em LLM (LSTC, LBDC) gera chunks semanticamente perfeitos, porém consome <strong style="color:#fca5a5">5.672 MB de RAM</strong> contra 873 MB do PGC, sem ganho proporcional de qualidade.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Compreensão semântica profunda do conteúdo</div>
+    <div class="prc">Fronteiras coerentes em textos ambíguos</div>
+    <div class="prc">Útil para domínios técnicos com terminologia rica</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">LSTC: 5.672 MB RAM vs PGC 873 MB (6,5× mais)</div>
+    <div class="cnc">LBDC: 5.418 MB RAM — igualmente caro</div>
+    <div class="cnc">Ganho de qualidade não proporcional ao custo extra</div>
+    <div class="cnc">Inviável em produção com grandes volumes</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">LSTC: 5.672 MB RAM</span><span class="mbadge">LBDC: 5.418 MB RAM</span><span class="mbadge">PGC: 873 MB (referência)</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">LSTC</span><span class="pill">LBDC</span><span class="pill">LLM-guided</span><span class="pill">alto custo computacional</span></div>
+<div id="cs-m11" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM11)window.__csM11=0;var g=++window.__csM11;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r11();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m11'));
+function r11(){
+  if(g!==window.__csM11)return;
+  var s=d3.select('#cs-m11').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var nut=s.append('g');
+  nut.append('circle').attr('cx',720).attr('cy',210).attr('r',18).attr('fill','rgba(200,160,80,.7)').attr('stroke','rgba(200,160,80,1)').attr('stroke-width',2);
+  nut.append('text').attr('x',720).attr('y',215).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.8)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('doc');
+  var hammer=s.append('g');
+  hammer.append('rect').attr('x',640).attr('y',0).attr('width',160).attr('height',100).attr('rx',8).attr('fill','rgba(100,120,180,.6)').attr('stroke','rgba(100,120,180,.9)').attr('stroke-width',2);
+  hammer.append('text').attr('x',720).attr('y',45).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.8)').attr('font-size',13).attr('font-family','Inter,sans-serif').text('LLM');
+  hammer.append('text').attr('x',720).attr('y',65).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.5)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('5.672 MB RAM');
+  hammer.append('rect').attr('x',706).attr('y',100).attr('width',28).attr('height',60).attr('fill','rgba(100,120,180,.5)');
+  var pgcBar=s.append('g');
+  pgcBar.append('text').attr('x',80).attr('y',50).attr('fill','rgba(255,255,255,.3)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('comparativo de RAM:');
+  var barData=[{label:'FCC (fixed)',ram:120,c:'rgba(180,180,180,.5)'},{label:'PGC (melhor)',ram:873,c:'rgba(100,200,130,.7)'},{label:'LSTC (LLM)',ram:5672,c:'rgba(220,80,80,.7)'}];
+  var maxRam=5672,barW=320;
+  barData.forEach(function(d,i){
+    var w=Math.round(d.ram/maxRam*barW);
+    pgcBar.append('rect').attr('x',100).attr('y',70+i*52).attr('width',w).attr('height',32).attr('rx',4).attr('fill',d.c).attr('opacity',0).transition().delay(i*300+400).duration(500).attr('opacity',1);
+    pgcBar.append('text').attr('x',95).attr('y',92+i*52).attr('text-anchor','end').attr('fill','rgba(255,255,255,.45)').attr('font-size',10).attr('font-family','Inter,sans-serif').text(d.label);
+    pgcBar.append('text').attr('x',100+w+6).attr('y',92+i*52).attr('fill','rgba(255,255,255,.6)').attr('font-size',10).attr('font-family','Inter,sans-serif').text(d.ram+' MB').attr('opacity',0).transition().delay(i*300+900).duration(300).attr('opacity',1);
+  });
+  var hy=10,dir=1;
+  var iv=setInterval(function(){
+    if(g!==window.__csM11){clearInterval(iv);return;}
+    hy+=dir*1.8;
+    if(hy>100){dir=-1;}
+    if(hy<10){dir=1;
+      s.append('circle').attr('cx',720).attr('cy',210).attr('r',22).attr('fill','rgba(255,200,80,.3)').attr('opacity',1).transition().duration(400).attr('r',40).attr('opacity',0).remove();
+    }
+    hammer.attr('transform','translate(0,'+hy+')');
+  },30);
+}})();</script>
+
+<!-- M12: A Garrafa Térmica (TurboRAG) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Garrafa Térmica</h3>
+<p class="text-white/50 text-sm italic mb-2">TurboRAG: KV-caches dos chunks pré-computados offline, reutilizados em inferência</p>
+<p class="text-white/65 text-sm mb-3">Refazer o café a cada xícara é ineficiente: a garrafa térmica guarda o café pronto e serve instantaneamente. O TurboRAG pré-computa os KV-caches de cada chunk e os armazena. Na query, em vez de processar os chunks novamente, o modelo usa os caches prontos: <strong style="color:#6ee7b7">8,6× mais rápido</strong> no TTFT médio.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">TTFT médio 8,6× menor; pico de 9,4× (vs RAG ingênuo)</div>
+    <div class="prc">98,46% de redução em TFLOPs computacionais</div>
+    <div class="prc">Acurácia preservada: 95,7% CN, 96,8% EN (vs RAG padrão)</div>
+    <div class="prc">LongBench MuSiQue F1=27,37 (vs 22,12 RAG ingênuo)</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Armazenamento: 28 TB para 1 M chunks (Qwen2-7B, FP16)</div>
+    <div class="cnc">Requer fine-tuning do LLM para novo padrão de atenção</div>
+    <div class="cnc">Cache inválido se chunk for atualizado</div>
+    <div class="cnc">Atenção independente: menos eficaz em raciocínio cruzado</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">TTFT 8,6× mais rápido</span><span class="mbadge">98,46% menos TFLOPs</span><span class="mbadge">28 TB / 1 M chunks</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">KV-cache</span><span class="pill">pré-computação offline</span><span class="pill">Independent Attention</span><span class="pill">Qwen2-7B</span></div>
+<div id="cs-m12" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM12)window.__csM12=0;var g=++window.__csM12;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r12();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m12'));
+function r12(){
+  if(g!==window.__csM12)return;
+  var s=d3.select('#cs-m12').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  s.append('text').attr('x',240).attr('y',28).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.6)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('TurboRAG: KV-cache pré-pronto');
+  s.append('text').attr('x',720).attr('y',28).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.5)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('RAG Ingênuo: recalcula sempre');
+  s.append('line').attr('x1',480).attr('y1',30).attr('x2',480).attr('y2',270).attr('stroke','rgba(255,255,255,.1)').attr('stroke-dasharray','6,4');
+  var thermosData=[{x:120,y:80},{x:220,y:80},{x:320,y:80}];
+  thermosData.forEach(function(t){
+    s.append('rect').attr('x',t.x-18).attr('y',t.y).attr('width',36).attr('height',80).attr('rx',6).attr('fill','rgba(100,200,130,.35)').attr('stroke','rgba(100,200,130,.7)').attr('stroke-width',2);
+    s.append('rect').attr('x',t.x-12).attr('y',t.y+8).attr('width',24).attr('height',50).attr('rx',4).attr('fill','rgba(100,200,130,.18)');
+    s.append('text').attr('x',t.x).attr('y',t.y+42).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.8)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('KV');
+  });
+  var drip=s.append('g');
+  drip.append('rect').attr('x',660).attr('y',70).attr('width',120).attr('height',60).attr('rx',8).attr('fill','rgba(220,80,80,.2)').attr('stroke','rgba(220,80,80,.5)').attr('stroke-width',2);
+  drip.append('text').attr('x',720).attr('y',105).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.7)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('recalculando...');
+  var queryG=s.append('g');
+  var queries=[{x:80,y:205,label:'Q1',side:'left'},{x:580,y:205,label:'Q2',side:'right'},{x:130,y:235,label:'Q3',side:'left'},{x:630,y:235,label:'Q4',side:'right'}];
+  queries.forEach(function(q){
+    var c=q.side==='left'?'rgba(100,200,130,.7)':'rgba(220,80,80,.7)';
+    var qg=queryG.append('g');
+    qg.append('circle').attr('cx',q.x).attr('cy',q.y).attr('r',12).attr('fill',c.replace('.7)','.2)')).attr('stroke',c).attr('stroke-width',1.5);
+    qg.append('text').attr('x',q.x).attr('y',q.y+4).attr('text-anchor','middle').attr('fill',c).attr('font-size',8).attr('font-family','Inter,sans-serif').text(q.label);
+  });
+  s.append('text').attr('x',240).attr('y',260).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.5)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('⚡ Instantâneo (8,6× mais rápido)');
+  s.append('text').attr('x',720).attr('y',260).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.5)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('🐢 Lento (recalcula KV a cada query)');
+  var dropY=135,dropActive=false;
+  var dropEl=s.append('circle').attr('cx',720).attr('cy',135).attr('r',4).attr('fill','rgba(220,80,80,.7)').attr('opacity',0);
+  var flashL=s.append('rect').attr('x',80).attr('y',165).attr('width',320).attr('height',20).attr('rx',4).attr('fill','rgba(100,200,130,.0)');
+  var t2=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM12){clearInterval(iv);return;}
+    t2+=0.04;
+    dropEl.attr('cy',135+40*((t2%1))).attr('opacity',0.7*(1-(t2%1)));
+    flashL.attr('fill','rgba(100,200,130,'+(0.15+0.1*Math.abs(Math.sin(t2*3)))+')');
+  },30);
+}})();</script>
+
+<!-- M13: O Roteador de Granularidade (Mix of Granularity – MoG) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Roteador de Granularidade</h3>
+<p class="text-white/50 text-sm italic mb-2">Mix of Granularity (MoG): router neural seleciona o nível de granularidade ideal por query</p>
+<p class="text-white/65 text-sm mb-3">O aeroporto tem balcões de check-in rápido, médio e completo: o sistema direciona cada passageiro ao balcão certo. O MoG indexa o documento em 4 a 5 níveis de granularidade e usa um router (RoBERTa+MLP) que lê a query e pesa cada nível. Resultado: <strong style="color:#6ee7b7">Global Avg 17,93%</strong> contra 8,12% sem router.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Global Avg 17,93% com 4 granularidades (vs 8,12% sem router)</div>
+    <div class="prc">Robusto para múltiplos LLMs (GPT, Llama3, Qwen1.5)</div>
+    <div class="prc">Router training-free possível com BM25 como retriever</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">+60% de tempo de inferência pelo módulo router</div>
+    <div class="cnc">Scores de similaridade entre granularidades não comparáveis</div>
+    <div class="cnc">Armazenamento N× — cada granularidade requer índice próprio</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Perf. Méd. 17,93% (4 níveis)</span><span class="mbadge">+60% latência com router</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">MoG Router</span><span class="pill">RoBERTa + MLP</span><span class="pill">4–5 granularidades</span><span class="pill">MIRAGE benchmark</span></div>
+<div id="cs-m13" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM13)window.__csM13=0;var g=++window.__csM13;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r13();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m13'));
+function r13(){
+  if(g!==window.__csM13)return;
+  var s=d3.select('#cs-m13').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var rings=[
+    {r:100,label:'Nível 1 (finest)',c:'rgba(255,144,77,.7)'},
+    {r:140,label:'Nível 2',c:'rgba(100,180,220,.7)'},
+    {r:175,label:'Nível 3',c:'rgba(100,200,130,.7)'},
+    {r:205,label:'Nível 4 (coarsest)',c:'rgba(180,100,220,.7)'}
+  ];
+  var cx2=700,cy2=140;
+  rings.forEach(function(r,i){
+    s.append('circle').attr('cx',cx2).attr('cy',cy2).attr('r',r.r).attr('fill','none').attr('stroke',r.c).attr('stroke-width',1.5).attr('stroke-dasharray','8,4').attr('opacity',0.5);
+    s.append('text').attr('x',cx2+r.r+6).attr('y',cy2+4).attr('fill',r.c).attr('font-size',9).attr('font-family','Inter,sans-serif').text(r.label);
+  });
+  var routerG=s.append('g');
+  routerG.append('rect').attr('x',160).attr('y',100).attr('width',100).attr('height',70).attr('rx',8).attr('fill','rgba(255,144,77,.2)').attr('stroke','rgba(255,144,77,.6)').attr('stroke-width',2);
+  routerG.append('text').attr('x',210).attr('y',132).attr('text-anchor','middle').attr('fill','rgba(255,144,77,.8)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('Router');
+  routerG.append('text').attr('x',210).attr('y',150).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('RoBERTa+MLP');
+  var qG=s.append('g');
+  qG.append('circle').attr('cx',60).attr('cy',140).attr('r',20).attr('fill','rgba(255,144,77,.2)').attr('stroke','rgba(255,144,77,.7)').attr('stroke-width',2);
+  qG.append('text').attr('x',60).attr('y',145).attr('text-anchor','middle').attr('fill','rgba(255,144,77,.9)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('Q');
+  var arrG=s.append('g');
+  var qi=0,ringCols=rings.map(function(r){return r.c;});
+  function routeQuery(){
+    if(g!==window.__csM13)return;
+    var ri=qi%rings.length;
+    var tc=rings[ri];
+    arrG.selectAll('*').remove();
+    s.selectAll('circle').transition().duration(200).attr('opacity',0.5);
+    s.selectAll('circle').filter(function(d,i){return i===ri;}).transition().duration(300).attr('opacity',1).attr('stroke-width',3);
+    arrG.append('line').attr('x1',262).attr('y1',135).attr('x2',cx2-rings[ri].r).attr('y2',cy2).attr('stroke',tc.c).attr('stroke-width',2).attr('opacity',0).transition().duration(500).attr('opacity',1);
+    var scoreBar=arrG.append('g');
+    rings.forEach(function(r2,i){
+      var w=i===ri?80:Math.random()*30+10;
+      scoreBar.append('rect').attr('x',160).attr('y',190+i*18).attr('width',0).attr('height',12).attr('rx',3).attr('fill',r2.c).transition().duration(400).attr('width',w);
+    });
+    qi++;setTimeout(function(){if(g!==window.__csM13)return;arrG.selectAll('*').remove();routeQuery();},1600);
+  }
+  setTimeout(routeQuery,400);
+}})();</script>
+
+<!-- M14: O Afinador de Rádio (UncertaintyRAG) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Afinador de Rádio</h3>
+<p class="text-white/50 text-sm italic mb-2">UncertaintyRAG: SNR do LLM detecta fronteiras semânticas sem treino supervisionado</p>
+<p class="text-white/65 text-sm mb-3">O técnico de rádio gira o dial até o sinal limpar: onde o ruído despenca e o sinal estabiliza, ali está a frequência certa. O UncertaintyRAG usa a Relação Sinal-Ruído (SNR) das probabilidades do LLM para detectar regiões estáveis (mesmo chunk) e instáveis (fronteira). Supera BGE-M3 usando apenas 4% dos dados de treino.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Supera BGE-M3 em 2,03% com apenas 4% dos dados</div>
+    <div class="prc">110 M parâmetros — leve e eficiente</div>
+    <div class="prc">Treinamento não supervisionado (7 M pares vs 184 M do BGE-M3)</div>
+    <div class="prc">Plug-and-play com qualquer LLM existente</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Chunking fixo de 300 letras (não adaptativo)</div>
+    <div class="cnc">SNR é proxy indireto — não capta fronteiras de paragrafo</div>
+    <div class="cnc">Janela SNR (20 tokens, step 10) é hiperparâmetro sensível</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">+2,03% vs BGE-M3</span><span class="mbadge">7 M pares (4% de 184 M)</span><span class="mbadge">110 M parâmetros</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">SNR (Signal-to-Noise Ratio)</span><span class="pill">contrastive learning</span><span class="pill">BM25 hard negatives</span><span class="pill">unsupervised</span></div>
+<div id="cs-m14" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM14)window.__csM14=0;var g=++window.__csM14;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r14();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m14'));
+function r14(){
+  if(g!==window.__csM14)return;
+  var s=d3.select('#cs-m14').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  s.append('text').attr('x',500).attr('y',22).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('SNR da saída do LLM: janela de 20 tokens, step 10 — regiões estáveis = mesmo chunk');
+  var ox=50,oy=40,W=900,H=160;
+  function snr(t){
+    var noise=0.35*Math.random();
+    var clean=0.6+0.2*Math.sin(t*0.4);
+    var boundary=(Math.sin(t*0.9)>0.6)?0.8:0;
+    return boundary?0.1+noise*2:clean+noise*0.15;
+  }
+  var nPts=90,offset=0;
+  var pathG=s.append('g');
+  var stableG=s.append('g');
+  var cutG=s.append('g');
+  var dialG=s.append('g');
+  dialG.append('circle').attr('cx',500).attr('cy',230).attr('r',28).attr('fill','rgba(255,255,255,.05)').attr('stroke','rgba(255,144,77,.5)').attr('stroke-width',2);
+  var dialNeedle=dialG.append('line').attr('x1',500).attr('y1',230).attr('x2',500).attr('y2',206).attr('stroke','rgba(255,144,77,.8)').attr('stroke-width',2.5);
+  var snrLbl=dialG.append('text').attr('x',560).attr('y',235).attr('fill','rgba(255,144,77,.7)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('SNR: —');
+  var t3=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM14){clearInterval(iv);return;}
+    t3+=0.04;offset=(offset+0.5)%W;
+    var data=d3.range(nPts).map(function(i){return snr(i*0.22+t3);});
+    var xS=function(i){return ox+i*(W/nPts);};
+    var yS=function(v){return oy+H-(v*H);};
+    var line=d3.line().x(function(d,i){return xS(i);}).y(function(d){return yS(d);}).curve(d3.curveBasis);
+    pathG.selectAll('*').remove();
+    pathG.append('path').datum(data).attr('d',line).attr('fill','none').attr('stroke','rgba(255,144,77,.6)').attr('stroke-width',2);
+    cutG.selectAll('*').remove();
+    var lastLow=false;
+    data.forEach(function(d,i){
+      if(d<0.25&&!lastLow){
+        cutG.append('line').attr('x1',xS(i)).attr('y1',oy).attr('x2',xS(i)).attr('y2',oy+H).attr('stroke','rgba(100,200,255,.7)').attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+        lastLow=true;
+      } else if(d>=0.25){lastLow=false;}
+    });
+    var curSNR=data[Math.floor(nPts/2)];
+    var needleAngle=(curSNR-0.5)*120*(Math.PI/180);
+    dialNeedle.attr('x2',500+28*Math.sin(needleAngle)).attr('y2',230-28*Math.cos(needleAngle));
+    snrLbl.text('SNR: '+curSNR.toFixed(2));
+  },40);
+}})();</script>
+
+<!-- M15: O Intérprete Simultâneo (Multimodal Chunking) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Intérprete Simultâneo</h3>
+<p class="text-white/50 text-sm italic mb-2">Multimodal Chunking: texto, imagem, tabela e fórmula no mesmo chunk semanticamente alinhado</p>
+<p class="text-white/65 text-sm mb-3">O intérprete simultâneo escuta três idiomas de uma vez e entrega um único discurso coerente. O chunker multimodal alinha texto, imagens (via CLIP), áudio (via Whisper) e tabelas em chunks onde cada modalidade complementa as outras. Separar a figura da sua legenda seria perder metade da informação.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Preserva alinhamento texto-imagem, texto-tabela</div>
+    <div class="prc">Essencial para PDFs científicos, relatórios financeiros</div>
+    <div class="prc">CLIP garante embeddings cruzados texto-imagem</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Alta complexidade de pipeline (múltiplos modelos)</div>
+    <div class="cnc">Custo de inferência multiplica pelas modalidades</div>
+    <div class="cnc">Alinhamento imperfeito para fórmulas matemáticas</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">CLIP (texto + imagem)</span><span class="mbadge">Whisper (áudio + texto)</span><span class="mbadge">Uso: PDFs científicos, relatórios</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">CLIP</span><span class="pill">Whisper</span><span class="pill">multimodal embedding</span><span class="pill">alinhamento cruzado</span></div>
+<div id="cs-m15" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM15)window.__csM15=0;var g=++window.__csM15;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r15();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m15'));
+function r15(){
+  if(g!==window.__csM15)return;
+  var s=d3.select('#cs-m15').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var streams=[
+    {label:'T',sub:'Texto',y:60,c:'rgba(255,144,77,.8)'},
+    {label:'I',sub:'Imagem',y:140,c:'rgba(100,180,220,.8)'},
+    {label:'G',sub:'Tabela',y:220,c:'rgba(100,200,130,.8)'}
+  ];
+  var cx5=500,cy5=140;
+  s.append('circle').attr('cx',cx5).attr('cy',cy5).attr('r',36).attr('fill','rgba(255,255,255,.06)').attr('stroke','rgba(255,255,255,.2)').attr('stroke-width',2);
+  s.append('text').attr('x',cx5).attr('y',cy5+5).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.6)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('Chunk');
+  s.append('circle').attr('cx',780).attr('cy',cy5).attr('r',28).attr('fill','rgba(255,255,255,.04)').attr('stroke','rgba(255,255,255,.15)').attr('stroke-width',2);
+  s.append('text').attr('x',780).attr('y',cy5+5).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.5)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('Vector');
+  streams.forEach(function(st){
+    s.append('circle').attr('cx',120).attr('cy',st.y).attr('r',24).attr('fill',st.c.replace(',.8)','.15)')).attr('stroke',st.c).attr('stroke-width',2);
+    s.append('text').attr('x',120).attr('y',st.y+4).attr('text-anchor','middle').attr('fill',st.c).attr('font-size',13).attr('font-family','Inter,sans-serif').text(st.label);
+    s.append('text').attr('x',120).attr('y',st.y+22).attr('text-anchor','middle').attr('fill',st.c.replace(',.8)','.5)')).attr('font-size',9).attr('font-family','Inter,sans-serif').text(st.sub);
+  });
+  var particles=[];
+  streams.forEach(function(st,si){
+    for(var i=0;i<3;i++){
+      particles.push({src:{x:144,y:st.y},dst:{x:464,y:cy5},c:st.c,t:si*0.33+i*0.15,si:si});
+    }
+  });
+  var pEls=particles.map(function(p){
+    return s.append('circle').attr('r',5).attr('fill',p.c).attr('cx',p.src.x).attr('cy',p.src.y).attr('opacity',0);
+  });
+  var outEls=[];
+  for(var i=0;i<2;i++){
+    outEls.push(s.append('circle').attr('r',5).attr('fill','rgba(255,255,255,.6)').attr('cx',536).attr('cy',cy5).attr('opacity',0));
+  }
+  var t4=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM15){clearInterval(iv);return;}
+    t4+=0.018;
+    particles.forEach(function(p,i){
+      var pt=(t4+p.t)%1;
+      var x=p.src.x+(p.dst.x-p.src.x)*pt;
+      var y=p.src.y+(p.dst.y-p.src.y)*pt;
+      pEls[i].attr('cx',x).attr('cy',y).attr('opacity',pt<0.85?0.8:0);
+    });
+    outEls.forEach(function(el,i){
+      var pt2=(t4+i*0.5)%1;
+      el.attr('cx',536+(780-536)*pt2).attr('cy',cy5).attr('opacity',pt2<0.85?0.7:0);
+    });
+  },30);
+}})();</script>
+
+<!-- M16: O Detetive Retórico (Discourse-RAG) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Detetive Retórico</h3>
+<p class="text-white/50 text-sm italic mb-2">Discourse-RAG: RST trees intra-chunk + grafo retórico inter-chunk + planejamento de geração</p>
+<p class="text-white/65 text-sm mb-3">O detetive não lê as pistas isoladas: ele pende barbantes no mural, conecta causa à evidência, evidência à conclusão. O Discourse-RAG constrói árvores RST dentro de cada chunk e um grafo retórico entre chunks (Elaboração, Contraste, Causa), depois usa esse mapa para guiar a geração. ASQA ROUGE-L = <strong style="color:#6ee7b7">42,4</strong> — estado da arte.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">ASQA ROUGE-L = 42,4 (supera Tree of Clarifications 39,7)</div>
+    <div class="prc">LLM Score Loong Set1 = 71,01 (+8,23 vs RAG padrão)</div>
+    <div class="prc">Robusto a ruído: retém 58,17 em 80% chunks ruidosos</div>
+    <div class="prc">Training-free: funciona plug-and-play com qualquer LLM</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">4 chamadas LLM por query: latência alta</div>
+    <div class="cnc">RST tree depende da qualidade do parser LLM</div>
+    <div class="cnc">Grafo inter-chunk: custo O(k²) com k chunks recuperados</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">ASQA ROUGE-L = 42,4</span><span class="mbadge">LLM Score 71,01 (Loong)</span><span class="mbadge">Robusto a 80% ruído</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">RST trees</span><span class="pill">Rhetorical Structure Theory</span><span class="pill">grafo inter-chunk</span><span class="pill">planejamento retórico</span></div>
+<div id="cs-m16" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM16)window.__csM16=0;var g=++window.__csM16;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r16();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m16'));
+function r16(){
+  if(g!==window.__csM16)return;
+  var s=d3.select('#cs-m16').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var nodes=[
+    {x:200,y:80,label:'C1',sub:'Argumento',c:'rgba(255,144,77,.7)'},
+    {x:420,y:60,label:'C2',sub:'Evidência',c:'rgba(100,180,220,.7)'},
+    {x:620,y:100,label:'C3',sub:'Contraste',c:'rgba(100,200,130,.7)'},
+    {x:480,y:180,label:'C4',sub:'Conclusão',c:'rgba(180,100,220,.7)'}
+  ];
+  var edges=[
+    {from:0,to:1,lbl:'Elaboração',c:'rgba(255,144,77,.5)'},
+    {from:1,to:2,lbl:'Contraste',c:'rgba(100,180,220,.5)'},
+    {from:0,to:3,lbl:'Causa',c:'rgba(255,144,77,.4)'},
+    {from:2,to:3,lbl:'Suporte',c:'rgba(100,200,130,.4)'}
+  ];
+  var nodeEls=nodes.map(function(n){
+    var ng=s.append('g').attr('opacity',0);
+    ng.append('circle').attr('cx',n.x).attr('cy',n.y).attr('r',28).attr('fill',n.c.replace(',.7)','.15)')).attr('stroke',n.c).attr('stroke-width',2);
+    ng.append('text').attr('x',n.x).attr('y',n.y-4).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.8)').attr('font-size',11).attr('font-family','Inter,sans-serif').text(n.label);
+    ng.append('text').attr('x',n.x).attr('y',n.y+10).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.45)').attr('font-size',8).attr('font-family','Inter,sans-serif').text(n.sub);
+    return ng;
+  });
+  var edgeEls=edges.map(function(e){
+    var a=nodes[e.from],b=nodes[e.to];
+    var eg=s.append('g').attr('opacity',0);
+    eg.append('line').attr('x1',a.x).attr('y1',a.y).attr('x2',b.x).attr('y2',b.y).attr('stroke',e.c).attr('stroke-width',2);
+    var mx=(a.x+b.x)/2,my=(a.y+b.y)/2-12;
+    eg.append('text').attr('x',mx).attr('y',my).attr('text-anchor','middle').attr('fill',e.c).attr('font-size',8).attr('font-family','Inter,sans-serif').text(e.lbl);
+    return eg;
+  });
+  var planG=s.append('g').attr('opacity',0);
+  planG.append('rect').attr('x',760).attr('y',60).attr('width',180).attr('height',140).attr('rx',8).attr('fill','rgba(255,255,255,.04)').attr('stroke','rgba(255,255,255,.15)').attr('stroke-width',1.5);
+  planG.append('text').attr('x',850).attr('y',82).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.3)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('Plano Retórico');
+  ['1. Background','2. Argument','3. Evidence','4. Conclusion'].forEach(function(step,i){
+    planG.append('text').attr('x',772).attr('y',102+i*22).attr('fill','rgba(255,255,255,.5)').attr('font-size',9).attr('font-family','Inter,sans-serif').text(step);
+  });
+  function runCycle(){
+    if(g!==window.__csM16)return;
+    nodeEls.forEach(function(el){el.attr('opacity',0);});
+    edgeEls.forEach(function(el){el.attr('opacity',0);});
+    planG.attr('opacity',0);
+    nodeEls.forEach(function(el,i){el.transition().delay(i*300).duration(350).attr('opacity',1);});
+    edgeEls.forEach(function(el,i){el.transition().delay(1200+i*250).duration(350).attr('opacity',1);});
+    planG.transition().delay(2400).duration(500).attr('opacity',1);
+    setTimeout(runCycle,4500);
+  }
+  setTimeout(runCycle,300);
+}})();</script>
+
+<!-- M17: A Alta Resolução (Chunk Twice, Embed Once) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Alta Resolução</h3>
+<p class="text-white/50 text-sm italic mb-2">Chunk Twice Embed Once: embedding no chunk pequeno, retrieval com contexto do chunk grande</p>
+<p class="text-white/65 text-sm mb-3">Ampliar uma foto de baixa resolução não recupera os detalhes perdidos: os pixels foram descartados na captura. A estratégia "chunk twice, embed once" captura primeiro em alta resolução (chunk grande para contexto) e depois recorta para indexação (chunk pequeno para precisão). O embedding preserva o contexto maior, o retrieval retorna o detalhe exato.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Embeddings ricos: contexto amplo preservado</div>
+    <div class="prc">Retrieval preciso: chunks menores entregues ao LLM</div>
+    <div class="prc">Reduz "lost in the middle" com chunks pequenos</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Dois tamanhos de chunk a gerenciar no índice</div>
+    <div class="cnc">Overhead de indexação (child + parent chunks)</div>
+    <div class="cnc">Chunks pais muito grandes podem diluir embeddings</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Uso: docs longos com partes precisas a recuperar</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">parent chunk (contexto)</span><span class="pill">child chunk (retrieval)</span><span class="pill">two-level indexing</span></div>
+<div id="cs-m17" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM17)window.__csM17=0;var g=++window.__csM17;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r17();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m17'));
+function r17(){
+  if(g!==window.__csM17)return;
+  var s=d3.select('#cs-m17').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  /* --- LADO ESQUERDO: Chunk Twice Embed Once --- */
+  var lx=30,py=50,pw=380,ph=170;
+  s.append('text').attr('x',lx+pw/2).attr('y',30).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.7)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('Chunk Twice Embed Once ✓');
+  /* parent box */
+  s.append('rect').attr('x',lx).attr('y',py).attr('width',pw).attr('height',ph).attr('rx',8)
+    .attr('fill','rgba(100,200,130,.06)').attr('stroke','rgba(100,200,130,.35)').attr('stroke-width',1.5);
+  s.append('text').attr('x',lx+6).attr('y',py+14).attr('fill','rgba(100,200,130,.4)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('Parent chunk (contexto)');
+  /* child box */
+  var cx2=lx+100,cy2=py+30,cw2=180,ch2=110;
+  s.append('rect').attr('x',cx2).attr('y',cy2).attr('width',cw2).attr('height',ch2).attr('rx',6)
+    .attr('fill','rgba(100,200,130,.18)').attr('stroke','rgba(100,200,130,.75)').attr('stroke-width',2);
+  s.append('text').attr('x',cx2+cw2/2).attr('y',cy2+40).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.9)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('Child chunk');
+  s.append('text').attr('x',cx2+cw2/2).attr('y',cy2+60).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.5)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('(precisão)');
+  /* feixe de scan que percorre o parent da esquerda pra direita */
+  var beam=s.append('rect').attr('x',lx).attr('y',py).attr('width',6).attr('height',ph).attr('rx',2)
+    .attr('fill','rgba(100,255,160,.45)').attr('opacity',0);
+  /* vetor embed → exibido abaixo */
+  var vecG=s.append('g');
+  var vecX=lx+pw+20,vecY=py+70;
+  var vecBox=vecG.append('rect').attr('x',vecX).attr('y',vecY).attr('width',60).attr('height',30).attr('rx',5)
+    .attr('fill','rgba(100,200,130,.2)').attr('stroke','rgba(100,200,130,.5)').attr('stroke-width',1.5).attr('opacity',0);
+  vecG.append('text').attr('x',vecX+30).attr('y',vecY+20).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.8)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('embed').attr('opacity',0);
+  var vecLbl=vecG.select('text');
+  s.append('text').attr('x',lx+pw/2).attr('y',py+ph+18).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.4)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('embed ← contexto do parent');
+  /* --- LADO DIREITO: Chunk Then Embed --- */
+  var rx2=540,rw=400;
+  s.append('text').attr('x',rx2+rw/2).attr('y',30).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.6)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('Chunk Then Embed ✗');
+  var fragH=28,fragGap=8;
+  var fragColors=['rgba(220,80,80,.18)','rgba(220,80,80,.14)','rgba(220,80,80,.18)','rgba(220,80,80,.12)','rgba(220,80,80,.16)'];
+  var fragEls=fragColors.map(function(fc,i){
+    var fy=py+i*(fragH+fragGap);
+    s.append('rect').attr('x',rx2).attr('y',fy).attr('width',rw).attr('height',fragH).attr('rx',4)
+      .attr('fill',fc).attr('stroke','rgba(220,80,80,.25)').attr('stroke-width',1);
+    /* cada fragmento tem seu próprio mini-embed box */
+    var mbox=s.append('rect').attr('x',rx2+rw+8).attr('y',fy+4).attr('width',36).attr('height',20).attr('rx',3)
+      .attr('fill','rgba(220,80,80,.15)').attr('stroke','rgba(220,80,80,.3)').attr('stroke-width',1).attr('opacity',0);
+    return {y:fy,mbox:mbox};
+  });
+  s.append('text').attr('x',rx2+rw/2).attr('y',py+ph+18).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.45)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('embed isolado por chunk — contexto perdido');
+  /* --- ANIMAÇÃO LOOP --- */
+  var t5=0,scanX=lx,scanDir=1,phase=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM17){clearInterval(iv);return;}
+    t5+=0.035;
+    /* feixe de scan */
+    scanX+=scanDir*4;
+    if(scanX>lx+pw){
+      scanDir=-1;
+      /* ao terminar o scan, pisca o vetor de embed */
+      vecBox.attr('opacity',1);vecLbl.attr('opacity',1);
+      phase++;
+    }
+    if(scanX<lx){scanDir=1;vecBox.attr('opacity',0);vecLbl.attr('opacity',0);}
+    beam.attr('x',scanX).attr('opacity',scanX>lx&&scanX<lx+pw?0.7:0);
+    /* child box pulsa */
+    s.selectAll('rect').filter(function(){return d3.select(this).attr('x')==cx2;}).attr('opacity',0.6+0.3*Math.abs(Math.sin(t5*2)));
+    /* fragmentos do lado direito aparecem um a um e piscam aleatoriamente */
+    fragEls.forEach(function(f,i){
+      f.mbox.attr('opacity',Math.abs(Math.sin(t5*1.5+i*0.8))*0.9);
+    });
+  },30);
+}})();</script>
+
+<!-- M21: O Detector de Mudança de Clima (TextTiling) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Detector de Mudança de Clima</h3>
+<p class="text-white/50 text-sm italic mb-2">TextTiling: coesão lexical entre janelas de texto revela onde o tema muda</p>
+<p class="text-white/65 text-sm mb-3">O barômetro não lê o céu — ele mede a pressão. O TextTiling mede a sobreposição de vocabulário entre duas janelas adjacentes: quando os termos compartilhados despencam, chegou uma fronteira de tópico. Sem ML, sem embeddings, só frequência de palavras.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Zero dependência de modelos — totalmente determinístico</div>
+    <div class="prc">Rápido e barato para qualquer volume de texto</div>
+    <div class="prc">Clássico bem compreendido, fácil de auditar</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Ignora sinônimos e semântica latente</div>
+    <div class="cnc">Muito sensível ao tamanho da janela léxica</div>
+    <div class="cnc">Recall@10 = 79.25 (bem abaixo de PGC 0.459)</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Recall@10 = 79.25 (benchmark Shaukat)</span><span class="mbadge">Usa: frequência de tokens</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">coesão lexical</span><span class="pill">janela deslizante</span><span class="pill">sem ML</span><span class="pill">clássico NLP</span></div>
+<div id="cs-m21" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM21)window.__csM21=0;var g=++window.__csM21;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r21();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m21'));
+function r21(){
+  if(g!==window.__csM21)return;
+  var s=d3.select('#cs-m21').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var nPts=40,W=880,ox=60,oy=200;
+  /* coesão léxica simulada: alta dentro de segmentos, cai nas fronteiras */
+  function cohScore(i){
+    if(i<10)return 0.75+0.15*Math.sin(i*0.9);
+    if(i===10||i===11)return 0.18+0.05*Math.random();
+    if(i<22)return 0.72+0.14*Math.sin(i*0.7);
+    if(i===22||i===23)return 0.14+0.04*Math.random();
+    return 0.76+0.13*Math.sin(i*0.8);
+  }
+  var baseScores=d3.range(nPts).map(function(i){return cohScore(i);});
+  var xS=function(i){return ox+i*(W/(nPts-1));};
+  var yS=function(v){return oy-v*140;};
+  /* eixo */
+  s.append('line').attr('x1',ox).attr('y1',oy).attr('x2',ox+W).attr('y2',oy).attr('stroke','rgba(255,255,255,.1)').attr('stroke-width',1);
+  /* threshold */
+  var thresh=0.4;
+  s.append('line').attr('x1',ox).attr('y1',yS(thresh)).attr('x2',ox+W).attr('y2',yS(thresh)).attr('stroke','rgba(255,144,77,.4)').attr('stroke-dasharray','6,4').attr('stroke-width',1.5);
+  s.append('text').attr('x',ox+W+6).attr('y',yS(thresh)+4).attr('fill','rgba(255,144,77,.6)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('limiar');
+  /* labels de segmento */
+  [[0,9,'Tópico A','rgba(100,180,220,.5)'],[12,21,'Tópico B','rgba(100,200,130,.5)'],[24,39,'Tópico C','rgba(180,100,220,.5)']].forEach(function(seg){
+    s.append('rect').attr('x',xS(seg[0])).attr('y',40).attr('width',xS(seg[1])-xS(seg[0])).attr('height',yS(0)-40).attr('fill',seg[3].replace(',.5)','.06)')).attr('rx',4);
+    s.append('text').attr('x',(xS(seg[0])+xS(seg[1]))/2).attr('y',58).attr('text-anchor','middle').attr('fill',seg[3]).attr('font-size',10).attr('font-family','Inter,sans-serif').text(seg[2]);
+  });
+  /* linha de coesão (animada) */
+  var pathG=s.append('path').attr('fill','none').attr('stroke','rgba(100,200,130,.7)').attr('stroke-width',2.5);
+  /* ponto móvel */
+  var dot=s.append('circle').attr('r',5).attr('fill','rgba(255,144,77,.9)');
+  /* corte vertical (aparece quando cruza o limiar) */
+  var cutG=s.append('g');
+  var t=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM21){clearInterval(iv);return;}
+    t+=0.025;
+    var scores=baseScores.map(function(v,i){return Math.max(0.05,Math.min(0.99,v+0.04*Math.sin(t+i*0.3)));});
+    var line=d3.line().x(function(d,i){return xS(i);}).y(function(d){return yS(d);}).curve(d3.curveCatmullRom);
+    pathG.attr('d',line(scores));
+    /* ponto percorre */
+    var pi=Math.floor(((t*0.4)%1)*nPts);
+    dot.attr('cx',xS(pi)).attr('cy',yS(scores[pi]));
+    /* cortes */
+    cutG.selectAll('*').remove();
+    scores.forEach(function(v,i){
+      if(i>0&&v<thresh&&scores[i-1]>=thresh){
+        cutG.append('line').attr('x1',xS(i)).attr('y1',40).attr('x2',xS(i)).attr('y2',oy).attr('stroke','rgba(255,255,255,.6)').attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+        cutG.append('text').attr('x',xS(i)).attr('y',35).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.5)').attr('font-size',14).text('✂');
+      }
+    });
+  },40);
+}})();</script>
+
+<!-- M22: O Genealogista (HAC) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Genealogista</h3>
+<p class="text-white/50 text-sm italic mb-2">HAC: sentencas mais similares fundem-se primeiro, construindo uma árvore de agrupamentos</p>
+<p class="text-white/65 text-sm mb-3">O genealogista agrupa primeiro os irmãos, depois os primos, depois os parentes distantes. O HAC (Hierarchical Agglomerative Clustering) calcula a similaridade entre todas as sentenças e funde os pares mais próximos iterativamente, construindo um dendrograma. O corte define os chunks.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Fronteiras semanticamente motivadas (similaridade real)</div>
+    <div class="prc">Flexível: o corte define o nível de granularidade</div>
+    <div class="prc">Recall@10 = 79.84 — razoável como baseline semântico</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Complexidade O(n²) — inviável para docs muito longos</div>
+    <div class="cnc">Requer embedding de cada sentença individualmente</div>
+    <div class="cnc">Não preserva ordem original das sentenças</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Recall@10 = 79.84</span><span class="mbadge">Complexidade O(n²)</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">clustering aglomerativo</span><span class="pill">dendrograma</span><span class="pill">similaridade cosseno</span></div>
+<div id="cs-m22" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM22)window.__csM22=0;var g=++window.__csM22;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r22();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m22'));
+function r22(){
+  if(g!==window.__csM22)return;
+  var s=d3.select('#cs-m22').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  /* 8 sentencas na base */
+  var nodes=[{x:80},{x:190},{x:300},{x:410},{x:520},{x:630},{x:740},{x:870}];
+  var baseY=240,cols=['rgba(100,180,220,.8)','rgba(100,180,220,.8)','rgba(100,200,130,.8)','rgba(100,200,130,.8)','rgba(255,144,77,.8)','rgba(255,144,77,.8)','rgba(180,100,220,.8)','rgba(180,100,220,.8)'];
+  nodes.forEach(function(n,i){
+    s.append('circle').attr('cx',n.x).attr('cy',baseY).attr('r',14).attr('fill',cols[i].replace(',.8)','.2)')).attr('stroke',cols[i]).attr('stroke-width',2);
+    s.append('text').attr('x',n.x).attr('y',baseY+4).attr('text-anchor','middle').attr('fill',cols[i]).attr('font-size',9).attr('font-family','Inter,sans-serif').text('S'+(i+1));
+  });
+  /* fusoes: pares -> grupos -> clusters */
+  var merges=[
+    {pairs:[[0,1],[2,3],[4,5],[6,7]],y:185,c:['rgba(100,180,220,.7)','rgba(100,200,130,.7)','rgba(255,144,77,.7)','rgba(180,100,220,.7)']},
+    {pairs:[[0,1],[2,3]],y:130,c:['rgba(100,180,220,.6)','rgba(180,150,255,.6)']},
+    {pairs:[[0,1]],y:80,c:['rgba(255,255,255,.4)']}
+  ];
+  var mergeEls=merges.map(function(m){
+    return m.pairs.map(function(p,pi){
+      var x1=nodes[p[0]*2]?nodes[p[0]*2].x:nodes[p[0]].x;
+      var x2=nodes[p[1]*2+1]?nodes[p[1]*2+1].x:nodes[p[1]].x;
+      var mx=(x1+x2)/2;
+      var g2=s.append('g').attr('opacity',0);
+      /* linha horizontal */
+      g2.append('line').attr('x1',x1).attr('y1',m.y).attr('x2',x2).attr('y2',m.y).attr('stroke',m.c[pi]).attr('stroke-width',2);
+      /* linhas verticais para os filhos */
+      g2.append('line').attr('x1',x1).attr('y1',m.y).attr('x2',x1).attr('y2',m.y+55).attr('stroke',m.c[pi]).attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+      g2.append('line').attr('x1',x2).attr('y1',m.y).attr('x2',x2).attr('y2',m.y+55).attr('stroke',m.c[pi]).attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+      /* nó de fusao */
+      g2.append('circle').attr('cx',mx).attr('cy',m.y).attr('r',10).attr('fill',m.c[pi].replace(/[^,]+\)$/,'.15)')).attr('stroke',m.c[pi]).attr('stroke-width',2);
+      return g2;
+    });
+  });
+  /* linha de corte */
+  var cutLine=s.append('line').attr('x1',40).attr('y1',155).attr('x2',940).attr('y2',155).attr('stroke','rgba(255,144,77,.5)').attr('stroke-dasharray','8,4').attr('stroke-width',2).attr('opacity',0);
+  s.append('text').attr('x',945).attr('y',159).attr('fill','rgba(255,144,77,.6)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('corte').attr('opacity',0).transition().delay(3200).duration(400).attr('opacity',1);
+  function runCycle(){
+    if(g!==window.__csM22)return;
+    /* reset */
+    mergeEls.forEach(function(row){row.forEach(function(el){el.attr('opacity',0);});});
+    cutLine.attr('opacity',0);
+    /* revela camada por camada */
+    mergeEls.forEach(function(row,ri){
+      row.forEach(function(el,pi){
+        el.transition().delay(ri*800+pi*120+300).duration(400).attr('opacity',1);
+      });
+    });
+    cutLine.transition().delay(2800).duration(500).attr('opacity',1);
+    setTimeout(runCycle,5000);
+  }
+  setTimeout(runCycle,300);
+}})();</script>
+
+<!-- M23: O Cartógrafo das Conexões (GraphSeg) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Cartógrafo das Conexões</h3>
+<p class="text-white/50 text-sm italic mb-2">GraphSeg: grafo de similaridade entre sentencas — clusters densos viram chunks</p>
+<p class="text-white/65 text-sm mb-3">O cartógrafo não traça fronteiras à régua: ele observa onde as estradas se concentram e onde rareiam. O GraphSeg constrói um grafo onde cada sentença é um nó e as arestas são a similaridade. Regiões densamente conectadas formam chunks; lacunas de conectividade são fronteiras.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Captura relações não lineares entre sentencas</div>
+    <div class="prc">Recall@10 = 85.98 — entre os melhores clássicos</div>
+    <div class="prc">Robusto a parágrafos desordenados</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Construção do grafo: O(n²) similaridades calculadas</div>
+    <div class="cnc">Custo de embedding para todas as sentencas</div>
+    <div class="cnc">Sensível ao threshold de aresta (hiperparâmetro)</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Recall@10 = 85.98</span><span class="mbadge">Grafo de similaridade O(n²)</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">grafo de sentenças</span><span class="pill">clustering por densidade</span><span class="pill">fronteiras por lacuna</span></div>
+<div id="cs-m23" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM23)window.__csM23=0;var g=++window.__csM23;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r23();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m23'));
+function r23(){
+  if(g!==window.__csM23)return;
+  var s=d3.select('#cs-m23').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var nodes=[
+    {x:120,y:100,c:'rgba(100,180,220,.8)',g:0},{x:200,y:60,c:'rgba(100,180,220,.8)',g:0},{x:200,y:150,c:'rgba(100,180,220,.8)',g:0},{x:290,y:100,c:'rgba(100,180,220,.8)',g:0},
+    {x:480,y:80,c:'rgba(100,200,130,.8)',g:1},{x:560,y:130,c:'rgba(100,200,130,.8)',g:1},{x:480,y:175,c:'rgba(100,200,130,.8)',g:1},
+    {x:730,y:90,c:'rgba(255,144,77,.8)',g:2},{x:820,y:60,c:'rgba(255,144,77,.8)',g:2},{x:820,y:140,c:'rgba(255,144,77,.8)',g:2},{x:900,y:100,c:'rgba(255,144,77,.8)',g:2}
+  ];
+  /* arestas intra-cluster (fortes) */
+  var strongEdges=[[0,1],[0,2],[1,3],[2,3],[1,2],[4,5],[4,6],[5,6],[7,8],[7,9],[8,10],[9,10],[8,9]];
+  /* arestas inter-cluster (fracas, representam fronteiras) */
+  var weakEdges=[[3,4],[6,7]];
+  /* desenha arestas fracas primeiro */
+  weakEdges.forEach(function(e){
+    s.append('line').attr('x1',nodes[e[0]].x).attr('y1',nodes[e[0]].y).attr('x2',nodes[e[1]].x).attr('y2',nodes[e[1]].y)
+      .attr('stroke','rgba(255,255,255,.08)').attr('stroke-width',1).attr('stroke-dasharray','4,4');
+  });
+  /* arestas fortes */
+  var edgeEls=strongEdges.map(function(e){
+    return s.append('line').attr('x1',nodes[e[0]].x).attr('y1',nodes[e[0]].y).attr('x2',nodes[e[1]].x).attr('y2',nodes[e[1]].y)
+      .attr('stroke',nodes[e[0]].c.replace(',.8)','.4)')).attr('stroke-width',2);
+  });
+  /* nós */
+  var nodeEls=nodes.map(function(n,i){
+    var ng=s.append('g');
+    ng.append('circle').attr('cx',n.x).attr('cy',n.y).attr('r',16).attr('fill',n.c.replace(',.8)','.15)')).attr('stroke',n.c).attr('stroke-width',2);
+    ng.append('text').attr('x',n.x).attr('y',n.y+4).attr('text-anchor','middle').attr('fill',n.c).attr('font-size',9).attr('font-family','Inter,sans-serif').text('S'+(i+1));
+    return ng;
+  });
+  /* labels de cluster */
+  [{x:205,y:225,label:'Chunk A',c:'rgba(100,180,220,.6)'},{x:520,y:225,label:'Chunk B',c:'rgba(100,200,130,.6)'},{x:810,y:225,label:'Chunk C',c:'rgba(255,144,77,.6)'}].forEach(function(lb){
+    s.append('text').attr('x',lb.x).attr('y',lb.y).attr('text-anchor','middle').attr('fill',lb.c).attr('font-size',11).attr('font-family','Inter,sans-serif').text(lb.label);
+  });
+  var t=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM23){clearInterval(iv);return;}
+    t+=0.03;
+    nodeEls.forEach(function(ng,i){
+      ng.select('circle').attr('opacity',0.6+0.35*Math.abs(Math.sin(t+i*0.7)));
+    });
+    edgeEls.forEach(function(el,i){
+      el.attr('opacity',0.3+0.5*Math.abs(Math.sin(t*0.8+i*0.4)));
+    });
+  },30);
+}})();</script>
+
+<!-- M24: O Repórter de Fatos Atômicos (DenseX / Proposition-based) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Repórter de Fatos Atômicos</h3>
+<p class="text-white/50 text-sm italic mb-2">DenseX / Proposition-based: cada chunk é uma proposicão verificável e auto-suficiente</p>
+<p class="text-white/65 text-sm mb-3">O repórter não escreve parágrafos — ele escreve manchetes. Cada chunk é uma proposição atômica: "A reunião ocorreu na segunda-feira" é um chunk. "Decidiram aumentar os preços em 15%" é outro. O resultado: precisão máxima por chunk, mas o número explode — DenseX gerou <strong style="color:#fca5a5">32.968 chunks</strong> contra 2.300 do LumberChunker no mesmo corpus.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Cada chunk é semanticamente auto-suficiente</div>
+    <div class="prc">Precisão de retrieval por proposição muito alta</div>
+    <div class="prc">Ideal para QA factual e fact-checking</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">DenseX: 32.968 chunks — explosão de volume</div>
+    <div class="cnc">Recall@10 = 66.28 (pior do benchmark!)</div>
+    <div class="cnc">Perde contexto: cada proposicão é isolada</div>
+    <div class="cnc">Custo de geração: requer LLM para extrair proposições</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">DenseX: 32.968 chunks</span><span class="mbadge">Recall@10 = 66.28 (pior)</span><span class="mbadge">LumberChunker: 2.300 chunks</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">proposição atômica</span><span class="pill">fact-checking</span><span class="pill">QA factual</span><span class="pill">DenseX</span></div>
+<div id="cs-m24" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM24)window.__csM24=0;var g=++window.__csM24;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r24();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m24'));
+function r24(){
+  if(g!==window.__csM24)return;
+  var s=d3.select('#cs-m24').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  /* parágrafo fonte */
+  var paraG=s.append('g');
+  paraG.append('rect').attr('x',30).attr('y',40).attr('width',280).attr('height',180).attr('rx',8)
+    .attr('fill','rgba(255,255,255,.04)').attr('stroke','rgba(255,255,255,.12)').attr('stroke-width',1.5);
+  paraG.append('text').attr('x',170).attr('y',62).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.25)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('Parágrafo fonte');
+  /* linhas de texto simuladas */
+  for(var i=0;i<6;i++){
+    paraG.append('rect').attr('x',46).attr('y',72+i*22).attr('width',240-Math.random()*40).attr('height',10).attr('rx',2).attr('fill','rgba(255,255,255,.08)');
+  }
+  /* seta */
+  s.append('text').attr('x',330).attr('y',140).attr('fill','rgba(255,144,77,.6)').attr('font-size',22).attr('font-family','Inter,sans-serif').text('→');
+  /* proposições resultantes */
+  var props=[
+    {text:'A reunião foi na 2ª',y:55},{text:'Decidiram +15% preço',y:100},{text:'CEO assinou contrato',y:145},{text:'Prazo: Q3 deste ano',y:190}
+  ];
+  var propEls=props.map(function(p){
+    var pg=s.append('g').attr('opacity',0);
+    pg.append('rect').attr('x',365).attr('y',p.y).attr('width',220).attr('height',28).attr('rx',5)
+      .attr('fill','rgba(100,200,130,.1)').attr('stroke','rgba(100,200,130,.4)').attr('stroke-width',1.5);
+    pg.append('text').attr('x',475).attr('y',p.y+18).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.8)').attr('font-size',9).attr('font-family','Inter,sans-serif').text(p.text);
+    return pg;
+  });
+  /* contador de chunks */
+  var cntG=s.append('g');
+  var cntRect=cntG.append('rect').attr('x',640).attr('y',60).attr('width',300).attr('height',160).attr('rx',8).attr('fill','rgba(220,80,80,.06)').attr('stroke','rgba(220,80,80,.2)').attr('stroke-width',1.5);
+  cntG.append('text').attr('x',790).attr('y',90).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.4)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('Volume gerado');
+  var cntText=cntG.append('text').attr('x',790).attr('y',145).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.8)').attr('font-size',28).attr('font-weight','bold').attr('font-family','Inter,sans-serif').text('0');
+  cntG.append('text').attr('x',790).attr('y',175).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.4)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('chunks (DenseX)');
+  var cnt=0,target=32968,phase=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM24){clearInterval(iv);return;}
+    phase+=0.04;
+    /* proposições aparecem sequencialmente */
+    propEls.forEach(function(el,i){el.attr('opacity',phase>i*0.8?Math.min(1,phase-i*0.8):0);});
+    /* contador sobe rápido e volta */
+    var cycle=(phase*0.3)%1;
+    cnt=Math.floor(cycle*target);
+    cntText.text(cnt.toLocaleString('pt-BR'));
+    cntRect.attr('fill','rgba(220,80,80,'+(0.04+0.06*Math.abs(Math.sin(phase)))+')');
+  },30);
+}})();</script>
+
+<!-- M25: O Lenhador com Critério (LumberChunker) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Lenhador com Critério</h3>
+<p class="text-white/50 text-sm italic mb-2">LumberChunker: janela deslizante com LLM avaliando onde o corte faz mais sentido</p>
+<p class="text-white/65 text-sm mb-3">O lenhador inexperiente corta a cada metro. O LumberChunker avalia trecho a trecho: pede ao LLM que indique se o ponto atual é uma boa fronteira antes de cortar. Resultado: <strong style="color:#6ee7b7">apenas 2.300 chunks</strong> onde o DenseX gerava 32.968 — e Recall@10 = 87.14, melhor do benchmark.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Recall@10 = 87.14 — melhor resultado no benchmark clássico</div>
+    <div class="prc">Apenas 2.300 chunks (vs 32.968 do DenseX)</div>
+    <div class="prc">Fronteiras semanticamente motivadas por LLM</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Uma chamada LLM por candidato de fronteira</div>
+    <div class="cnc">Latência alta para documentos longos</div>
+    <div class="cnc">Custo proporcional ao número de sentenças avaliadas</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Recall@10 = 87.14 (melhor clássico)</span><span class="mbadge">2.300 chunks (eficiente)</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">LLM como juiz de fronteira</span><span class="pill">janela deslizante</span><span class="pill">avaliação semântica</span></div>
+<div id="cs-m25" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM25)window.__csM25=0;var g=++window.__csM25;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r25();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m25'));
+function r25(){
+  if(g!==window.__csM25)return;
+  var s=d3.select('#cs-m25').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  /* linhas de texto (documento) */
+  var nLines=10,lx=40,lw=600,ly=30,lh=16,lgap=6;
+  for(var i=0;i<nLines;i++){
+    s.append('rect').attr('x',lx).attr('y',ly+i*(lh+lgap)).attr('width',lw-Math.floor(Math.random()*80)).attr('height',lh).attr('rx',3).attr('fill','rgba(255,255,255,.06)');
+  }
+  /* janela deslizante */
+  var winH=3*(lh+lgap)-lgap;
+  var win=s.append('rect').attr('x',lx-2).attr('width',lw+4).attr('height',winH).attr('rx',5)
+    .attr('fill','rgba(255,144,77,.08)').attr('stroke','rgba(255,144,77,.5)').attr('stroke-width',2).attr('y',ly);
+  /* LLM badge */
+  var llmG=s.append('g');
+  var llmBox=llmG.append('rect').attr('x',680).attr('y',80).attr('width',100).attr('height',50).attr('rx',8)
+    .attr('fill','rgba(100,180,220,.15)').attr('stroke','rgba(100,180,220,.5)').attr('stroke-width',2);
+  llmG.append('text').attr('x',730).attr('y',110).attr('text-anchor','middle').attr('fill','rgba(100,180,220,.8)').attr('font-size',12).attr('font-family','Inter,sans-serif').text('LLM');
+  /* decisão */
+  var decText=s.append('text').attr('x',730).attr('y',170).attr('text-anchor','middle').attr('font-size',11).attr('font-family','Inter,sans-serif').text('');
+  /* linha de corte */
+  var cutLine=s.append('line').attr('x1',lx).attr('x2',lx+lw).attr('stroke','rgba(100,200,130,.7)').attr('stroke-width',2).attr('stroke-dasharray','6,4').attr('opacity',0);
+  var cutScissors=s.append('text').attr('x',lx+lw+8).attr('font-size',16).attr('opacity',0).text('✂');
+  /* barras de resultado */
+  var barData=[{label:'DenseX',val:32968,c:'rgba(220,80,80,.7)'},{label:'LumberChunker',val:2300,c:'rgba(100,200,130,.7)'}];
+  var maxV=32968,barW=120;
+  barData.forEach(function(b,i){
+    s.append('text').attr('x',685).attr('y',215+i*32).attr('fill','rgba(255,255,255,.4)').attr('font-size',9).attr('font-family','Inter,sans-serif').text(b.label);
+    var bw=Math.round(b.val/maxV*barW);
+    s.append('rect').attr('x',800).attr('y',202+i*32).attr('width',bw).attr('height',18).attr('rx',3).attr('fill',b.c);
+    s.append('text').attr('x',800+bw+4).attr('y',215+i*32).attr('fill',b.c).attr('font-size',9).attr('font-family','Inter,sans-serif').text(b.val.toLocaleString('pt-BR'));
+  });
+  var pi=0,decisions=['✗ Não cortar','✗ Não cortar','✓ CORTAR!','✗ Não cortar','✓ CORTAR!'];
+  var dColors=['rgba(220,80,80,.8)','rgba(220,80,80,.8)','rgba(100,200,130,.9)','rgba(220,80,80,.8)','rgba(100,200,130,.9)'];
+  var cutPositions=[3,7];
+  function stepLumber(){
+    if(g!==window.__csM25)return;
+    var winY=ly+pi*(lh+lgap);
+    win.transition().duration(500).ease(d3.easeCubicInOut).attr('y',winY);
+    var dec=decisions[pi%decisions.length];
+    decText.text(dec).attr('fill',dColors[pi%dColors.length]);
+    llmBox.attr('fill',dec.includes('✓')?'rgba(100,200,130,.2)':'rgba(100,180,220,.15)');
+    if(dec.includes('✓')){
+      cutLine.attr('y1',winY+winH).attr('y2',winY+winH).attr('opacity',1);
+      cutScissors.attr('y',winY+winH+5).attr('opacity',1);
+    } else {
+      cutLine.attr('opacity',0);cutScissors.attr('opacity',0);
+    }
+    pi++;
+    if(pi>=nLines-2){pi=0;cutLine.attr('opacity',0);cutScissors.attr('opacity',0);}
+    setTimeout(stepLumber,1200);
+  }
+  setTimeout(stepLumber,400);
+}})();</script>
+
+<!-- M26: A Balança do Tamanho Ideal (Max-min Chunking) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Balança do Tamanho Ideal</h3>
+<p class="text-white/50 text-sm italic mb-2">Max-min Chunking: chunks entre um tamanho mínimo e máximo garantido</p>
+<p class="text-white/65 text-sm mb-3">A balança não deixa nenhum prato vazio nem sobrecarregado: impõe um limite mínimo e máximo. O Max-min chunking divide o texto em segmentos que respeitam um tamanho mínimo (para ter contexto suficiente) e máximo (para não diluir o embedding). Recall@10 = 81.79 — consistente e previsível.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Pontos fortes</div>
+    <div class="prc">Recall@10 = 81.79 — desempenho sólido e previsível</div>
+    <div class="prc">Sem chunks muito curtos nem muito longos</div>
+    <div class="prc">Simples de implementar e ajustar</div>
+  </div>
+  <div><div class="sec-lbl">Limitações</div>
+    <div class="cnc">Não respeita fronteiras semânticas naturais</div>
+    <div class="cnc">Parâmetros min/max requerem ajuste por domínio</div>
+    <div class="cnc">Abaixo de GraphSeg (85.98) e LumberChunker (87.14)</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Recall@10 = 81.79</span><span class="mbadge">Controle de tamanho min/max</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">tamanho controlado</span><span class="pill">sem ML</span><span class="pill">previsível</span><span class="pill">simples</span></div>
+<div id="cs-m26" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM26)window.__csM26=0;var g=++window.__csM26;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r26();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m26'));
+function r26(){
+  if(g!==window.__csM26)return;
+  var s=d3.select('#cs-m26').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  /* balança visual */
+  var cx3=500,baseY=240,pivotY=110;
+  /* base e haste */
+  s.append('rect').attr('x',cx3-6).attr('y',pivotY).attr('width',12).attr('height',baseY-pivotY).attr('rx',4).attr('fill','rgba(255,255,255,.2)');
+  s.append('rect').attr('x',cx3-80).attr('y',baseY-8).attr('width',160).attr('height',12).attr('rx',4).attr('fill','rgba(255,255,255,.15)');
+  /* braços e pratos */
+  var arm=s.append('line').attr('x1',cx3-200).attr('y1',pivotY).attr('x2',cx3+200).attr('y2',pivotY).attr('stroke','rgba(255,144,77,.6)').attr('stroke-width',3);
+  var plateL=s.append('rect').attr('x',cx3-240).attr('y',pivotY+20).attr('width',80).attr('height',12).attr('rx',4).attr('fill','rgba(255,144,77,.4)');
+  var plateR=s.append('rect').attr('x',cx3+160).attr('y',pivotY+20).attr('width',80).attr('height',12).attr('rx',4).attr('fill','rgba(255,144,77,.4)');
+  var cordL=s.append('line').attr('x1',cx3-200).attr('y1',pivotY).attr('x2',cx3-200).attr('y2',pivotY+20).attr('stroke','rgba(255,144,77,.4)').attr('stroke-width',1.5);
+  var cordR=s.append('line').attr('x1',cx3+200).attr('y1',pivotY).attr('x2',cx3+200).attr('y2',pivotY+20).attr('stroke','rgba(255,144,77,.4)').attr('stroke-width',1.5);
+  /* objetos nos pratos */
+  var lblMin=s.append('text').attr('x',cx3-200).attr('y',pivotY+55).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.8)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('min: 100 tokens');
+  var lblMax=s.append('text').attr('x',cx3+200).attr('y',pivotY+55).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.8)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('max: 500 tokens');
+  /* barra de tamanho de chunk atual */
+  var barBg=s.append('rect').attr('x',200).attr('y',175).attr('width',600).attr('height',24).attr('rx',6).attr('fill','rgba(255,255,255,.05)').attr('stroke','rgba(255,255,255,.1)').attr('stroke-width',1);
+  var bar=s.append('rect').attr('x',200).attr('y',175).attr('width',0).attr('height',24).attr('rx',6).attr('fill','rgba(255,144,77,.5)');
+  var barLbl=s.append('text').attr('x',500).attr('y',192).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.7)').attr('font-size',10).attr('font-family','Inter,sans-serif').text('');
+  /* limites visuais */
+  s.append('line').attr('x1',260).attr('y1',168).attr('x2',260).attr('y2',202).attr('stroke','rgba(100,200,130,.6)').attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+  s.append('text').attr('x',260).attr('y',165).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.5)').attr('font-size',8).attr('font-family','Inter,sans-serif').text('mín');
+  s.append('line').attr('x1',740).attr('y1',168).attr('x2',740).attr('y2',202).attr('stroke','rgba(220,80,80,.6)').attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+  s.append('text').attr('x',740).attr('y',165).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.5)').attr('font-size',8).attr('font-family','Inter,sans-serif').text('máx');
+  var t=0,tilt=0,tiltDir=1;
+  var iv=setInterval(function(){
+    if(g!==window.__csM26){clearInterval(iv);return;}
+    t+=0.03;
+    /* balança oscila suavemente */
+    tilt=18*Math.sin(t*0.7);
+    var rad=tilt*Math.PI/180;
+    var armLen=200;
+    arm.attr('x1',cx3-armLen*Math.cos(rad)).attr('y1',pivotY-armLen*Math.sin(rad))
+       .attr('x2',cx3+armLen*Math.cos(rad)).attr('y2',pivotY+armLen*Math.sin(rad));
+    plateL.attr('x',cx3-armLen*Math.cos(rad)-40).attr('y',pivotY-armLen*Math.sin(rad)+20);
+    plateR.attr('x',cx3+armLen*Math.cos(rad)-40).attr('y',pivotY+armLen*Math.sin(rad)+20);
+    cordL.attr('x1',cx3-armLen*Math.cos(rad)).attr('y1',pivotY-armLen*Math.sin(rad)).attr('x2',cx3-armLen*Math.cos(rad)).attr('y2',pivotY-armLen*Math.sin(rad)+20);
+    cordR.attr('x1',cx3+armLen*Math.cos(rad)).attr('y1',pivotY+armLen*Math.sin(rad)).attr('x2',cx3+armLen*Math.cos(rad)).attr('y2',pivotY+armLen*Math.sin(rad)+20);
+    /* barra de tamanho de chunk oscila entre min e max */
+    var chunkSize=Math.round(300+200*Math.sin(t*0.5));
+    var barW2=Math.round((chunkSize-100)/400*480);
+    bar.attr('x',260).attr('width',Math.max(0,barW2));
+    barLbl.text(chunkSize+' tokens');
+    var inRange=chunkSize>=100&&chunkSize<=500;
+    bar.attr('fill',inRange?'rgba(100,200,130,.5)':'rgba(220,80,80,.5)');
+  },30);
+}})();</script>
+
+<!-- M18: A Corrida das Estratégias (Comparativo) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Corrida das Estratégias</h3>
+<p class="text-white/50 text-sm italic mb-2">Comparativo nDCG@5 e custo computacional — 1.080 configurações avaliadas (Shaukat et al. 2026)</p>
+<p class="text-white/65 text-sm mb-3">Na corrida de cavalos, o vencedor muda conforme o terreno: PGC domina em jurídico e matemático, DFC vence em biologia e física. O custo (RAM) separa os campeões eficientes dos gastadores. Nenhuma estratégia vence em todos os domínios — a escolha depende do contexto.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Vencedores por domínio</div>
+    <div class="prc">Jurídico + Matemático → PGC (nDCG 0.459)</div>
+    <div class="prc">Biologia + Física + Saúde → DFC (nDCG 0.441)</div>
+    <div class="prc">Agricultura → PGC / HPGC / LCTS</div>
+  </div>
+  <div><div class="sec-lbl">Custo RAM comparado</div>
+    <div class="prc">PGC: 873 MB — eficiente</div>
+    <div class="cnc">LSTC (LLM): 5.672 MB — 6,5× mais caro</div>
+    <div class="cnc">FCC (pior): nDCG@5 = 0.244 — nem barato compensa</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">bge-m3 = melhor embedding (nDCG 0.456)</span><span class="mbadge">chunking domina sobre escolha do embedding</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">nDCG@5</span><span class="pill">Precision@1</span><span class="pill">Hit@5</span><span class="pill">1.080 configs</span></div>
+<div id="cs-m18" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM18)window.__csM18=0;var g=++window.__csM18;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r18();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m18'));
+function r18(){
+  if(g!==window.__csM18)return;
+  var s=d3.select('#cs-m18').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var strategies=[
+    {name:'PGC',ndcg:0.459,c:'rgba(100,200,130,.85)',ram:873},
+    {name:'DFC',ndcg:0.441,c:'rgba(100,180,220,.85)',ram:980},
+    {name:'HPGC',ndcg:0.432,c:'rgba(180,140,220,.8)',ram:1100},
+    {name:'LCTS',ndcg:0.421,c:'rgba(255,180,80,.8)',ram:1050},
+    {name:'TextTiling',ndcg:0.382,c:'rgba(180,180,180,.7)',ram:520},
+    {name:'Recursive',ndcg:0.358,c:'rgba(220,150,80,.7)',ram:450},
+    {name:'FCC',ndcg:0.244,c:'rgba(220,80,80,.7)',ram:180}
+  ];
+  var maxNdcg=0.5,maxW=580,ox=200,barH=24,gap=8;
+  s.append('text').attr('x',ox+maxW/2).attr('y',18).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('nDCG@5 (quanto maior, melhor)   →');
+  strategies.forEach(function(st,i){
+    var y=30+i*(barH+gap);
+    s.append('text').attr('x',ox-8).attr('y',y+16).attr('text-anchor','end').attr('fill','rgba(255,255,255,.55)').attr('font-size',10).attr('font-family','Inter,sans-serif').text(st.name);
+    var targetW=Math.round(st.ndcg/maxNdcg*maxW);
+    var bar=s.append('rect').attr('x',ox).attr('y',y).attr('width',0).attr('height',barH).attr('rx',4).attr('fill',st.c);
+    bar.transition().delay(i*120+200).duration(800).attr('width',targetW);
+    s.append('text').attr('x',ox+targetW+8).attr('y',y+16).attr('fill',st.c).attr('font-size',10).attr('font-family','Inter,sans-serif').text(st.ndcg).attr('opacity',0).transition().delay(i*120+1000).duration(300).attr('opacity',1);
+    var ramW=Math.round(st.ram/5672*80);
+    s.append('rect').attr('x',840).attr('y',y+4).attr('width',ramW).attr('height',barH-8).attr('rx',3).attr('fill','rgba(255,255,255,.12)').attr('opacity',0).transition().delay(i*120+1200).duration(400).attr('opacity',1);
+  });
+  s.append('text').attr('x',878).attr('y',18).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.15)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('RAM →');
+}})();</script>
+
+<!-- M19: O GPS do Chunking (Mapa de Decisão) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O GPS do Chunking</h3>
+<p class="text-white/50 text-sm italic mb-2">Mapa de decisão: qual estratégia usar dado o tipo de documento e o objetivo</p>
+<p class="text-white/65 text-sm mb-3">O GPS não dá a mesma rota para todos: ele calcula o caminho ideal dado o destino e o tráfego. Para escolher a estratégia de chunking certa, pergunte: qual é o tipo de documento? Qual o objetivo? A combinação ideal quase sempre envolve pelo menos duas estratégias em camadas.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Combinações recomendadas</div>
+    <div class="prc">Docs jurídicos/matemáticos: PGC + Hierarchical</div>
+    <div class="prc">Artigos bio/física: DFC + Late Chunking (LCTS)</div>
+    <div class="prc">Base de suporte/FAQ: QChunker + PGC</div>
+    <div class="prc">Relatórios com imagens: Multimodal + Hierarchical</div>
+  </div>
+  <div><div class="sec-lbl">Otimizações adicionais</div>
+    <div class="prc">Alto volume + latência crítica: PGC + TurboRAG</div>
+    <div class="prc">Documentos longos com estrutura discursiva: Discourse-RAG</div>
+    <div class="prc">Múltiplos domínios simultaneamente: MoG + PGC base</div>
+    <div class="cnc">LLM-Based raramente justifica o custo extra</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">Regra de ouro: comece com PGC + bge-m3</span><span class="mbadge">Ajuste por domínio apenas se nDCG &lt; 0.40</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">decisão por domínio</span><span class="pill">combinação de estratégias</span><span class="pill">tradeoff custo-qualidade</span></div>
+<div id="cs-m19" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM19)window.__csM19=0;var g=++window.__csM19;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r19();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m19'));
+function r19(){
+  if(g!==window.__csM19)return;
+  var s=d3.select('#cs-m19').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var docTypes=[
+    {x:80,y:70,label:'Jurídico',c:'rgba(255,144,77,.8)'},
+    {x:80,y:140,label:'Bio/Física',c:'rgba(100,180,220,.8)'},
+    {x:80,y:210,label:'FAQ/Suporte',c:'rgba(100,200,130,.8)'},
+  ];
+  var strategies2=[
+    {x:460,y:55,label:'PGC',c:'rgba(255,144,77,.7)'},
+    {x:460,y:110,label:'DFC',c:'rgba(100,180,220,.7)'},
+    {x:460,y:165,label:'QChunker',c:'rgba(100,200,130,.7)'},
+    {x:460,y:220,label:'TurboRAG',c:'rgba(255,180,80,.7)'}
+  ];
+  var combos=[
+    {x:780,y:70,label:'PGC + Hierárquico',c:'rgba(255,144,77,.8)'},
+    {x:780,y:140,label:'DFC + LCTS',c:'rgba(100,180,220,.8)'},
+    {x:780,y:210,label:'QChunker + PGC',c:'rgba(100,200,130,.8)'}
+  ];
+  docTypes.forEach(function(d){
+    s.append('circle').attr('cx',d.x).attr('cy',d.y).attr('r',26).attr('fill',d.c.replace(',.8)','.15)')).attr('stroke',d.c).attr('stroke-width',2);
+    s.append('text').attr('x',d.x).attr('y',d.y+4).attr('text-anchor','middle').attr('fill',d.c).attr('font-size',9).attr('font-family','Inter,sans-serif').text(d.label);
+  });
+  strategies2.forEach(function(st){
+    s.append('rect').attr('x',st.x-40).attr('y',st.y-16).attr('width',80).attr('height',28).attr('rx',6).attr('fill',st.c.replace(',.7)','.12)')).attr('stroke',st.c).attr('stroke-width',1.5);
+    s.append('text').attr('x',st.x).attr('y',st.y+5).attr('text-anchor','middle').attr('fill',st.c).attr('font-size',10).attr('font-family','Inter,sans-serif').text(st.label);
+  });
+  combos.forEach(function(cb){
+    s.append('rect').attr('x',cb.x-70).attr('y',cb.y-16).attr('width',160).attr('height',30).attr('rx',6).attr('fill',cb.c.replace(',.8)','.12)')).attr('stroke',cb.c).attr('stroke-width',2);
+    s.append('text').attr('x',cb.x).attr('y',cb.y+5).attr('text-anchor','middle').attr('fill',cb.c).attr('font-size',10).attr('font-family','Inter,sans-serif').text(cb.label);
+  });
+  var routes=[
+    {from:docTypes[0],to:strategies2[0],to2:combos[0]},
+    {from:docTypes[1],to:strategies2[1],to2:combos[1]},
+    {from:docTypes[2],to:strategies2[2],to2:combos[2]}
+  ];
+  var routeEls=routes.map(function(r){
+    var eg=s.append('g').attr('opacity',0);
+    eg.append('line').attr('x1',r.from.x+28).attr('y1',r.from.y).attr('x2',r.to.x-42).attr('y2',r.to.y).attr('stroke',r.from.c).attr('stroke-width',2).attr('stroke-dasharray','5,3');
+    eg.append('line').attr('x1',r.to.x+42).attr('y1',r.to.y).attr('x2',r.to2.x-72).attr('y2',r.to2.y).attr('stroke',r.from.c).attr('stroke-width',2).attr('stroke-dasharray','5,3');
+    return eg;
+  });
+  var ai=0;
+  function pulseRoute(){
+    if(g!==window.__csM19)return;
+    routeEls.forEach(function(el,i){el.transition().duration(300).attr('opacity',i===ai?1:0.15);});
+    ai=(ai+1)%routeEls.length;
+    setTimeout(pulseRoute,1200);
+  }
+  setTimeout(pulseRoute,400);
+}})();</script>
+
+<!-- M20: A Sinfonia do Chunking (Encerramento) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Sinfonia do Chunking</h3>
+<p class="text-white/50 text-sm italic mb-2">Síntese: nenhum instrumento é suficiente sozinho — a orquestra completa é o RAG eficiente</p>
+<p class="text-white/65 text-sm mb-3">Nenhum instrumento sozinho faz uma sinfonia. O RAG de alta performance combina: a estrutura do PGC, a adaptação do DFC, a velocidade do TurboRAG, a riqueza discursiva do Discourse-RAG e a flexibilidade do MoG. O maestro é você — escolha a partitura certa para cada domínio e objetivo.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Regras de ouro (da pesquisa)</div>
+    <div class="prc">Comece sempre com PGC + bge-m3 como baseline</div>
+    <div class="prc">Estratégia de chunking importa mais que o embedding</div>
+    <div class="prc">Nenhuma estratégia domina em todos os domínios</div>
+    <div class="prc">Combine 2 estratégias: uma para contexto, uma para precisão</div>
+  </div>
+  <div><div class="sec-lbl">O que nunca fazer</div>
+    <div class="cnc">FCC como default em produção (nDCG 0.244)</div>
+    <div class="cnc">LLM-Based sem benchmark de custo-benefício real</div>
+    <div class="cnc">Ignorar o domínio ao escolher a estratégia</div>
+    <div class="cnc">Trocar o embedding antes de otimizar o chunking</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">10 papers · 1.080 configs avaliadas</span><span class="mbadge">PGC = melhor custo-benefício global</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">PGC baseline</span><span class="pill">domínio first</span><span class="pill">two-strategy combo</span><span class="pill">RAG eficiente</span></div>
+<div id="cs-m20" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM20)window.__csM20=0;var g=++window.__csM20;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r20();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m20'));
+function r20(){
+  if(g!==window.__csM20)return;
+  var s=d3.select('#cs-m20').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  var instruments=[
+    {label:'PGC',role:'Estrutura',x:200,y:90,r:38,c:'rgba(100,200,130,.75)'},
+    {label:'DFC',role:'Adaptação',x:370,y:60,r:30,c:'rgba(100,180,220,.75)'},
+    {label:'TurboRAG',role:'Velocidade',x:520,y:90,r:30,c:'rgba(255,200,80,.75)'},
+    {label:'MoG',role:'Flexibil.',x:660,y:65,r:26,c:'rgba(180,100,220,.75)'},
+    {label:'Discourse',role:'Coerência',x:800,y:90,r:26,c:'rgba(255,144,77,.75)'}
+  ];
+  var maestroG=s.append('g');
+  maestroG.append('circle').attr('cx',500).attr('cy',210).attr('r',22).attr('fill','rgba(255,144,77,.2)').attr('stroke','rgba(255,144,77,.7)').attr('stroke-width',2);
+  maestroG.append('text').attr('x',500).attr('y',215).attr('text-anchor','middle').attr('fill','rgba(255,144,77,.9)').attr('font-size',11).attr('font-family','Inter,sans-serif').text('RAG');
+  var nodeEls=instruments.map(function(inst){
+    var ng=s.append('g');
+    ng.append('circle').attr('cx',inst.x).attr('cy',inst.y).attr('r',inst.r).attr('fill',inst.c.replace(',.75)','.18)')).attr('stroke',inst.c).attr('stroke-width',2);
+    ng.append('text').attr('x',inst.x).attr('y',inst.y-4).attr('text-anchor','middle').attr('fill',inst.c).attr('font-size',10).attr('font-family','Inter,sans-serif').text(inst.label);
+    ng.append('text').attr('x',inst.x).attr('y',inst.y+10).attr('text-anchor','middle').attr('fill',inst.c.replace(',.75)','.5)')).attr('font-size',8).attr('font-family','Inter,sans-serif').text(inst.role);
+    return ng;
+  });
+  var connG=s.append('g');
+  instruments.forEach(function(inst){
+    connG.append('line').attr('x1',inst.x).attr('y1',inst.y+inst.r).attr('x2',500).attr('y2',188).attr('stroke',inst.c).attr('stroke-width',1.5).attr('opacity',0.4).attr('stroke-dasharray','5,4');
+  });
+  var t6=0;
+  var iv=setInterval(function(){
+    if(g!==window.__csM20){clearInterval(iv);return;}
+    t6+=0.025;
+    nodeEls.forEach(function(ng,i){
+      var pulse=1+0.08*Math.sin(t6+i*1.2);
+      var inst=instruments[i];
+      ng.attr('transform','translate(0,'+Math.sin(t6*0.8+i*0.7)*4+')');
+      ng.select('circle').attr('opacity',0.6+0.3*Math.abs(Math.sin(t6+i*1.1)));
+    });
+    maestroG.attr('transform','translate(0,'+Math.sin(t6*1.5)*3+')');
+  },30);
+}})();</script>
+
+<!-- M27: O Painel de Controle (Tabela de Decisão Completa — 23 Métodos) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Painel de Controle</h3>
+<p class="text-white/50 text-sm italic mb-2">Tabela de decisão: todos os 23 métodos por custo computacional, qualidade e caso de uso</p>
+<p class="text-white/65 text-sm mb-3">O painel de controle da usina mostra todos os medidores de uma vez: você escolhe qual alavanca puxar conforme o objetivo. Três dimensões guiam a escolha: custo (RAM/latência), qualidade (nDCG, Recall) e tipo de documento. Nenhum método vence em tudo — a combinação certa é o diferencial.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Melhor custo-benefício por objetivo</div>
+    <div class="prc">Qualidade geral: PGC (0.459 nDCG) + bge-m3</div>
+    <div class="prc">Velocidade: TurboRAG (8,6× TTFT) + PGC</div>
+    <div class="prc">Precisão factual: LumberChunker (87.14 Recall)</div>
+    <div class="prc">Discurso longo: Discourse-RAG (ROUGE-L 42.4)</div>
+  </div>
+  <div><div class="sec-lbl">Métodos a evitar como default</div>
+    <div class="cnc">FCC: nDCG 0.244 — pior de todos</div>
+    <div class="cnc">DenseX: 32.968 chunks, Recall 66.28 — pior recall</div>
+    <div class="cnc">LSTC/LBDC: 5.672 MB RAM sem ganho proporcional</div>
+    <div class="cnc">TextTiling/HAC: inferiores às alternativas modernas</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">23 estratégias mapeadas</span><span class="mbadge">4 grupos de complexidade</span><span class="mbadge">Regra: PGC + domínio-first</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">decisão por objetivo</span><span class="pill">custo vs qualidade</span><span class="pill">23 métodos</span><span class="pill">visão completa</span></div>
+<div id="cs-m27" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM27)window.__csM27=0;var g=++window.__csM27;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r27();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m27'));
+function r27(){
+  if(g!==window.__csM27)return;
+  var s=d3.select('#cs-m27').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%');
+  /* eixos: X = custo (baixo→alto), Y = qualidade (baixo→alto) */
+  var ox=80,oy=240,W=860,H=200;
+  s.append('line').attr('x1',ox).attr('y1',oy).attr('x2',ox+W).attr('y2',oy).attr('stroke','rgba(255,255,255,.15)').attr('stroke-width',1.5);
+  s.append('line').attr('x1',ox).attr('y1',oy).attr('x2',ox).attr('y2',oy-H).attr('stroke','rgba(255,255,255,.15)').attr('stroke-width',1.5);
+  s.append('text').attr('x',ox+W/2).attr('y',oy+18).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('← custo computacional baixo          custo alto →');
+  s.append('text').attr('x',ox-12).attr('y',oy-H/2).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',9).attr('font-family','Inter,sans-serif').attr('transform','rotate(-90,'+(ox-12)+','+(oy-H/2)+')').text('← qualidade baixa    qualidade alta →');
+  /* 23 métodos posicionados no espaço custo x qualidade */
+  var methods=[
+    {name:'FCC',x:.05,q:.15,c:'rgba(220,80,80,.8)',r:8},
+    {name:'Fixed',x:.06,q:.22,c:'rgba(220,80,80,.7)',r:7},
+    {name:'Max-min',x:.08,q:.42,c:'rgba(180,180,180,.7)',r:8},
+    {name:'TextTiling',x:.09,q:.38,c:'rgba(180,180,180,.7)',r:8},
+    {name:'Recursive',x:.10,q:.40,c:'rgba(180,180,180,.7)',r:8},
+    {name:'Sliding W.',x:.11,q:.36,c:'rgba(180,180,180,.7)',r:7},
+    {name:'HAC',x:.22,q:.44,c:'rgba(100,180,220,.7)',r:8},
+    {name:'GraphSeg',x:.25,q:.52,c:'rgba(100,180,220,.7)',r:9},
+    {name:'LumberC.',x:.30,q:.55,c:'rgba(100,180,220,.8)',r:10},
+    {name:'Semantic',x:.28,q:.46,c:'rgba(100,180,220,.7)',r:8},
+    {name:'PGC',x:.20,q:.85,c:'rgba(100,200,130,.9)',r:14},
+    {name:'HPGC',x:.22,q:.80,c:'rgba(100,200,130,.7)',r:10},
+    {name:'LCTS',x:.35,q:.78,c:'rgba(255,200,80,.8)',r:10},
+    {name:'DFC',x:.30,q:.82,c:'rgba(100,200,130,.8)',r:12},
+    {name:'Chunk2x',x:.25,q:.72,c:'rgba(100,200,130,.7)',r:9},
+    {name:'QChunker',x:.40,q:.75,c:'rgba(255,200,80,.7)',r:9},
+    {name:'Meta-PPL',x:.38,q:.70,c:'rgba(255,200,80,.7)',r:9},
+    {name:'MoG',x:.55,q:.76,c:'rgba(180,100,220,.7)',r:10},
+    {name:'UncertRAG',x:.50,q:.72,c:'rgba(180,100,220,.7)',r:9},
+    {name:'TurboRAG',x:.45,q:.74,c:'rgba(255,200,80,.8)',r:10},
+    {name:'Multimod.',x:.65,q:.68,c:'rgba(180,100,220,.7)',r:9},
+    {name:'Disc-RAG',x:.60,q:.82,c:'rgba(255,144,77,.8)',r:11},
+    {name:'DenseX',x:.70,q:.20,c:'rgba(220,80,80,.7)',r:9},
+    {name:'LSTC',x:.90,q:.60,c:'rgba(220,80,80,.6)',r:9}
+  ];
+  /* zona de destaque (canto sup-esquerdo = ideal) */
+  s.append('rect').attr('x',ox).attr('y',oy-H).attr('width',W*0.35).attr('height',H*0.4).attr('rx',6)
+    .attr('fill','rgba(100,200,130,.04)').attr('stroke','rgba(100,200,130,.15)').attr('stroke-dasharray','6,4').attr('stroke-width',1);
+  s.append('text').attr('x',ox+W*0.175).attr('y',oy-H+15).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.3)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('Zona Ideal');
+  var dotEls=methods.map(function(m){
+    var px=ox+m.x*W;
+    var py=oy-m.q*H;
+    var dg=s.append('g').attr('opacity',0);
+    dg.append('circle').attr('cx',px).attr('cy',py).attr('r',m.r).attr('fill',m.c.replace(/[\d.]+\)$/,'.2)')).attr('stroke',m.c).attr('stroke-width',1.5);
+    dg.append('text').attr('x',px).attr('y',py-m.r-3).attr('text-anchor','middle').attr('fill',m.c).attr('font-size',7.5).attr('font-family','Inter,sans-serif').text(m.name);
+    return {el:dg,x:px,y:py,c:m.c,r:m.r};
+  });
+  /* reveal sequencial na entrada */
+  dotEls.forEach(function(d,i){d.el.transition().delay(i*80+300).duration(300).attr('opacity',1);});
+  /* highlight rotativo */
+  var hi=0;
+  function pulse(){
+    if(g!==window.__csM27)return;
+    dotEls.forEach(function(d){d.el.select('circle').attr('r',d.r);});
+    dotEls[hi].el.select('circle').transition().duration(300).attr('r',d3.select(dotEls[hi].el.node()).select('circle').attr('r')*1.6).transition().duration(300).attr('r',dotEls[hi].r);
+    hi=(hi+1)%dotEls.length;
+    setTimeout(pulse,400);
+  }
+  setTimeout(pulse,2200);
+}})();</script>
+
+
+</main>
+
+<footer class="py-12 text-center text-white/40">
+  <p>&copy; 2026 Ibukun C. Didier &nbsp;·&nbsp; Série Chunking Strategies para RAG</p>
+</footer>
+
+<script>
+AOS.init({duration:800,once:true,offset:100});
+lucide.createIcons();
+const cardSections=[];
+function buildCardSections(){
+  cardSections.length=0;
+  const wrappers=document.querySelectorAll('.fullscreen-wrapper');
+  if(wrappers.length>0){wrappers.forEach(el=>cardSections.push(el));}
+  else{document.querySelectorAll('main > .glass-card').forEach(el=>cardSections.push(el));}
+}
+function getCurrentSectionIndex(){
+  const scrollTop=window.scrollY+window.innerHeight*0.3;
+  let idx=-1;
+  for(let i=0;i<cardSections.length;i++){if(cardSections[i].offsetTop<=scrollTop)idx=i;}
+  return idx;
+}
+window.addEventListener('scroll',()=>{
+  const scrollTop=window.scrollY;
+  const docHeight=document.documentElement.scrollHeight-window.innerHeight;
+  document.getElementById('reading-progress').style.width=((scrollTop/docHeight)*100)+'%';
+  const btn=document.getElementById('next-card');
+  scrollTop>300?btn.classList.add('visible'):btn.classList.remove('visible');
+  const icon=document.getElementById('next-card-icon');
+  const atBottom=(scrollTop+window.innerHeight)>=(document.documentElement.scrollHeight-100);
+  icon.setAttribute('data-lucide',atBottom?'chevron-up':'chevron-down');
+  lucide.createIcons();
+});
+document.getElementById('next-card').addEventListener('click',()=>{
+  const atBottom=(window.scrollY+window.innerHeight)>=(document.documentElement.scrollHeight-100);
+  if(atBottom){window.scrollTo({top:0,behavior:'smooth'});return;}
+  const idx=getCurrentSectionIndex();
+  const next=idx+1;
+  if(next<cardSections.length)cardSections[next].scrollIntoView({behavior:'smooth',block:'start'});
+});
+function setupFullScreenWrappers(){
+  const main=document.querySelector('main');
+  if(!main)return;
+  main.classList.remove('gap-[60vh]','py-20');
+  Array.from(main.children).forEach(child=>{
+    if(child.tagName==='DIV'&&!child.classList.contains('fullscreen-wrapper')){
+      const wrapper=document.createElement('div');
+      wrapper.className='min-h-screen w-full flex items-center justify-center fullscreen-wrapper snap-start p-4';
+      child.parentNode.insertBefore(wrapper,child);
+      wrapper.appendChild(child);
+    }
+  });
+  buildCardSections();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  setupFullScreenWrappers();
+  const headerBtn=document.getElementById('header-next-btn');
+  if(headerBtn){headerBtn.addEventListener('click',()=>{if(cardSections.length>0)cardSections[0].scrollIntoView({behavior:'smooth',block:'start'});});}
+  document.addEventListener('keydown',(e)=>{
+    const idx=getCurrentSectionIndex();
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();const next=idx+1;if(next<cardSections.length)cardSections[next].scrollIntoView({behavior:'smooth',block:'start'});}
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();const prev=idx-1;if(prev>=0)cardSections[prev].scrollIntoView({behavior:'smooth',block:'start'});else window.scrollTo({top:0,behavior:'smooth'});}
+  });
+  window.addEventListener('resize',setupFullScreenWrappers);
+});
+</script>
+</body>
+</html>
