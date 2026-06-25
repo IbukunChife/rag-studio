@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Busca Híbrida em RAG — Panorama de 4 Pesquisas</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    :root {
+      --mira-primary: #FF904D;
+      --mira-primary-dim: rgba(255,144,77,0.3);
+      --mira-primary-glow: rgba(255,144,77,0.12);
+      --mira-bg: #000000;
+      --mira-card-bg: rgba(255,255,255,0.04);
+      --mira-border: rgba(255,255,255,0.1);
+      --mira-border-strong: rgba(255,255,255,0.2);
+      --mira-text: #FFFFFF;
+      --mira-text-muted: rgba(255,255,255,0.55);
+      --mira-text-dim: rgba(255,255,255,0.3);
+      --mira-glow: rgba(255,144,77,0.25);
+      --mira-success: #4DFFB4;
+      --mira-warning: #FFD54D;
+      --mira-error: #FF6464;
+      --mira-blue: #4DB4FF;
+      --mira-purple: #B464FF;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--mira-bg);
+      color: var(--mira-text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: var(--mira-primary); z-index: 9999;
+      transition: width 0.2s ease;
+      box-shadow: 0 0 10px var(--mira-glow);
+    }
+
+    #next-card {
+      position: fixed; bottom: 2rem; right: 2rem;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--mira-primary); border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      z-index: 9998; opacity: 0; transform: translateY(20px);
+      transition: opacity 0.3s, transform 0.3s;
+      box-shadow: 0 4px 20px var(--mira-glow);
+    }
+    #next-card.visible { opacity: 1; transform: translateY(0); }
+    #next-card svg { color: #000; }
+
+    .header-section {
+      min-height: 100vh; position: relative;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .header-video {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; opacity: 0.4; z-index: 0;
+    }
+    .header-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.6) 100%);
+      z-index: 1;
+    }
+    .header-content {
+      position: relative; z-index: 2;
+      text-align: center; max-width: 920px; padding: 2rem;
+    }
+
+    .slide-section {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 4rem 2rem;
+    }
+    .slide-card {
+      width: 100%; max-width: 920px;
+      background: var(--mira-card-bg);
+      border: 1px solid var(--mira-border);
+      border-radius: 20px; padding: 2.8rem;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Paper intro card — visual diferenciado para abertura de cada artigo */
+    .paper-intro-card {
+      position: relative; overflow: hidden;
+    }
+    .paper-intro-card::before {
+      content: ''; position: absolute;
+      left: 0; top: 0; bottom: 0; width: 5px; border-radius: 20px 0 0 20px;
+    }
+    .paper-intro-card.dat::before   { background: var(--mira-success); }
+    .paper-intro-card.live::before  { background: var(--mira-warning); }
+    .paper-intro-card.evid::before  { background: var(--mira-blue); }
+    .paper-intro-card.bm25::before  { background: var(--mira-purple); }
+    .paper-num-bg {
+      font-size: 7rem; font-weight: 900; opacity: 0.055;
+      position: absolute; top: 0.8rem; right: 1.8rem;
+      line-height: 1; pointer-events: none; user-select: none;
+    }
+
+    .slide-label {
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--mira-primary); margin-bottom: 0.65rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .slide-title {
+      font-size: 2.05rem; font-weight: 800;
+      line-height: 1.2; margin-bottom: 0.65rem;
+    }
+    .slide-subtitle {
+      font-size: 0.98rem; color: var(--mira-text-muted);
+      line-height: 1.65; margin-bottom: 1.75rem;
+    }
+
+    .tag {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.35rem 0.9rem; border-radius: 999px;
+      font-size: 0.78rem; font-weight: 600;
+      border: 1px solid var(--mira-border);
+      background: var(--mira-card-bg); color: var(--mira-text-muted);
+    }
+    .tag-primary { border-color: var(--mira-primary-dim); color: var(--mira-primary); background: var(--mira-primary-glow); }
+
+    .paper-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.25rem 0.65rem; border-radius: 8px;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .badge-dat   { background: rgba(77,255,180,0.12); color: var(--mira-success); }
+    .badge-live  { background: rgba(255,213,77,0.12); color: var(--mira-warning); }
+    .badge-evid  { background: rgba(77,180,255,0.12); color: var(--mira-blue); }
+    .badge-bm25  { background: rgba(180,100,255,0.12); color: var(--mira-purple); }
+    .badge-fund  { background: var(--mira-primary-glow); color: var(--mira-primary); }
+    .badge-synth { background: rgba(255,255,255,0.08); color: var(--mira-text-muted); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.1rem; }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; }
+
+    .g-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--mira-border);
+      border-radius: 14px; padding: 1.35rem;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .g-card:hover { border-color: var(--mira-primary-dim); background: rgba(255,144,77,0.05); }
+    .g-card h4 {
+      font-size: 0.77rem; font-weight: 700; color: var(--mira-primary);
+      margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .g-card p { font-size: 0.87rem; color: var(--mira-text-muted); line-height: 1.5; }
+    .g-card .stat { font-size: 1.85rem; font-weight: 900; color: var(--mira-primary); margin-bottom: 0.2rem; }
+
+    /* Problema / Solução boxes para paper intros */
+    .ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.35rem 0; }
+    .ps-box { padding: 1.05rem 1.2rem; border-radius: 12px; }
+    .ps-box label {
+      font-size: 0.64rem; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; display: block; margin-bottom: 0.55rem;
+    }
+    .ps-box p { font-size: 0.87rem; color: var(--mira-text-muted); line-height: 1.55; }
+    .ps-box.prob { background: rgba(255,100,100,0.07); border: 1px solid rgba(255,100,100,0.22); }
+    .ps-box.prob label { color: var(--mira-error); }
+    .ps-box.sol  { background: rgba(77,255,180,0.07); border: 1px solid rgba(77,255,180,0.22); }
+    .ps-box.sol  label { color: var(--mira-success); }
+
+    .key-result-bar {
+      display: flex; align-items: center; gap: 1.2rem;
+      padding: 1rem 1.35rem;
+      background: var(--mira-primary-glow);
+      border: 1px solid var(--mira-primary-dim);
+      border-radius: 12px; margin-top: 1.35rem;
+    }
+    .key-result-num {
+      font-size: 2.1rem; font-weight: 900;
+      color: var(--mira-primary); white-space: nowrap;
+    }
+    .key-result-desc { font-size: 0.9rem; color: var(--mira-text-muted); line-height: 1.5; }
+
+    /* Chapter header strip */
+    .chapter-strip {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
+      padding-bottom: 1.1rem; border-bottom: 1px solid var(--mira-border);
+    }
+    .chapter-strip .num {
+      font-size: 2.8rem; font-weight: 900; opacity: 0.18; line-height: 1;
+    }
+
+    .hi-box {
+      background: var(--mira-primary-glow);
+      border: 1px solid var(--mira-primary-dim);
+      border-radius: 12px; padding: 1.15rem 1.35rem; margin-top: 1.35rem;
+    }
+
+    .formula {
+      font-family: 'Courier New', monospace;
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--mira-primary); text-align: center;
+      padding: 1.35rem; background: rgba(0,0,0,0.4);
+      border-radius: 12px; border: 1px solid var(--mira-primary-dim);
+      margin: 1.35rem 0; letter-spacing: 0.04em;
+    }
+
+    .anim-box {
+      width: 100%; border-radius: 14px; overflow: hidden;
+      background: rgba(0,0,0,0.35); margin: 1.35rem 0;
+    }
+
+    .threejs-wrap {
+      width: 100%; height: 54vh; border-radius: 14px;
+      overflow: hidden; position: relative;
+      background: rgba(0,0,0,0.5); margin: 1.35rem 0;
+    }
+
+    .num-list { list-style: none; }
+    .num-list li {
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.9rem 0; border-bottom: 1px solid var(--mira-border);
+    }
+    .num-list li:last-child { border-bottom: none; }
+    .num-badge {
+      min-width: 1.85rem; height: 1.85rem; border-radius: 50%;
+      background: var(--mira-primary); color: #000;
+      font-weight: 800; font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    .pill { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.73rem; font-weight: 600; }
+    .pill-primary { background: var(--mira-primary-dim); color: var(--mira-primary); }
+    .pill-success { background: rgba(77,255,180,0.15); color: var(--mira-success); }
+    .pill-warning { background: rgba(255,213,77,0.15); color: var(--mira-warning); }
+    .pill-error   { background: rgba(255,100,100,0.15); color: var(--mira-error); }
+    .pill-blue    { background: rgba(77,180,255,0.15); color: var(--mira-blue); }
+    .pill-purple  { background: rgba(180,100,255,0.15); color: var(--mira-purple); }
+
+    .divider { height: 1px; background: var(--mira-border); margin: 1.35rem 0; }
+    .icon-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+
+    /* Mapa dos 4 artigos */
+    .map-card {
+      border-radius: 14px; padding: 1.35rem;
+      border: 1px solid var(--mira-border);
+      position: relative; overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .map-card:hover { border-color: var(--mira-border-strong); }
+    .map-card .mc-num {
+      font-size: 3rem; font-weight: 900;
+      opacity: 0.09; position: absolute;
+      top: 0.5rem; right: 0.85rem; line-height: 1;
+    }
+    .map-card h4 { font-size: 0.95rem; font-weight: 800; margin-bottom: 0.4rem; }
+    .map-card .mc-prob { font-size: 0.78rem; color: var(--mira-error); margin-bottom: 0.35rem; font-weight: 600; }
+    .map-card .mc-sol  { font-size: 0.78rem; color: var(--mira-text-muted); line-height: 1.45; }
+    .map-card .mc-key  { font-size: 1.25rem; font-weight: 900; margin-top: 0.6rem; }
+
+    @media (max-width: 768px) {
+      .grid-2,.grid-3,.grid-4,.ps-grid { grid-template-columns: 1fr; }
+      .slide-title { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<button id="next-card" aria-label="Próximo slide">
+  <i data-lucide="chevron-down" style="width:22px;height:22px;"></i>
+</button>
+
+<!-- ═══════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════ -->
+<header class="header-section" id="top">
+  <video class="header-video" autoplay loop muted playsinline>
+    <source src="header-bg.mp4" type="video/mp4">
+  </video>
+  <div class="header-overlay"></div>
+  <div class="header-content">
+    <div data-aos="fade-down" data-aos-delay="100" style="margin-bottom:1.4rem;">
+      <span class="tag tag-primary">
+        <i data-lucide="layers" style="width:14px;height:14px;"></i>
+        Categoria 03 — Hybrid Search
+      </span>
+    </div>
+    <h1 data-aos="fade-up" data-aos-delay="200"
+        style="font-size:3rem;font-weight:900;line-height:1.1;margin-bottom:1rem;">
+      Busca Híbrida<br>
+      <span style="color:var(--mira-primary);">em RAG</span>
+    </h1>
+    <p data-aos="fade-up" data-aos-delay="300"
+       style="font-size:1.08rem;color:var(--mira-text-muted);max-width:600px;margin:0 auto 2rem;line-height:1.65;">
+      Uma jornada por 4 pesquisas que redefinem como sistemas RAG recuperam, fundem e verificam informação
+    </p>
+    <div data-aos="fade-up" data-aos-delay="400"
+         style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem;">
+      <span class="pill pill-success">01 · DAT — Alpha Dinâmico</span>
+      <span class="pill pill-warning">02 · LiveRAG — Dados ao Vivo</span>
+      <span class="pill pill-blue">03 · Evidence-Grounded RAG</span>
+      <span class="pill pill-purple">04 · BM25 → CRAG (Benchmark)</span>
+    </div>
+    <a href="#slide-1" data-aos="fade-up" data-aos-delay="500"
+       style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.85rem 2rem;
+              background:var(--mira-primary);color:#000;border-radius:999px;
+              font-weight:700;text-decoration:none;font-size:0.95rem;
+              box-shadow:0 4px 24px var(--mira-glow);">
+      Começar a Jornada
+      <i data-lucide="arrow-down" style="width:17px;height:17px;"></i>
+    </a>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     S1 — O Problema Central
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-1" data-slide="1">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-fund">O Problema</span></div>
+    <h2 class="slide-title">Por Que uma Busca Só Não Basta para RAG?</h2>
+    <p class="slide-subtitle">Todo sistema RAG precisa recuperar documentos relevantes antes de gerar uma resposta. O problema é que nenhum método de recuperação isolado funciona bem em todos os cenários.</p>
+    <div class="grid-3" style="margin-bottom:1.35rem;">
+      <div class="g-card" style="border-color:rgba(255,100,100,0.25);text-align:center;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🔵</div>
+        <h4 style="color:var(--mira-blue);">BM25 (Léxico)</h4>
+        <p>Excelente em termos exatos. Cego para paráfrases e sinônimos — se a palavra não bate, não recupera.</p>
+      </div>
+      <div class="g-card" style="border-color:rgba(255,100,100,0.25);text-align:center;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🟣</div>
+        <h4 style="color:var(--mira-purple);">Dense (Semântico)</h4>
+        <p>Captura contexto e significado. Dilui termos técnicos, siglas e entidades específicas de domínio.</p>
+      </div>
+      <div class="g-card" style="border-color:rgba(255,100,100,0.25);text-align:center;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">⚖️</div>
+        <h4 style="color:var(--mira-warning);">Alpha Fixo</h4>
+        <p>Combinar os dois com peso fixo (α = 0,5) é uma solução medíocre — nem léxica nem semântica se beneficia plenamente.</p>
+      </div>
+    </div>
+    <div class="hi-box">
+      <p style="font-size:0.95rem;color:var(--mira-text-muted);text-align:center;">
+        <strong style="color:var(--mira-primary);">A tese central desta categoria:</strong>
+        busca híbrida é a base certa — mas como calibrar o peso, lidar com dados ao vivo,
+        verificar a resposta e escolher entre 10 estratégias? São exatamente essas 4 perguntas
+        que os artigos desta categoria respondem.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S2 — Mapa: 4 Artigos, 4 Respostas
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-2" data-slide="2">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-fund">Mapa da Jornada</span></div>
+    <h2 class="slide-title">Quatro Perguntas, Quatro Pesquisas</h2>
+    <p class="slide-subtitle">Esta categoria reúne 4 artigos que atacam diferentes gargalos da busca híbrida em RAG — da calibração do peso à verificação da resposta.</p>
+    <div class="grid-2" style="margin-top:1.35rem;">
+      <div class="map-card" style="border-color:rgba(77,255,180,0.25);background:rgba(77,255,180,0.03);">
+        <span class="mc-num" style="color:var(--mira-success);">01</span>
+        <span class="paper-badge badge-dat" style="margin-bottom:0.65rem;display:inline-flex;">DAT</span>
+        <h4>Dynamic Alpha Tuning</h4>
+        <p class="mc-prob">❓ O peso entre BM25 e Dense deveria ser o mesmo para toda query?</p>
+        <p class="mc-sol">Propõe calibrar α automaticamente por query usando um LLM como árbitro</p>
+        <div class="mc-key" style="color:var(--mira-success);">+7,5% em queries difíceis</div>
+      </div>
+      <div class="map-card" style="border-color:rgba(255,213,77,0.25);background:rgba(255,213,77,0.03);">
+        <span class="mc-num" style="color:var(--mira-warning);">02</span>
+        <span class="paper-badge badge-live" style="margin-bottom:0.65rem;display:inline-flex;">LiveRAG</span>
+        <h4>LiveRAG Challenge 2025</h4>
+        <p class="mc-prob">❓ Como fazer RAG eficaz quando os documentos mudam a todo momento?</p>
+        <p class="mc-sol">Revela que alinhamento vocabular supera qualquer técnica avançada em dados ao vivo</p>
+        <div class="mc-key" style="color:var(--mira-warning);">Vocab. gap explica 26% de queda</div>
+      </div>
+      <div class="map-card" style="border-color:rgba(77,180,255,0.25);background:rgba(77,180,255,0.03);">
+        <span class="mc-num" style="color:var(--mira-blue);">03</span>
+        <span class="paper-badge badge-evid" style="margin-bottom:0.65rem;display:inline-flex;">Evidence-RAG</span>
+        <h4>Evidence-Grounded RAG</h4>
+        <p class="mc-prob">❓ Como garantir que cada frase gerada tem evidência real nos documentos?</p>
+        <p class="mc-sol">Avalia cada afirmação individualmente com um juiz independente — não a resposta inteira</p>
+        <div class="mc-key" style="color:var(--mira-blue);">200/200 claims sustentados</div>
+      </div>
+      <div class="map-card" style="border-color:rgba(180,100,255,0.25);background:rgba(180,100,255,0.03);">
+        <span class="mc-num" style="color:var(--mira-purple);">04</span>
+        <span class="paper-badge badge-bm25" style="margin-bottom:0.65rem;display:inline-flex;">T²-RAGBench</span>
+        <h4>BM25 to Corrective RAG</h4>
+        <p class="mc-prob">❓ Dentre 10 estratégias de recuperação, qual realmente vence em documentos financeiros reais?</p>
+        <p class="mc-sol">Benchmark sistemático com 23.088 queries em documentos texto+tabelas de relatórios SEC</p>
+        <div class="mc-key" style="color:var(--mira-purple);">Híbrido+Rerank R@5 = 0,816</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S3 — FUNDAMENTOS: O Paradoxo da Busca Única (D3)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-3" data-slide="3">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-fund">Fundamentos</span></div>
+    <h2 class="slide-title">O Paradoxo da Busca Única</h2>
+    <p class="slide-subtitle">BM25 e Dense enxergam o mundo de formas opostas — e é exatamente essa diferença que torna a fusão deles poderosa.</p>
+    <div class="anim-box" id="anim-paradoxo" style="height:285px;"></div>
+    <div class="grid-2" style="margin-top:0;">
+      <div class="hi-box" style="margin-top:0;">
+        <div class="icon-row">
+          <i data-lucide="hash" style="width:17px;height:17px;color:var(--mira-blue);"></i>
+          <strong style="color:var(--mira-blue);">BM25 — "redes neurais" ❌</strong>
+        </div>
+        <p style="font-size:0.86rem;color:var(--mira-text-muted);">
+          A query usa o termo português. Os documentos usam "neural networks". BM25 não recupera — as palavras não batem.
+        </p>
+      </div>
+      <div class="hi-box" style="margin-top:0;border-color:rgba(180,100,255,0.3);background:rgba(180,100,255,0.07);">
+        <div class="icon-row">
+          <i data-lucide="brain" style="width:17px;height:17px;color:var(--mira-purple);"></i>
+          <strong style="color:var(--mira-purple);">Dense — "EBITDA 2024" ⚠️</strong>
+        </div>
+        <p style="font-size:0.86rem;color:var(--mira-text-muted);">
+          O embedding dilui identificadores precisos. "EBITDA Q3 2024" e "lucro antes de impostos" ficam parecidos — mas o dado exato se perde.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S4 — FUNDAMENTOS: Anatomia da Busca Híbrida (Three.js)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-4" data-slide="4">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-fund">Fundamentos</span></div>
+    <h2 class="slide-title">A Fusão que Supera os Dois</h2>
+    <p class="slide-subtitle">Combinar BM25 e Dense via Reciprocal Rank Fusion (RRF) produz um ranking superior ao de qualquer método isolado — validado em todos os 4 artigos desta categoria.</p>
+    <div class="threejs-wrap" id="canvas-anatomy"></div>
+    <div class="grid-3" style="margin-top:0;">
+      <div class="g-card" style="text-align:center;">
+        <div style="font-size:1.3rem;margin-bottom:0.4rem;">🔵</div>
+        <h4 style="color:var(--mira-blue);">BM25</h4>
+        <p>Correspondência léxica — termos exatos, siglas, entidades nomeadas</p>
+      </div>
+      <div class="g-card" style="text-align:center;border-color:var(--mira-primary-dim);">
+        <div style="font-size:1.3rem;margin-bottom:0.4rem;">🟠</div>
+        <h4>RRF — Fusão</h4>
+        <p>RRF(d) = Σ 1/(k+rᵢ) — combina rankings sem precisar normalizar scores</p>
+      </div>
+      <div class="g-card" style="text-align:center;">
+        <div style="font-size:1.3rem;margin-bottom:0.4rem;">🟣</div>
+        <h4 style="color:var(--mira-purple);">Dense</h4>
+        <p>Embeddings semânticos — paráfrases, sinônimos, contexto implícito</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S5 — INTRO PAPER 01: DAT
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-5" data-slide="5">
+  <div class="slide-card paper-intro-card dat" data-aos="fade-up">
+    <span class="paper-num-bg" style="color:var(--mira-success);">01</span>
+    <div class="chapter-strip">
+      <div class="num" style="color:var(--mira-success);">01</div>
+      <div>
+        <span class="paper-badge badge-dat">Artigo 01 · DAT</span>
+        <div style="font-size:0.75rem;color:var(--mira-text-dim);margin-top:0.3rem;">Dynamic Alpha Tuning · Benchmarks SQuAD / DRCD</div>
+      </div>
+    </div>
+    <h2 class="slide-title" style="color:var(--mira-success);">Quando o Alpha Certo Muda Tudo</h2>
+    <p class="slide-subtitle">A busca híbrida usa a fórmula R(q,d) = α·Ŝ<sub>dense</sub> + (1-α)·Ŝ<sub>BM25</sub>. O DAT pergunta: <em>por que α seria o mesmo para toda query?</em></p>
+    <div class="ps-grid">
+      <div class="ps-box prob">
+        <label>Problema que resolve</label>
+        <p>Um α fixo (tipicamente 0,5) trata queries semânticas e léxicas do mesmo jeito — desperdiçando precisão nos dois extremos. Uma query sobre sinônimos precisa de α alto; uma query com siglas técnicas precisa de α baixo.</p>
+      </div>
+      <div class="ps-box sol">
+        <label>Solução proposta</label>
+        <p>Usar um LLM para pontuar o Top-1 de cada método (BM25 e Dense) numa escala de 0 a 5, e calcular automaticamente o α ideal para aquela query específica — sem treino adicional.</p>
+      </div>
+    </div>
+    <div class="key-result-bar">
+      <div class="key-result-num">+7,5%</div>
+      <div class="key-result-desc">
+        de ganho em queries <em>híbrido-sensíveis</em> — as mais difíceis para α fixo. Nos próximos slides: a fórmula exata e os resultados completos.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S6 — DAT: A Fórmula do Alpha Dinâmico
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-6" data-slide="6">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-dat">Artigo 01 · DAT — Mecanismo</span></div>
+    <h2 class="slide-title">α(q) = S<sub>v</sub> / (S<sub>v</sub> + S<sub>BM25</sub>)</h2>
+    <p class="slide-subtitle">O LLM avalia o Top-1 de cada método isoladamente e os scores derivam o α automaticamente — uma query de cada vez, em tempo de inferência.</p>
+    <div class="formula">α(q) = S<sub>v</sub> / (S<sub>v</sub> + S<sub>BM25</sub>)</div>
+    <div class="grid-3">
+      <div class="g-card">
+        <h4>Passo 1 — Recuperar</h4>
+        <p>BM25 e Dense recuperam seus Top-K independentemente. O Top-1 de cada um é separado para avaliação.</p>
+      </div>
+      <div class="g-card" style="border-color:var(--mira-primary-dim);">
+        <h4>Passo 2 — Pontuar</h4>
+        <p>LLM avalia cada Top-1 numa escala 0→5: quão relevante é este documento para esta query?</p>
+      </div>
+      <div class="g-card">
+        <h4>Passo 3 — Calcular α</h4>
+        <p>S_v e S_b normalizam para α ∈ [0,1]. Se Dense vence (S_v=4, S_b=1) → α=0,80. Vice-versa → α=0,20.</p>
+      </div>
+    </div>
+    <div class="hi-box">
+      <div style="display:flex;gap:2.5rem;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:0.68rem;color:var(--mira-text-muted);">QUERY SEMÂNTICA</div>
+          <div style="font-size:1.05rem;font-weight:800;color:var(--mira-success);">S_v=4, S_b=1 → α = 0,80</div>
+          <div style="font-size:0.78rem;color:var(--mira-text-muted);">Dense domina o ranking final</div>
+        </div>
+        <div>
+          <div style="font-size:0.68rem;color:var(--mira-text-muted);">QUERY LÉXICA</div>
+          <div style="font-size:1.05rem;font-weight:800;color:var(--mira-success);">S_v=1, S_b=4 → α = 0,20</div>
+          <div style="font-size:0.78rem;color:var(--mira-text-muted);">BM25 domina o ranking final</div>
+        </div>
+        <div>
+          <div style="font-size:0.68rem;color:var(--mira-text-muted);">CUSTO ADICIONAL</div>
+          <div style="font-size:1.05rem;font-weight:800;color:var(--mira-warning);">1 chamada LLM por query</div>
+          <div style="font-size:0.78rem;color:var(--mira-text-muted);">Zero custo de treino ou fine-tuning</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S7 — DAT: Resultados (D3)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-7" data-slide="7">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-dat">Artigo 01 · DAT — Resultados</span></div>
+    <h2 class="slide-title">+7,5% Exatamente nas Queries Mais Difíceis</h2>
+    <p class="slide-subtitle">O DAT supera o alpha fixo nas queries onde os dois métodos discordam — as chamadas <em>híbrido-sensíveis</em>. Onde eles concordam, o ganho é menor mas consistente.</p>
+    <div class="anim-box" id="anim-dat-result" style="height:285px;"></div>
+    <div class="grid-2" style="margin-top:0;">
+      <div class="g-card" style="text-align:center;">
+        <div class="stat">+7,5%</div>
+        <p>Queries híbrido-sensíveis (SQuAD e DRCD) — onde α fixo erra mais</p>
+      </div>
+      <div class="g-card" style="text-align:center;border-color:rgba(77,255,180,0.25);">
+        <div class="stat" style="color:var(--mira-success);">0 → 5</div>
+        <p>Escala de scoring do LLM — pontuação do Top-1 de cada método por query</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S8 — INTRO PAPER 02: LiveRAG
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-8" data-slide="8">
+  <div class="slide-card paper-intro-card live" data-aos="fade-up">
+    <span class="paper-num-bg" style="color:var(--mira-warning);">02</span>
+    <div class="chapter-strip">
+      <div class="num" style="color:var(--mira-warning);">02</div>
+      <div>
+        <span class="paper-badge badge-live">Artigo 02 · LiveRAG</span>
+        <div style="font-size:0.75rem;color:var(--mira-text-dim);margin-top:0.3rem;">LiveRAG Challenge 2025 · 4º Fidelidade, 11º Correção</div>
+      </div>
+    </div>
+    <h2 class="slide-title" style="color:var(--mira-warning);">O Desafio dos Dados que Não Param</h2>
+    <p class="slide-subtitle">E quando os documentos são atualizados continuamente? O LiveRAG Challenge 2025 testou sistemas RAG sobre um corpus em streaming — e a resposta surpreendeu.</p>
+    <div class="ps-grid">
+      <div class="ps-box prob">
+        <label>Problema que resolve</label>
+        <p>Em dados ao vivo (streaming), os documentos mudam antes mesmo do sistema terminar de indexá-los. Estratégias elaboradas como doc2query e DSPy falham ou criam novos problemas (overconfidence, latência absurda).</p>
+      </div>
+      <div class="ps-box sol">
+        <label>Descoberta central</label>
+        <p>O fator que mais impactou a performance foi o mais simples: alinhamento vocabular entre a query e os documentos. Antes de otimizar arquitetura, otimize vocabulário.</p>
+      </div>
+    </div>
+    <div class="key-result-bar">
+      <div class="key-result-num">+52%</div>
+      <div class="key-result-desc">
+        MAP com RankLLaMA re-ranker (0,523 → 0,797) — mas com <strong style="color:var(--mira-error);">84 segundos por query</strong>.
+        O artigo expõe o trade-off brutal entre qualidade e latência em re-ranking neural.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S9 — LiveRAG: Stream de Dados (D3)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-9" data-slide="9">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-live">Artigo 02 · LiveRAG — Contexto</span></div>
+    <h2 class="slide-title">RAG sobre um Rio de Dados</h2>
+    <p class="slide-subtitle">O pipeline do LiveRAG usa BM25 + E5 em fusão híbrida como retriever, com RankLLaMA como re-ranker de segunda etapa. Cada componente foi avaliado isoladamente.</p>
+    <div class="anim-box" id="anim-stream" style="height:255px;"></div>
+    <div class="grid-2" style="margin-top:0;">
+      <div class="g-card">
+        <h4>Pipeline Completo</h4>
+        <p>BM25 + E5 híbrido (retrieval) → RankLLaMA (re-ranking) → geração final</p>
+      </div>
+      <div class="g-card">
+        <h4>O que Falhou</h4>
+        <p>doc2query não ajudou. DSPy zerou recusas mas criou overconfidence — 0% de recusa é red flag, não vitória.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S10 — LiveRAG: +52% MAP / 84s (D3)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-10" data-slide="10">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-live">Artigo 02 · LiveRAG — Trade-off</span></div>
+    <h2 class="slide-title">+52% de MAP — Mas Cada Query Custa 84 Segundos</h2>
+    <p class="slide-subtitle">O RankLLaMA transformou a qualidade de recuperação. O preço foi uma latência completamente incompatível com qualquer sistema em produção real.</p>
+    <div class="anim-box" id="anim-map-prog" style="height:260px;"></div>
+    <div class="grid-3" style="margin-top:0;">
+      <div class="g-card" style="text-align:center;">
+        <div class="stat" style="color:var(--mira-text-muted);">0,523</div>
+        <p>MAP inicial — Híbrido BM25 + E5 sem re-ranker</p>
+      </div>
+      <div class="g-card" style="text-align:center;border-color:var(--mira-primary-dim);">
+        <div class="stat">0,797</div>
+        <p>MAP com RankLLaMA — ganho absoluto de +52%</p>
+      </div>
+      <div class="g-card" style="text-align:center;border-color:rgba(255,100,100,0.3);">
+        <div class="stat" style="color:var(--mira-error);">84s</div>
+        <p>Latência por query — inviável em produção com SLA humano</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S11 — LiveRAG: Vocabulário é o Fator #1
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-11" data-slide="11">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-live">Artigo 02 · LiveRAG — Insight Central</span></div>
+    <h2 class="slide-title">O Que Mais Importou Não Foi a Arquitetura</h2>
+    <p class="slide-subtitle">A análise pós-competição revelou: o alinhamento entre vocabulário da query e vocabulário dos documentos dominou todos os fatores técnicos testados.</p>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div style="padding:1.35rem;background:rgba(77,255,180,0.05);border:1px solid rgba(77,255,180,0.2);border-radius:14px;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--mira-success);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.75rem;">Vocabulário Alinhado</div>
+        <div style="font-size:2rem;font-weight:900;color:var(--mira-success);margin-bottom:0.4rem;">0,762</div>
+        <p style="font-size:0.86rem;color:var(--mira-text-muted);">Cosine similarity query↔documento quando há sobreposição de vocabulário</p>
+        <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--mira-text-muted);">Expert: 0,709 &nbsp;·&nbsp; Novato: 0,628</div>
+      </div>
+      <div style="padding:1.35rem;background:rgba(255,100,100,0.05);border:1px solid rgba(255,100,100,0.2);border-radius:14px;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--mira-error);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.75rem;">Vocabulário Distante</div>
+        <div style="font-size:2rem;font-weight:900;color:var(--mira-error);margin-bottom:0.4rem;">0,562</div>
+        <p style="font-size:0.86rem;color:var(--mira-text-muted);">Queda de 26% apenas por mudar o vocabulário — sem alterar nenhum componente técnico</p>
+        <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--mira-text-muted);">É o gap mais barato de corrigir e o mais ignorado</div>
+      </div>
+    </div>
+    <div class="hi-box">
+      <p style="font-size:0.88rem;color:var(--mira-text-muted);">
+        <strong style="color:var(--mira-primary);">Lição prática:</strong> antes de adicionar re-rankers ou mudar embeddings, revise se o vocabulário do corpus e da query estão alinhados. É a intervenção com melhor custo-benefício.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S12 — INTRO PAPER 03: Evidence-Grounded RAG
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-12" data-slide="12">
+  <div class="slide-card paper-intro-card evid" data-aos="fade-up">
+    <span class="paper-num-bg" style="color:var(--mira-blue);">03</span>
+    <div class="chapter-strip">
+      <div class="num" style="color:var(--mira-blue);">03</div>
+      <div>
+        <span class="paper-badge badge-evid">Artigo 03 · Evidence-Grounded RAG</span>
+        <div style="font-size:0.75rem;color:var(--mira-text-dim);margin-top:0.3rem;">Amazon Bedrock + Cohere + Claude Sonnet 4.6 + Amazon Nova Pro · Domínio Biomédico</div>
+      </div>
+    </div>
+    <h2 class="slide-title" style="color:var(--mira-blue);">Cada Afirmação Precisa de Prova</h2>
+    <p class="slide-subtitle">RAG gera respostas fluentes — mas fluência não é correção. Como saber se cada frase da resposta está realmente sustentada pelos documentos recuperados?</p>
+    <div class="ps-grid">
+      <div class="ps-box prob">
+        <label>Problema que resolve</label>
+        <p>Avaliar a resposta como um bloco único esconde afirmações sem sustentação. Um LLM pode gerar 5 afirmações corretas e 1 alucinada — e a nota da resposta seria "boa".</p>
+      </div>
+      <div class="ps-box sol">
+        <label>Solução proposta</label>
+        <p>Decompor cada resposta em claims individuais e avaliar cada um contra o contexto recuperado, usando um modelo <em>diferente</em> do gerador como juiz — evita viés de autoavaliação.</p>
+      </div>
+    </div>
+    <div class="key-result-bar">
+      <div class="key-result-num">200/200</div>
+      <div class="key-result-desc">
+        claims avaliados — todos sustentados por evidência recuperada.
+        Stack: S3 → Bedrock Knowledge Bases → Titan V2 → OpenSearch → Cohere Rerank → Claude Sonnet 4.6 → Nova Pro (juiz)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S13 — Evidence-RAG: O Juiz Claim a Claim (D3)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-13" data-slide="13">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-evid">Artigo 03 · Mecanismo de Avaliação</span></div>
+    <h2 class="slide-title">O Juiz Independente de Cada Afirmação</h2>
+    <p class="slide-subtitle">A resposta é desmontada em claims. Cada claim vai ao Amazon Nova Pro (modelo separado do gerador Claude) para verificação — afirmação por afirmação.</p>
+    <div class="anim-box" id="anim-juiz" style="height:285px;"></div>
+    <div class="grid-3" style="margin-top:0;">
+      <div class="g-card">
+        <h4 style="color:var(--mira-blue);">Gerador</h4>
+        <p>Claude Sonnet 4.6 produz resposta usando os chunks reordenados pelo Cohere</p>
+      </div>
+      <div class="g-card" style="border-color:var(--mira-primary-dim);">
+        <h4>Extrator</h4>
+        <p>Resposta decomposta em afirmações factuais — média de 8,0 claims por resposta</p>
+      </div>
+      <div class="g-card">
+        <h4 style="color:var(--mira-warning);">Juiz</h4>
+        <p>Amazon Nova Pro avalia cada claim isoladamente — modelo diferente evita autoavaliação inflada</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S14 — Evidence-RAG: Pipeline Bedrock (Three.js)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-14" data-slide="14">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-evid">Artigo 03 · Pipeline em Produção</span></div>
+    <h2 class="slide-title">S3 → Bedrock → Cohere → Claude → Nova</h2>
+    <p class="slide-subtitle">Um pipeline RAG completamente gerenciado na AWS, avaliado com 25 queries biomédicas e 5 documentos científicos (k=20 candidatos no retrieval).</p>
+    <div class="threejs-wrap" id="canvas-bedrock"></div>
+    <div class="grid-2" style="margin-top:0;">
+      <div class="g-card">
+        <h4>Stack de Recuperação</h4>
+        <p>Amazon S3 → Bedrock Knowledge Bases → Titan Embeddings V2 → OpenSearch Serverless → Cohere Rerank (k=20 → top-5)</p>
+      </div>
+      <div class="g-card" style="border-color:var(--mira-primary-dim);">
+        <h4>Resultado Final</h4>
+        <p><strong style="color:var(--mira-primary);">200 claims avaliados — 100% sustentados.</strong> Evidência distribuída entre múltiplos documentos: nenhuma resposta dependeu de um único chunk.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S15 — Evidence-RAG: 91,2% dos Chunks Trocaram (D3)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-15" data-slide="15">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-evid">Artigo 03 · Impacto do Reranker</span></div>
+    <h2 class="slide-title">91,2% dos Chunks Mudaram de Posição</h2>
+    <p class="slide-subtitle">O Cohere Reranker não é cosmético — ele reordenou dramaticamente a lista do Bedrock. Apenas 8,8% dos chunks mantiveram o ranking original após a segunda etapa.</p>
+    <div class="anim-box" id="anim-shuffle" style="height:265px;"></div>
+    <div class="grid-2" style="margin-top:0;">
+      <div class="g-card">
+        <h4>Score Bedrock (média)</h4>
+        <div style="font-size:1.7rem;font-weight:900;color:var(--mira-text);">0,501</div>
+        <p style="font-size:0.83rem;color:var(--mira-text-muted);">Score original do Knowledge Base — os futuros Top-1 estavam em posições 4 a 16 antes do reranking</p>
+      </div>
+      <div class="g-card" style="border-color:var(--mira-primary-dim);">
+        <h4>Score Cohere Top-1 (média)</h4>
+        <div style="font-size:1.7rem;font-weight:900;color:var(--mira-primary);">0,801</div>
+        <p style="font-size:0.83rem;color:var(--mira-text-muted);">Após reranking — 60% mais alto. O reranker resgata evidência que o primeiro ranking enterrou</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S16 — INTRO PAPER 04: T²-RAGBench
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-16" data-slide="16">
+  <div class="slide-card paper-intro-card bm25" data-aos="fade-up">
+    <span class="paper-num-bg" style="color:var(--mira-purple);">04</span>
+    <div class="chapter-strip">
+      <div class="num" style="color:var(--mira-purple);">04</div>
+      <div>
+        <span class="paper-badge badge-bm25">Artigo 04 · T²-RAGBench</span>
+        <div style="font-size:0.75rem;color:var(--mira-text-dim);margin-top:0.3rem;">BM25 to Corrective RAG · EACL 2026 · FinQA + ConvFinQA + TAT-DQA</div>
+      </div>
+    </div>
+    <h2 class="slide-title" style="color:var(--mira-purple);">O Maior Teste de RAG em Documentos Financeiros</h2>
+    <p class="slide-subtitle">Dentre tantas estratégias de recuperação disponíveis, qual realmente funciona quando os documentos misturam texto e tabelas em relatórios financeiros reais?</p>
+    <div class="ps-grid">
+      <div class="ps-box prob">
+        <label>Problema que resolve</label>
+        <p>Não existia benchmark sistemático para RAG em documentos financeiros texto+tabelas. Pesquisadores escolhiam estratégias sem evidência sólida de qual funcionava melhor nesse domínio específico.</p>
+      </div>
+      <div class="ps-box sol">
+        <label>Contribuição</label>
+        <p>T²-RAGBench: 23.088 queries sobre 7.318 documentos SEC (avg 920 tokens). 10 estratégias avaliadas com métricas R@5, MRR@3, nDCG@10. Primeiro resultado sistemático no setor.</p>
+      </div>
+    </div>
+    <div class="key-result-bar">
+      <div class="key-result-num">R@5 = 0,816</div>
+      <div class="key-result-desc">
+        Híbrido RRF + Cohere Rerank vence com margem expressiva (+17pp sobre o 3º lugar).
+        Surpresa: BM25 supera Dense em <em>todos</em> os subsets financeiros. HyDE fica em último.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S17 — BM25→CRAG: Race das 10 Estratégias (D3)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-17" data-slide="17">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-bm25">Artigo 04 · 10 Estratégias em Corrida</span></div>
+    <h2 class="slide-title">23.088 Queries Decidiram o Vencedor</h2>
+    <p class="slide-subtitle">O T²-RAGBench avaliou cada estratégia com a mesma base — documentos financeiros reais, mesmas métricas, sem vantagem de domínio. O resultado é estatisticamente sólido (p&lt;0,001).</p>
+    <div class="anim-box" id="anim-race" style="height:285px;"></div>
+    <div class="grid-3" style="margin-top:0;">
+      <div class="g-card" style="text-align:center;">
+        <div class="stat">23K</div>
+        <p>queries sobre documentos reais — FinQA, ConvFinQA, TAT-DQA</p>
+      </div>
+      <div class="g-card" style="text-align:center;border-color:var(--mira-primary-dim);">
+        <div class="stat">10</div>
+        <p>estratégias testadas — de BM25 puro até CRAG com correção adaptativa</p>
+      </div>
+      <div class="g-card" style="text-align:center;">
+        <div class="stat">920</div>
+        <p>tokens médios por documento — texto corrido e tabelas misturados</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S18 — BM25→CRAG: Híbrido+Reranker Domina (D3 horizontal bars)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-18" data-slide="18">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-bm25">Artigo 04 · Resultados Definitivos</span></div>
+    <h2 class="slide-title">Híbrido + Reranker Vence com 17pp de Margem</h2>
+    <p class="slide-subtitle">E a surpresa: BM25 puro supera Dense em todos os subsets financeiros. HyDE fica em último — alucinações numéricas corrompem o embedding hipotético.</p>
+    <div class="anim-box" id="anim-rank-bars" style="height:295px;"></div>
+    <div class="hi-box">
+      <div style="display:flex;gap:2.5rem;flex-wrap:wrap;align-items:center;">
+        <div>
+          <div style="font-size:0.68rem;color:var(--mira-text-muted);">CAMPEÃO</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--mira-primary);">Hybrid RRF + Cohere Rerank</div>
+          <div style="font-size:0.83rem;color:var(--mira-text-muted);">R@5: 0,816 &nbsp;·&nbsp; MRR@3: 0,605</div>
+        </div>
+        <div>
+          <div style="font-size:0.68rem;color:var(--mira-text-muted);">SURPRESA</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--mira-warning);">BM25 &gt; Dense em finanças</div>
+          <div style="font-size:0.83rem;color:var(--mira-text-muted);">Termos exatos, tickers, períodos fiscais</div>
+        </div>
+        <div>
+          <div style="font-size:0.68rem;color:var(--mira-text-muted);">DECEPÇÃO</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--mira-error);">HyDE &lt; Dense simples</div>
+          <div style="font-size:0.83rem;color:var(--mira-text-muted);">R@5=0,544 — o pior da lista</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S19 — BM25→CRAG: Onde o Híbrido Tropeça (D3 donut)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-19" data-slide="19">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-bm25">Artigo 04 · Análise de Falhas</span></div>
+    <h2 class="slide-title">Onde o Melhor Método Ainda Erra</h2>
+    <p class="slide-subtitle">31,1% das queries (7.188/23.088) não encontraram o documento certo no Top-5. A causa dominante não é o método de fusão — é a estrutura dos dados.</p>
+    <div class="anim-box" id="anim-donut" style="height:265px;"></div>
+    <div class="grid-2" style="margin-top:0;">
+      <div class="g-card" style="border-color:rgba(255,100,100,0.3);">
+        <h4 style="color:var(--mira-error);">73% — Estrutura de Tabela</h4>
+        <p>A resposta está numa célula de tabela em Markdown. O embedding não captura a posição estrutural — a coluna certa e o row certo dentro do layout.</p>
+      </div>
+      <div class="g-card" style="border-color:rgba(255,213,77,0.3);">
+        <h4 style="color:var(--mira-warning);">20% — Raciocínio Numérico</h4>
+        <p>A query pede uma conta ("variação anual?"). O dado bruto existe no documento, mas a query requer dois números + operação — semântica pura não localiza isso.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S20 — SÍNTESE: A Pirâmide da Recuperação (D3)
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-20" data-slide="20">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-synth">Síntese · 4 Artigos</span></div>
+    <h2 class="slide-title">A Pirâmide da Recuperação Híbrida</h2>
+    <p class="slide-subtitle">Os 4 artigos constroem uma pirâmide coerente: cada camada adiciona precisão sobre a anterior, com custo progressivo e ganho comprovado nos estudos.</p>
+    <div class="anim-box" id="anim-piramide" style="height:305px;"></div>
+    <div class="hi-box">
+      <p style="font-size:0.9rem;color:var(--mira-text-muted);">
+        <strong style="color:var(--mira-primary);">Regra prática:</strong> comece com Híbrido RRF como baseline.
+        Adicione re-ranker se qualidade supera latência (Art. 04 confirma +17pp). Aplique alpha dinâmico se queries variam muito em tipo (Art. 01 confirma +7,5%).
+        Avalie com claim-level, não answer-level (Art. 03). Não esqueça vocabulário (Art. 02).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S21 — Qual Estratégia para o Seu RAG?
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-21" data-slide="21">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-synth">Guia Prático · Decisão</span></div>
+    <h2 class="slide-title">Qual Estratégia para o Seu Caso?</h2>
+    <p class="slide-subtitle">A escolha depende do domínio, tipo de query e tolerância à latência. Este mapa consolida as recomendações diretas dos 4 artigos.</p>
+    <div class="grid-2" style="margin-top:1.35rem;">
+      <div class="g-card" style="border-color:rgba(77,255,180,0.3);">
+        <div style="margin-bottom:0.7rem;"><span class="pill pill-success">Documentos Financeiros / Técnicos</span></div>
+        <ul style="list-style:none;">
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Baseline mínimo:</strong> BM25 (supera Dense em finanças — Art. 04)</li>
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Melhor opção:</strong> Híbrido RRF + Cohere Rerank</li>
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Evitar:</strong> HyDE (alucinações numéricas corrompem o embedding)</li>
+        </ul>
+      </div>
+      <div class="g-card" style="border-color:rgba(255,213,77,0.3);">
+        <div style="margin-bottom:0.7rem;"><span class="pill pill-warning">Dados ao Vivo / Streaming</span></div>
+        <ul style="list-style:none;">
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Baseline:</strong> Híbrido BM25 + E5 — Art. 02</li>
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Foco primeiro:</strong> alinhe vocabulário antes de otimizar arquitetura</li>
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Cuidado:</strong> re-ranker LLM tem 84s/query — avalie o SLA</li>
+        </ul>
+      </div>
+      <div class="g-card" style="border-color:rgba(77,180,255,0.3);">
+        <div style="margin-bottom:0.7rem;"><span class="pill pill-blue">Alta Confiabilidade / Compliance</span></div>
+        <ul style="list-style:none;">
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Pipeline:</strong> Híbrido + Cohere + LLM gerador — Art. 03</li>
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Avaliação:</strong> juiz independente, claim a claim</li>
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Meta:</strong> 100% grounding accuracy por afirmação</li>
+        </ul>
+      </div>
+      <div class="g-card" style="border-color:rgba(180,100,255,0.3);">
+        <div style="margin-bottom:0.7rem;"><span class="pill pill-purple">Queries Heterogêneas</span></div>
+        <ul style="list-style:none;">
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Baseline:</strong> Híbrido RRF</li>
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Avançado:</strong> DAT — alpha dinâmico por query — Art. 01</li>
+          <li style="font-size:0.85rem;color:var(--mira-text-muted);padding:0.22rem 0;">→ <strong>Trade-off:</strong> 1 chamada LLM extra por query para calibrar α</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     S22 — Quatro Descobertas
+══════════════════════════════════════════════ -->
+<section class="slide-section" id="slide-22" data-slide="22">
+  <div class="slide-card" data-aos="fade-up">
+    <div class="slide-label"><span class="paper-badge badge-synth">Conclusão · Síntese Final</span></div>
+    <h2 class="slide-title">Quatro Descobertas que Redefinem o RAG</h2>
+    <p class="slide-subtitle">Cada artigo respondeu uma pergunta diferente — juntos eles formam um manual atualizado de como construir recuperação híbrida de qualidade.</p>
+    <ul class="num-list" style="margin-top:1.35rem;">
+      <li>
+        <span class="num-badge">1</span>
+        <div>
+          <strong style="color:var(--mira-success);">Alpha fixo desperdiça potencial (DAT · Art. 01)</strong>
+          <p style="font-size:0.87rem;color:var(--mira-text-muted);margin-top:0.2rem;">
+            Um α único para todas as queries deixa +7,5% na mesa. O LLM como árbitro por query é a solução mais eficiente sem custo de treino.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="num-badge">2</span>
+        <div>
+          <strong style="color:var(--mira-warning);">Vocabulário importa mais que arquitetura (LiveRAG · Art. 02)</strong>
+          <p style="font-size:0.87rem;color:var(--mira-text-muted);margin-top:0.2rem;">
+            Em dados ao vivo, a lacuna vocabular explica 26% de queda em performance — sem mudar nenhum componente do pipeline. Corrija isso primeiro.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="num-badge">3</span>
+        <div>
+          <strong style="color:var(--mira-blue);">Grounding precisa ser claim a claim (Evidence-RAG · Art. 03)</strong>
+          <p style="font-size:0.87rem;color:var(--mira-text-muted);margin-top:0.2rem;">
+            Avaliar a resposta inteira esconde alucinações. Decompor em afirmações individuais com juiz independente alcançou 100% de grounding em domínio biomédico.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="num-badge">4</span>
+        <div>
+          <strong style="color:var(--mira-purple);">Reranker é o maior ganho unitário disponível (T²-RAGBench · Art. 04)</strong>
+          <p style="font-size:0.87rem;color:var(--mira-text-muted);margin-top:0.2rem;">
+            Em 10 estratégias avaliadas, adicionar cross-encoder reranker ao híbrido foi o maior salto isolado: +17pp MRR@3. É o componente com melhor custo-benefício hoje.
+          </p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="background:rgba(255,255,255,0.02);border-top:1px solid var(--mira-border);padding:3rem 2rem;text-align:center;">
+  <p style="color:var(--mira-text-muted);font-size:0.82rem;">
+    Categoria 03 — Hybrid Search &nbsp;·&nbsp; 4 artigos &nbsp;·&nbsp; 22 slides
+  </p>
+</footer>
+
+<!-- ═══════════════════════════════════════════
+     SCRIPTS — AOS / LUCIDE / NAVIGATION
+══════════════════════════════════════════════ -->
+<script>
+  AOS.init({ duration: 680, once: true, offset: 50 });
+  lucide.createIcons();
+
+  var progressBar = document.getElementById('progress-bar');
+  var nextBtn     = document.getElementById('next-card');
+
+  function updateProgress() {
+    var s = window.scrollY;
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (h > 0 ? (s / h) * 100 : 0) + '%';
+    nextBtn.classList.toggle('visible', s > 300);
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  var slides = Array.from(document.querySelectorAll('[data-slide]'));
+
+  function currentIdx() {
+    var mid = window.scrollY + window.innerHeight / 2;
+    var best = 0;
+    slides.forEach(function(s, i) { if (s.getBoundingClientRect().top + window.scrollY < mid) best = i; });
+    return best;
+  }
+  function scrollToSlide(idx) {
+    var t = slides[Math.max(0, Math.min(idx, slides.length - 1))];
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  nextBtn.addEventListener('click', function() { scrollToSlide(currentIdx() + 1); });
+  document.addEventListener('keydown', function(e) {
+    if (['ArrowDown','ArrowRight','PageDown'].includes(e.key)) { e.preventDefault(); scrollToSlide(currentIdx() + 1); }
+    if (['ArrowUp','ArrowLeft','PageUp'].includes(e.key))     { e.preventDefault(); scrollToSlide(currentIdx() - 1); }
+  });
+</script>
+
+<!-- ═══════════════════════════════════════════
+     THREE.JS — S4: Anatomia da Busca Híbrida
+══════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+var wrap = document.getElementById('canvas-anatomy');
+if (wrap) {
+  var W = wrap.clientWidth, H = wrap.clientHeight;
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(W, H); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0); wrap.appendChild(renderer.domElement);
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
+  camera.position.set(0, 1, 9);
+  var ctrl = new OrbitControls(camera, renderer.domElement);
+  ctrl.enableDamping = true; ctrl.dampingFactor = 0.05;
+  ctrl.autoRotate = true; ctrl.autoRotateSpeed = 0.75;
+  ctrl.enableZoom = false; ctrl.enablePan = false;
+  var cMesh = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.95, 2),
+    new THREE.MeshPhongMaterial({ color: 0xFF904D, emissive: 0xFF904D, emissiveIntensity: 0.35, transparent: true, opacity: 0.88 })
+  );
+  scene.add(cMesh);
+  scene.add(new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.97, 2),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.07 })
+  ));
+  var bMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.52, 32, 32),
+    new THREE.MeshPhongMaterial({ color: 0x4DB4FF, emissive: 0x4DB4FF, emissiveIntensity: 0.45, transparent: true, opacity: 0.9 })
+  );
+  scene.add(bMesh);
+  var dMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.52, 32, 32),
+    new THREE.MeshPhongMaterial({ color: 0xB464FF, emissive: 0xB464FF, emissiveIntensity: 0.45, transparent: true, opacity: 0.9 })
+  );
+  scene.add(dMesh);
+  var rMesh = new THREE.Mesh(
+    new THREE.TorusGeometry(0.35, 0.11, 16, 60),
+    new THREE.MeshPhongMaterial({ color: 0x4DFFB4, emissive: 0x4DFFB4, emissiveIntensity: 0.4, transparent: true, opacity: 0.85 })
+  );
+  scene.add(rMesh);
+  var pCount = 220;
+  var pPos = new Float32Array(pCount * 3);
+  for (var i = 0; i < pCount; i++) {
+    var r = 3.5 + Math.random() * 2, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1);
+    pPos[i*3] = r * Math.sin(phi) * Math.cos(theta); pPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta); pPos[i*3+2] = r * Math.cos(phi);
+  }
+  var pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xFF904D, size: 0.045, transparent: true, opacity: 0.45 })));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+  var pl = new THREE.PointLight(0xFF904D, 2.2, 12); pl.position.set(0, 2, 5); scene.add(pl);
+  var bl = new THREE.PointLight(0x4DB4FF, 1.8, 10); bl.position.set(-4, 0, 0); scene.add(bl);
+  var dl = new THREE.PointLight(0xB464FF, 1.8, 10); dl.position.set(4, 0, 0); scene.add(dl);
+  var tA = 0;
+  (function loopA() {
+    requestAnimationFrame(loopA); tA += 0.012;
+    bMesh.position.set(Math.cos(tA) * 2.6, Math.sin(tA * 0.45) * 0.5, Math.sin(tA) * 2.6);
+    dMesh.position.set(Math.cos(tA + Math.PI) * 2.6, Math.sin(tA * 0.45 + Math.PI) * 0.5, Math.sin(tA + Math.PI) * 2.6);
+    rMesh.position.set(Math.cos(tA * 0.7 + 1) * 2, Math.sin(tA * 0.9) * 1.2, Math.sin(tA * 0.7 + 1) * 2);
+    rMesh.rotation.y += 0.02;
+    cMesh.rotation.x += 0.004; cMesh.rotation.y += 0.007;
+    ctrl.update(); renderer.render(scene, camera);
+  })();
+  new ResizeObserver(function() {
+    var nw = wrap.clientWidth, nh = wrap.clientHeight;
+    camera.aspect = nw / nh; camera.updateProjectionMatrix(); renderer.setSize(nw, nh);
+  }).observe(wrap);
+}
+</script>
+
+<!-- ═══════════════════════════════════════════
+     THREE.JS — S14: Pipeline Amazon Bedrock
+══════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+var wrap = document.getElementById('canvas-bedrock');
+if (wrap) {
+  var W = wrap.clientWidth, H = wrap.clientHeight;
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(W, H); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0); wrap.appendChild(renderer.domElement);
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(44, W / H, 0.1, 100);
+  camera.position.set(0, 2, 13);
+  var ctrl = new OrbitControls(camera, renderer.domElement);
+  ctrl.enableDamping = true; ctrl.dampingFactor = 0.05;
+  ctrl.autoRotate = true; ctrl.autoRotateSpeed = 0.45;
+  ctrl.enableZoom = false; ctrl.enablePan = false;
+  var nodeData = [
+    { x: -6,   color: 0x4DB4FF },
+    { x: -3,   color: 0xFF904D },
+    { x:  0,   color: 0x4DFFB4 },
+    { x:  3,   color: 0xB464FF },
+    { x:  5.5, color: 0xFF904D },
+  ];
+  var nodes = nodeData.map(function(nd) {
+    var m = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.55, 0),
+      new THREE.MeshPhongMaterial({ color: nd.color, emissive: nd.color, emissiveIntensity: 0.5, transparent: true, opacity: 0.92 })
+    );
+    m.position.set(nd.x, 0, 0); scene.add(m); return m;
+  });
+  for (var ni = 0; ni < nodeData.length - 1; ni++) {
+    var x1 = nodeData[ni].x + 0.65, x2 = nodeData[ni+1].x - 0.65;
+    var cyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.035, x2 - x1, 8),
+      new THREE.MeshBasicMaterial({ color: 0xFF904D, transparent: true, opacity: 0.25 })
+    );
+    cyl.rotation.z = Math.PI / 2; cyl.position.set((x1 + x2) / 2, 0, 0); scene.add(cyl);
+  }
+  var fps = Array.from({ length: 6 }, function(_, fi) {
+    var m = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0x4DFFB4, transparent: true, opacity: 0.85 })
+    );
+    scene.add(m); return { mesh: m, offset: fi / 6 };
+  });
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  var pl2 = new THREE.PointLight(0xFF904D, 2.5, 18); pl2.position.set(0, 3, 6); scene.add(pl2);
+  var tB = 0;
+  (function loopB() {
+    requestAnimationFrame(loopB); tB += 0.013;
+    nodes.forEach(function(n, i) {
+      n.rotation.x += 0.01; n.rotation.y += 0.009;
+      n.position.y = Math.sin(tB + i * 0.65) * 0.22;
+    });
+    fps.forEach(function(fp) {
+      var p = ((tB * 0.55 + fp.offset) % 1);
+      fp.mesh.position.x = -6 + p * 12;
+      fp.mesh.position.y = Math.sin(p * Math.PI) * 0.55;
+      fp.mesh.material.opacity = Math.sin(p * Math.PI) * 0.9;
+    });
+    ctrl.update(); renderer.render(scene, camera);
+  })();
+  new ResizeObserver(function() {
+    var nw = wrap.clientWidth, nh = wrap.clientHeight;
+    camera.aspect = nw / nh; camera.updateProjectionMatrix(); renderer.setSize(nw, nh);
+  }).observe(wrap);
+}
+</script>
+
+<!-- ═══════════════════════════════════════════
+     D3 ANIMATIONS
+══════════════════════════════════════════════ -->
+<script>
+
+// ── S3: Paradoxo BM25 vs Dense ───────────────────────────────
+(function() {
+  window.__hybridParadoxoGen = (window.__hybridParadoxoGen || 0) + 1;
+  var myGen = window.__hybridParadoxoGen;
+  var el = document.getElementById('anim-paradoxo');
+  if (!el) return;
+  var W=700,H=258;
+  var svg = d3.select('#anim-paradoxo').append('svg')
+    .attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var mid = W / 2;
+  var qg = svg.append('g').attr('transform','translate('+mid+','+(H/2)+')');
+  qg.append('rect').attr('x',-72).attr('y',-22).attr('width',144).attr('height',44).attr('rx',9)
+    .attr('fill','rgba(255,144,77,0.15)').attr('stroke','#FF904D').attr('stroke-width',1.5);
+  qg.append('text').attr('text-anchor','middle').attr('dy','-0.15em')
+    .attr('fill','#FF904D').attr('font-size',11).attr('font-weight',700).text('"redes neurais"');
+  qg.append('text').attr('text-anchor','middle').attr('dy','1.1em')
+    .attr('fill','rgba(255,144,77,0.55)').attr('font-size',9).text('query do usuário');
+
+  var bData = ['neural network ❌','deep learning ❌','embedding model ❌','transformers ❌'];
+  svg.append('text').attr('x',105).attr('y',24).attr('text-anchor','middle')
+    .attr('fill','#4DB4FF').attr('font-size',9.5).attr('font-weight',700).text('BM25 (Léxico)');
+  var bGs = svg.selectAll('.bi').data(bData).enter().append('g').attr('class','bi')
+    .attr('transform',function(d,i){ return 'translate(8,'+(38+i*44)+')'; });
+  var bRects = bGs.append('rect').attr('width',188).attr('height',34).attr('rx',7)
+    .attr('fill','rgba(77,180,255,0.06)').attr('stroke','rgba(77,180,255,0.2)').attr('stroke-width',1);
+  bGs.append('text').attr('x',94).attr('y',19).attr('text-anchor','middle')
+    .attr('fill','rgba(255,255,255,0.38)').attr('font-size',9.5).text(function(d){ return d; });
+
+  var dData = ['✓ redes neurais','✓ deep learning','✓ embeddings','✓ atenção neural'];
+  svg.append('text').attr('x',W-105).attr('y',24).attr('text-anchor','middle')
+    .attr('fill','#B464FF').attr('font-size',9.5).attr('font-weight',700).text('Dense (Semântico)');
+  var dGs = svg.selectAll('.di').data(dData).enter().append('g').attr('class','di')
+    .attr('transform',function(d,i){ return 'translate('+(W-196)+','+(38+i*44)+')'; });
+  var dRects = dGs.append('rect').attr('width',188).attr('height',34).attr('rx',7)
+    .attr('fill','rgba(180,100,255,0.06)').attr('stroke','rgba(180,100,255,0.2)').attr('stroke-width',1);
+  dGs.append('text').attr('x',94).attr('y',19).attr('text-anchor','middle')
+    .attr('fill','rgba(77,255,180,0.7)').attr('font-size',9.5).text(function(d){ return d; });
+
+  var ph = 0;
+  function loop() {
+    if (window.__hybridParadoxoGen !== myGen) return;
+    ph = 1 - ph;
+    bRects.transition().duration(700)
+      .attr('fill',ph===0 ? 'rgba(255,100,100,0.14)' : 'rgba(77,180,255,0.06)')
+      .attr('stroke',ph===0 ? 'rgba(255,100,100,0.5)' : 'rgba(77,180,255,0.2)');
+    dRects.transition().duration(700)
+      .attr('fill',ph===1 ? 'rgba(77,255,180,0.12)' : 'rgba(180,100,255,0.06)')
+      .attr('stroke',ph===1 ? 'rgba(77,255,180,0.4)' : 'rgba(180,100,255,0.2)');
+    setTimeout(loop, 2000);
+  }
+  var obs = new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    bGs.attr('opacity',0).transition().duration(400).delay(function(d,i){ return 150+i*100; }).attr('opacity',1);
+    dGs.attr('opacity',0).transition().duration(400).delay(function(d,i){ return 350+i*100; }).attr('opacity',1);
+    setTimeout(function(){ if (window.__hybridParadoxoGen===myGen) loop(); }, 1200);
+  }, { threshold: 0.3 });
+  obs.observe(el);
+})();
+
+// ── S7: DAT Resultados ───────────────────────────────────────
+(function() {
+  window.__hybridDatResultGen = (window.__hybridDatResultGen || 0) + 1;
+  var myGen = window.__hybridDatResultGen;
+  var el = document.getElementById('anim-dat-result');
+  if (!el) return;
+  var W=700,H=258,mt=28,mr=28,mb=48,ml=78;
+  var iW=W-ml-mr, iH=H-mt-mb;
+  var svg = d3.select('#anim-dat-result').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var g = svg.append('g').attr('transform','translate('+ml+','+mt+')');
+  var data=[
+    {q:'Queries Gerais',      f:0.78, d:0.80},
+    {q:'Híbrido-Sensíveis',  f:0.69, d:0.745},
+    {q:'Só Semânticas',      f:0.83, d:0.855},
+    {q:'Só Léxicas',         f:0.80, d:0.82},
+  ];
+  var x0=d3.scaleBand().domain(data.map(function(d){ return d.q; })).range([0,iW]).paddingInner(0.28);
+  var x1=d3.scaleBand().domain(['f','d']).range([0,x0.bandwidth()]).padding(0.1);
+  var y=d3.scaleLinear().domain([0.55,0.92]).range([iH,0]);
+  g.append('g').attr('transform','translate(0,'+iH+')')
+    .call(d3.axisBottom(x0).tickSize(0))
+    .call(function(ax){ ax.select('.domain').remove(); ax.selectAll('text').attr('fill','rgba(255,255,255,0.48)').attr('font-size',10).attr('text-anchor','middle'); });
+  g.append('g').call(d3.axisLeft(y).ticks(4).tickFormat(d3.format('.2f')))
+    .call(function(ax){ ax.select('.domain').remove(); ax.selectAll('.tick line').attr('stroke','rgba(255,255,255,0.07)').attr('x2',iW); ax.selectAll('text').attr('fill','rgba(255,255,255,0.42)').attr('font-size',9.5); });
+  var groups = g.selectAll('.gr').data(data).enter().append('g').attr('class','gr')
+    .attr('transform',function(d){ return 'translate('+x0(d.q)+',0)'; });
+  groups.append('rect').attr('x',x1('f')).attr('width',x1.bandwidth())
+    .attr('y',iH).attr('height',0).attr('rx',3).attr('fill','rgba(255,255,255,0.28)');
+  var dynBars = groups.append('rect').attr('x',x1('d')).attr('width',x1.bandwidth())
+    .attr('y',iH).attr('height',0).attr('rx',3).attr('fill','#FF904D');
+  var pcts = g.selectAll('.pct').data(data).enter().append('text').attr('class','pct')
+    .attr('x',function(d){ return x0(d.q)+x1('d')+x1.bandwidth()/2; }).attr('y',0)
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0)').attr('font-size',8).attr('font-weight',700)
+    .text(function(d){ return '+'+((d.d-d.f)*100).toFixed(1)+'%'; });
+  var lg = g.append('g').attr('transform','translate('+(iW-135)+',4)');
+  lg.append('rect').attr('width',11).attr('height',11).attr('rx',2).attr('fill','rgba(255,255,255,0.28)');
+  lg.append('text').attr('x',15).attr('y',9.5).attr('fill','rgba(255,255,255,0.48)').attr('font-size',8.5).text('α fixo = 0,5');
+  lg.append('rect').attr('y',16).attr('width',11).attr('height',11).attr('rx',2).attr('fill','#FF904D');
+  lg.append('text').attr('x',15).attr('y',25.5).attr('fill','rgba(255,255,255,0.48)').attr('font-size',8.5).text('DAT dinâmico');
+  function loop() {
+    if (window.__hybridDatResultGen!==myGen) return;
+    dynBars.transition().duration(600).attr('opacity',1).transition().duration(600).attr('opacity',0.72);
+    setTimeout(loop,1600);
+  }
+  var obs = new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    groups.selectAll('rect:first-of-type').transition().duration(700).delay(function(d,i){ return i*80; })
+      .attr('y',function(d){ return y(d.f); }).attr('height',function(d){ return iH-y(d.f); });
+    dynBars.transition().duration(700).delay(function(d,i){ return 200+i*80; })
+      .attr('y',function(d){ return y(d.d); }).attr('height',function(d){ return iH-y(d.d); });
+    pcts.transition().duration(400).delay(function(d,i){ return 900+i*80; })
+      .attr('y',function(d){ return y(d.d)-5; }).attr('fill','rgba(255,144,77,0.85)');
+    setTimeout(function(){ if(window.__hybridDatResultGen===myGen) loop(); },1500);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+
+// ── S9: LiveRAG Stream ───────────────────────────────────────
+(function() {
+  window.__hybridStreamGen = (window.__hybridStreamGen || 0) + 1;
+  var myGen = window.__hybridStreamGen;
+  var el = document.getElementById('anim-stream');
+  if (!el) return;
+  var W=700,H=228;
+  var svg = d3.select('#anim-stream').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var ry = H * 0.47;
+  svg.append('path')
+    .attr('d','M 0 '+(ry-20)+' C 110 '+(ry-36)+' 240 '+(ry-6)+' 370 '+(ry-20)+' S 560 '+(ry-6)+' 700 '+(ry-20))
+    .attr('fill','none').attr('stroke','#4DB4FF').attr('stroke-width',42).attr('opacity',0.13);
+  svg.append('text').attr('x',18).attr('y',ry-46).attr('fill','#4DB4FF').attr('font-size',9).attr('font-weight',700).text('STREAM DE DADOS AO VIVO');
+  var gateX = W * 0.62;
+  svg.append('rect').attr('x',gateX-2).attr('y',ry-46).attr('width',4).attr('height',54).attr('fill','#FF904D').attr('opacity',0.9);
+  svg.append('text').attr('x',gateX).attr('y',ry-52).attr('text-anchor','middle').attr('fill','#FF904D').attr('font-size',8.5).attr('font-weight',700).text('RETRIEVAL GATE');
+  var res = [{t:'✓ BM25 + E5 híbrido',ok:true},{t:'✓ Alinhamento vocab',ok:true},{t:'✗ doc2query falhou',ok:false}];
+  res.forEach(function(r,i) {
+    var rg = svg.append('g').attr('transform','translate('+(gateX+14)+','+(ry-36+i*25)+')');
+    rg.append('rect').attr('width',115).attr('height',20).attr('rx',5)
+      .attr('fill',r.ok ? 'rgba(77,255,180,0.1)' : 'rgba(255,100,100,0.1)')
+      .attr('stroke',r.ok ? 'rgba(77,255,180,0.3)' : 'rgba(255,100,100,0.3)');
+    rg.append('text').attr('x',57).attr('y',13).attr('text-anchor','middle')
+      .attr('fill',r.ok ? '#4DFFB4' : '#FF6464').attr('font-size',8).text(r.t);
+  });
+  var ptData = Array.from({length:14},function(_,i){ return {x:(i/14)*gateX*1.1-30, y:ry-15+(Math.random()-0.5)*16, speed:1.4+Math.random()*1.2}; });
+  var circles = svg.selectAll('.sp').data(ptData).enter().append('circle').attr('class','sp')
+    .attr('r',5.5).attr('fill','#4DB4FF').attr('opacity',0.7)
+    .attr('cx',function(d){ return d.x; }).attr('cy',function(d){ return d.y; });
+  function af() {
+    if (window.__hybridStreamGen!==myGen) return;
+    ptData.forEach(function(d){ d.x+=d.speed; if(d.x>gateX+10){ d.x=-18; d.y=ry-15+(Math.random()-0.5)*16; } });
+    circles.attr('cx',function(d){ return d.x; }).attr('cy',function(d){ return d.y; })
+      .attr('opacity',function(d){ return d.x>gateX ? 0.14 : 0.72; });
+    requestAnimationFrame(af);
+  }
+  var obs = new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    circles.attr('opacity',0).transition().duration(600).delay(function(d,i){ return i*65; }).attr('opacity',0.72);
+    setTimeout(function(){ if(window.__hybridStreamGen===myGen) af(); },700);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+
+// ── S10: MAP Progression ────────────────────────────────────
+(function() {
+  window.__hybridMapProgGen = (window.__hybridMapProgGen || 0) + 1;
+  var myGen = window.__hybridMapProgGen;
+  var el = document.getElementById('anim-map-prog');
+  if (!el) return;
+  var W=700,H=235,mt=28,mr=38,mb=40,ml=72;
+  var iW=W-ml-mr, iH=H-mt-mb;
+  var svg = d3.select('#anim-map-prog').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var g = svg.append('g').attr('transform','translate('+ml+','+mt+')');
+  var data=[
+    {label:'BM25\nEsparso',     map:0.523,color:'rgba(255,255,255,0.38)'},
+    {label:'Dense\nE5',         map:0.352,color:'#B464FF'},
+    {label:'Híbrido\nBM25+E5',  map:0.523,color:'#4DB4FF'},
+    {label:'Híbrido +\nRankLLaMA',map:0.797,color:'#FF904D'},
+  ];
+  var x=d3.scaleBand().domain(data.map(function(d){ return d.label; })).range([0,iW]).paddingInner(0.32);
+  var y=d3.scaleLinear().domain([0,1]).range([iH,0]);
+  g.append('g').attr('transform','translate(0,'+iH+')').call(d3.axisBottom(x).tickSize(0))
+    .call(function(ax){ ax.select('.domain').remove(); ax.selectAll('text').attr('fill','rgba(255,255,255,0.48)').attr('font-size',9.5); });
+  g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.1f')))
+    .call(function(ax){ ax.select('.domain').remove(); ax.selectAll('.tick line').attr('stroke','rgba(255,255,255,0.07)').attr('x2',iW); ax.selectAll('text').attr('fill','rgba(255,255,255,0.42)').attr('font-size',9.5); });
+  var bars = g.selectAll('.bm').data(data).enter().append('rect').attr('class','bm')
+    .attr('x',function(d){ return x(d.label); }).attr('width',x.bandwidth())
+    .attr('y',iH).attr('height',0).attr('rx',4).attr('fill',function(d){ return d.color; });
+  var vls = g.selectAll('.vlm').data(data).enter().append('text').attr('class','vlm')
+    .attr('x',function(d){ return x(d.label)+x.bandwidth()/2; }).attr('y',iH)
+    .attr('text-anchor','middle').attr('fill','rgba(0,0,0,0)').attr('font-size',9.5).attr('font-weight',700)
+    .text(function(d){ return d.map.toFixed(3); });
+  var x2=x(data[2].label)+x.bandwidth()/2, x3=x(data[3].label)+x.bandwidth()/2;
+  var arrG = g.append('g').attr('opacity',0);
+  arrG.append('line').attr('x1',x2).attr('y1',y(0.523)).attr('x2',x3).attr('y2',y(0.797))
+    .attr('stroke','#4DFFB4').attr('stroke-width',2).attr('stroke-dasharray','5,3');
+  arrG.append('text').attr('x',(x2+x3)/2+22).attr('y',y(0.66))
+    .attr('fill','#4DFFB4').attr('font-size',12).attr('font-weight',700).text('+52%');
+  function loop() {
+    if (window.__hybridMapProgGen!==myGen) return;
+    bars.filter(function(d,i){ return i===3; }).transition().duration(650).attr('opacity',1).transition().duration(650).attr('opacity',0.72);
+    setTimeout(loop,1700);
+  }
+  var obs = new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    bars.transition().duration(800).delay(function(d,i){ return i*130; })
+      .attr('y',function(d){ return y(d.map); }).attr('height',function(d){ return iH-y(d.map); });
+    vls.transition().duration(400).delay(function(d,i){ return 700+i*130; })
+      .attr('y',function(d){ return y(d.map)-7; }).attr('fill','rgba(255,255,255,0.72)');
+    arrG.transition().duration(500).delay(1300).attr('opacity',1);
+    setTimeout(function(){ if(window.__hybridMapProgGen===myGen) loop(); },1900);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+
+// ── S13: Claim Judge ────────────────────────────────────────
+(function() {
+  window.__hybridJuizGen = (window.__hybridJuizGen || 0) + 1;
+  var myGen = window.__hybridJuizGen;
+  var el = document.getElementById('anim-juiz');
+  if (!el) return;
+  var W=700,H=258;
+  var svg = d3.select('#anim-juiz').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var claims=['BERT usa atenção bidirecional','ClinicalBERT melhora NER clínico','Transformers escaláveis em prod.','BioBERT pré-treinado em PubMed','LLMs reduzem alucinações em RAG'];
+  svg.append('text').attr('x',93).attr('y',21).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.38)').attr('font-size',8.5).attr('font-weight',700).text('CLAIMS DA RESPOSTA');
+  var cGs = svg.selectAll('.cg').data(claims).enter().append('g').attr('class','cg')
+    .attr('transform',function(d,i){ return 'translate(7,'+(35+i*42)+')'; });
+  var cRects = cGs.append('rect').attr('width',172).attr('height',32).attr('rx',7)
+    .attr('fill','rgba(255,255,255,0.04)').attr('stroke','rgba(255,255,255,0.13)').attr('stroke-width',1);
+  cGs.append('text').attr('x',86).attr('y',18).attr('text-anchor','middle')
+    .attr('fill','rgba(255,255,255,0.48)').attr('font-size',8).text(function(d){ return d; });
+  var jG = svg.append('g').attr('transform','translate('+(W/2)+','+(H/2)+')');
+  jG.append('circle').attr('r',31).attr('fill','rgba(255,144,77,0.14)').attr('stroke','#FF904D').attr('stroke-width',2);
+  jG.append('text').attr('dy','-4').attr('text-anchor','middle').attr('fill','#FF904D').attr('font-size',20).text('⚖');
+  jG.append('text').attr('dy','17').attr('text-anchor','middle').attr('fill','#FF904D').attr('font-size',7.5).attr('font-weight',700).text('Nova Pro');
+  svg.append('text').attr('x',W-86).attr('y',21).attr('text-anchor','middle').attr('fill','#4DFFB4').attr('font-size',8.5).attr('font-weight',700).text('VEREDICTO');
+  var vGs = svg.selectAll('.vg').data(claims).enter().append('g').attr('class','vg')
+    .attr('transform',function(d,i){ return 'translate('+(W-182)+','+(35+i*42)+')'; });
+  var vRects = vGs.append('rect').attr('width',162).attr('height',32).attr('rx',7)
+    .attr('fill','rgba(77,255,180,0)').attr('stroke','rgba(77,255,180,0)').attr('stroke-width',1);
+  var vTexts = vGs.append('text').attr('x',81).attr('y',18).attr('text-anchor','middle')
+    .attr('fill','#4DFFB4').attr('font-size',8.5).attr('font-weight',700).attr('opacity',0).text('✓ SUSTENTADO');
+  d3.selectAll('.cg').each(function(d,i) {
+    svg.append('line')
+      .attr('x1',179).attr('y1',51+i*42).attr('x2',W/2-31).attr('y2',H/2)
+      .attr('stroke','#FF904D').attr('stroke-width',1).attr('opacity',0).attr('stroke-dasharray','3,3').attr('class','a-line');
+  });
+  var ai = 0;
+  function loop() {
+    if (window.__hybridJuizGen!==myGen) return;
+    cRects.filter(function(d,i){ return i===ai; })
+      .transition().duration(300).attr('fill','rgba(255,144,77,0.14)').attr('stroke','#FF904D')
+      .transition().duration(700).attr('fill','rgba(255,255,255,0.04)').attr('stroke','rgba(255,255,255,0.13)');
+    vTexts.filter(function(d,i){ return i===ai; }).attr('opacity',0).transition().duration(500).delay(380).attr('opacity',1);
+    vRects.filter(function(d,i){ return i===ai; }).transition().duration(500).delay(380)
+      .attr('fill','rgba(77,255,180,0.08)').attr('stroke','rgba(77,255,180,0.3)');
+    ai=(ai+1)%claims.length; setTimeout(loop,1300);
+  }
+  var obs = new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    cGs.attr('opacity',0).transition().duration(380).delay(function(d,i){ return i*90; }).attr('opacity',1);
+    svg.selectAll('.a-line').transition().duration(400).delay(600).attr('opacity',0.35);
+    setTimeout(function(){ if(window.__hybridJuizGen===myGen) loop(); },1100);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+
+// ── S15: Reranking Shuffle ───────────────────────────────────
+(function() {
+  window.__hybridShuffleGen = (window.__hybridShuffleGen || 0) + 1;
+  var myGen = window.__hybridShuffleGen;
+  var el = document.getElementById('anim-shuffle');
+  if (!el) return;
+  var W=700,H=244;
+  var svg = d3.select('#anim-shuffle').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  svg.append('text').attr('x',128).attr('y',21).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.36)').attr('font-size',9).attr('font-weight',700).text('BEDROCK INICIAL');
+  svg.append('text').attr('x',W-128).attr('y',21).attr('text-anchor','middle').attr('fill','#FF904D').attr('font-size',9).attr('font-weight',700).text('APÓS COHERE RERANK');
+  var reranked=[6,1,8,3,2,7,4,5];
+  var lGs = svg.selectAll('.lg').data([1,2,3,4,5,6,7,8]).enter().append('g').attr('class','lg')
+    .attr('transform',function(d,i){ return 'translate(16,'+(30+i*26)+')'; });
+  lGs.append('rect').attr('width',213).attr('height',20).attr('rx',5)
+    .attr('fill','rgba(255,255,255,0.05)').attr('stroke','rgba(255,255,255,0.13)');
+  lGs.append('text').attr('x',9).attr('y',13).attr('fill','rgba(255,255,255,0.4)').attr('font-size',8.5)
+    .text(function(d,i){ return '#'+d+' — Chunk '+d+' (score: '+(0.50+i*0.025).toFixed(3)+')'; });
+  var rGs = svg.selectAll('.rg').data(reranked).enter().append('g').attr('class','rg')
+    .attr('transform',function(d,i){ return 'translate('+(W-229)+','+(30+i*26)+')'; });
+  rGs.append('rect').attr('width',213).attr('height',20).attr('rx',5)
+    .attr('fill',function(d){ return d<=3 ? 'rgba(255,144,77,0.12)' : 'rgba(255,255,255,0.05)'; })
+    .attr('stroke',function(d){ return d<=3 ? 'rgba(255,144,77,0.4)' : 'rgba(255,255,255,0.13)'; });
+  rGs.append('text').attr('x',9).attr('y',13)
+    .attr('fill',function(d){ return d<=3 ? '#FF904D' : 'rgba(255,255,255,0.4)'; }).attr('font-size',8.5)
+    .text(function(d,i){ return '#'+(i+1)+' — Chunk '+d+' (score: '+(0.56+(7-i)*0.038).toFixed(3)+')'; });
+  var cidx = reranked.indexOf(1);
+  var conn = svg.append('line')
+    .attr('x1',229).attr('y1',30+0*26+10).attr('x2',W-229).attr('y2',30+cidx*26+10)
+    .attr('stroke','#4DFFB4').attr('stroke-width',1.5).attr('stroke-dasharray','4,3').attr('opacity',0);
+  function loop() {
+    if (window.__hybridShuffleGen!==myGen) return;
+    conn.attr('opacity',0).transition().duration(600).attr('opacity',0.8).transition().duration(600).attr('opacity',0.18);
+    setTimeout(loop,1600);
+  }
+  var obs = new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    lGs.attr('opacity',0).transition().duration(380).delay(function(d,i){ return i*55; }).attr('opacity',1);
+    rGs.attr('opacity',0).transition().duration(380).delay(function(d,i){ return 380+i*55; }).attr('opacity',1);
+    conn.transition().duration(500).delay(1000).attr('opacity',0.8);
+    setTimeout(function(){ if(window.__hybridShuffleGen===myGen) loop(); },1600);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+
+// ── S17: Race Benchmark ─────────────────────────────────────
+(function() {
+  window.__hybridRaceGen = (window.__hybridRaceGen || 0) + 1;
+  var myGen = window.__hybridRaceGen;
+  var el = document.getElementById('anim-race');
+  if (!el) return;
+  var W=700,H=258;
+  var svg = d3.select('#anim-race').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var raceData=[
+    {name:'Hybrid+Rerank', r5:0.816, color:'#FF904D'},
+    {name:'Ctx Hybrid',    r5:0.717, color:'#4DFFB4'},
+    {name:'Hybrid RRF',    r5:0.695, color:'#4DB4FF'},
+    {name:'CRAG',          r5:0.658, color:'#FFD54D'},
+    {name:'BM25',          r5:0.644, color:'rgba(255,255,255,0.55)'},
+    {name:'Dense',         r5:0.587, color:'#B464FF'},
+    {name:'HyDE',          r5:0.544, color:'#FF6464'},
+  ];
+  var tStart=143, tW=W-192;
+  var scoreBars=[];
+  raceData.forEach(function(d,i) {
+    var yy = 38+i*31;
+    svg.append('rect').attr('x',tStart).attr('y',yy-7).attr('width',tW).attr('height',14).attr('rx',7)
+      .attr('fill','rgba(255,255,255,0.04)').attr('stroke','rgba(255,255,255,0.07)');
+    svg.append('text').attr('x',tStart-7).attr('y',yy+5).attr('text-anchor','end')
+      .attr('fill',d.color).attr('font-size',9.5).attr('font-weight',600).text(d.name);
+    var bar = svg.append('rect').attr('x',tStart).attr('y',yy-7).attr('width',0).attr('height',14).attr('rx',7).attr('fill',d.color).attr('opacity',0.85);
+    var lab = svg.append('text').attr('x',tStart+5).attr('y',yy+5).attr('fill','rgba(0,0,0,0)').attr('font-size',8.5).attr('font-weight',700).text(d.r5.toFixed(3));
+    scoreBars.push({bar:bar,lab:lab,d:d});
+  });
+  var finX = tStart+tW*0.816;
+  svg.append('line').attr('x1',finX).attr('y1',22).attr('x2',finX).attr('y2',H-16)
+    .attr('stroke','#FF904D').attr('stroke-width',1.5).attr('stroke-dasharray','4,4').attr('opacity',0.5);
+  svg.append('text').attr('x',finX+5).attr('y',21).attr('fill','#FF904D').attr('font-size',7.5).text('WINNER');
+  function loop() {
+    if (window.__hybridRaceGen!==myGen) return;
+    scoreBars[0].bar.transition().duration(550).attr('opacity',1).transition().duration(550).attr('opacity',0.75);
+    setTimeout(loop,1300);
+  }
+  var obs = new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    scoreBars.forEach(function(sb,i) {
+      sb.bar.transition().duration(900).delay(i*90).attr('width',tW*sb.d.r5);
+      sb.lab.transition().duration(400).delay(900+i*90).attr('x',tStart+tW*sb.d.r5+6).attr('fill',sb.d.color);
+    });
+    setTimeout(function(){ if(window.__hybridRaceGen===myGen) loop(); },1900);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+
+// ── S18: Horizontal Bars ────────────────────────────────────
+(function() {
+  window.__hybridRankBarsGen = (window.__hybridRankBarsGen || 0) + 1;
+  var myGen = window.__hybridRankBarsGen;
+  var el = document.getElementById('anim-rank-bars');
+  if (!el) return;
+  var W=700,H=268,mt=24,mr=52,mb=28,ml=103;
+  var iW=W-ml-mr, iH=H-mt-mb;
+  var svg = d3.select('#anim-rank-bars').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var g = svg.append('g').attr('transform','translate('+ml+','+mt+')');
+  var data=[
+    {name:'Hybrid+Rerank', r5:0.816, color:'#FF904D',    win:true},
+    {name:'Ctx Hybrid',    r5:0.717, color:'#4DFFB4',    win:false},
+    {name:'Hybrid RRF',    r5:0.695, color:'#4DB4FF',    win:false},
+    {name:'CRAG',          r5:0.658, color:'#FFD54D',    win:false},
+    {name:'BM25',          r5:0.644, color:'rgba(255,255,255,0.48)', win:false},
+    {name:'Dense',         r5:0.587, color:'#B464FF',    win:false},
+    {name:'HyDE',          r5:0.544, color:'#FF6464',    win:false},
+  ];
+  var x=d3.scaleLinear().domain([0,0.9]).range([0,iW]);
+  var y=d3.scaleBand().domain(data.map(function(d){ return d.name; })).range([0,iH]).padding(0.22);
+  g.append('g').attr('transform','translate(0,'+iH+')').call(d3.axisBottom(x).ticks(5).tickFormat(d3.format('.1f')))
+    .call(function(ax){ ax.select('.domain').remove(); ax.selectAll('.tick line').attr('stroke','rgba(255,255,255,0.07)').attr('y1',-iH); ax.selectAll('text').attr('fill','rgba(255,255,255,0.42)').attr('font-size',9); });
+  g.append('g').call(d3.axisLeft(y).tickSize(0))
+    .call(function(ax){ ax.select('.domain').remove(); ax.selectAll('text')
+      .attr('fill',function(d){ var it=data.find(function(i){ return i.name===d; }); return it&&it.win?'#FF904D':'rgba(255,255,255,0.48)'; })
+      .attr('font-size',8.5).attr('font-weight',function(d){ var it=data.find(function(i){ return i.name===d; }); return it&&it.win?700:400; }); });
+  var bars = g.selectAll('.hb').data(data).enter().append('rect').attr('class','hb')
+    .attr('y',function(d){ return y(d.name); }).attr('height',y.bandwidth())
+    .attr('x',0).attr('width',0).attr('rx',3).attr('fill',function(d){ return d.color; }).attr('opacity',0.82);
+  var vls = g.selectAll('.vlh').data(data).enter().append('text').attr('class','vlh')
+    .attr('y',function(d){ return y(d.name)+y.bandwidth()/2+4; }).attr('x',0)
+    .attr('fill','rgba(255,255,255,0)').attr('font-size',8.5).attr('font-weight',700)
+    .text(function(d){ return d.r5.toFixed(3); });
+  function loop() {
+    if (window.__hybridRankBarsGen!==myGen) return;
+    bars.filter(function(d){ return d.win; }).transition().duration(600).attr('opacity',1).transition().duration(600).attr('opacity',0.75);
+    setTimeout(loop,1500);
+  }
+  var obs = new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    bars.transition().duration(800).delay(function(d,i){ return i*75; }).attr('width',function(d){ return x(d.r5); });
+    vls.transition().duration(400).delay(function(d,i){ return 750+i*75; }).attr('x',function(d){ return x(d.r5)+5; }).attr('fill','rgba(255,255,255,0.68)');
+    setTimeout(function(){ if(window.__hybridRankBarsGen===myGen) loop(); },1750);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+
+// ── S19: Failure Modes Donut ─────────────────────────────────
+(function() {
+  window.__hybridDonutGen = (window.__hybridDonutGen || 0) + 1;
+  var myGen = window.__hybridDonutGen;
+  var el = document.getElementById('anim-donut');
+  if (!el) return;
+  var W=700,H=238,cx=W*0.34,cy=H/2,R=86,r=43;
+  var svg = d3.select('#anim-donut').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var pieData=[
+    {label:'Estrutura de Tabela', pct:73, color:'#FF6464'},
+    {label:'Raciocínio Numérico', pct:20, color:'#FFD54D'},
+    {label:'Vocabulário',         pct:5,  color:'#B464FF'},
+    {label:'Outros',              pct:2,  color:'rgba(255,255,255,0.25)'},
+  ];
+  var pie=d3.pie().value(function(d){ return d.pct; }).sort(null);
+  var arc=d3.arc().innerRadius(r).outerRadius(R);
+  var arcH=d3.arc().innerRadius(r).outerRadius(R+9);
+  var gd=svg.append('g').attr('transform','translate('+cx+','+cy+')');
+  var paths=gd.selectAll('.ap').data(pie(pieData)).enter().append('path').attr('class','ap')
+    .attr('d',function(d){ return arc(d); }).attr('fill',function(d){ return d.data.color; }).attr('opacity',0)
+    .attr('stroke','rgba(0,0,0,0.4)').attr('stroke-width',2);
+  gd.append('text').attr('text-anchor','middle').attr('dy','-0.2em').attr('fill','#FF6464').attr('font-size',22).attr('font-weight',900).text('73%');
+  gd.append('text').attr('text-anchor','middle').attr('dy','1.1em').attr('fill','rgba(255,255,255,0.42)').attr('font-size',8.5).text('TABELAS');
+  var lg=svg.append('g').attr('transform','translate('+(W*0.57)+','+(H*0.11)+')');
+  pieData.forEach(function(d,i) {
+    var row=lg.append('g').attr('transform','translate(0,'+(i*46)+')');
+    row.append('rect').attr('width',12).attr('height',12).attr('rx',3).attr('fill',d.color);
+    row.append('text').attr('x',18).attr('y',10).attr('fill','rgba(255,255,255,0.65)').attr('font-size',8.5).attr('font-weight',600).text(d.label);
+    row.append('text').attr('x',18).attr('y',26).attr('fill',d.color).attr('font-size',14).attr('font-weight',900).text(d.pct+'%');
+  });
+  var ai=0;
+  function loop() {
+    if (window.__hybridDonutGen!==myGen) return;
+    paths.transition().duration(450)
+      .attr('d',function(d,i){ return i===ai ? arcH(d) : arc(d); })
+      .attr('opacity',function(d,i){ return i===ai ? 1 : 0.6; });
+    ai=(ai+1)%pieData.length; setTimeout(loop,1500);
+  }
+  var obs=new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    paths.transition().duration(800).delay(function(d,i){ return i*130; }).attr('opacity',0.88);
+    setTimeout(function(){ if(window.__hybridDonutGen===myGen) loop(); },1300);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+
+// ── S20: Pirâmide da Recuperação ────────────────────────────
+(function() {
+  window.__hybridPiramideGen = (window.__hybridPiramideGen || 0) + 1;
+  var myGen = window.__hybridPiramideGen;
+  var el = document.getElementById('anim-piramide');
+  if (!el) return;
+  var W=700,H=278;
+  var svg=d3.select('#anim-piramide').append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  svg.append('rect').attr('width',W).attr('height',H).attr('fill','rgba(0,0,0,0.3)');
+  var layers=[
+    {label:'RERANKER NEURAL',      sub:'Art. 04 — Cohere Rerank · +17pp MRR@3',         color:'#FF904D',   w:155},
+    {label:'ALPHA DINÂMICO (DAT)', sub:'Art. 01 — α por query · +7,5% nas difíceis',    color:'#4DFFB4',   w:280},
+    {label:'FUSÃO HÍBRIDA (RRF)',  sub:'Arts. 02-04 — BM25+Dense · recall superior',    color:'#4DB4FF',   w:420},
+    {label:'BM25 BASELINE',        sub:'Todos os artigos — léxico preciso · mínimo obrigatório', color:'rgba(255,255,255,0.48)', w:580},
+  ];
+  var baseY=H-28, lH=45;
+  var lGs=svg.selectAll('.l').data(layers).enter().append('g').attr('class','l')
+    .attr('transform',function(d,i){ return 'translate('+((W-d.w)/2)+','+(baseY-(layers.length-i)*lH)+')'; });
+  var lRects=lGs.append('rect')
+    .attr('width',function(d){ return d.w; }).attr('height',lH-5).attr('rx',7)
+    .attr('fill',function(d){ return d.color; }).attr('opacity',0);
+  var lT1=lGs.append('text').attr('x',function(d){ return d.w/2; }).attr('y',16)
+    .attr('text-anchor','middle').attr('fill','rgba(0,0,0,0.85)').attr('font-size',9.5).attr('font-weight',800).attr('opacity',0)
+    .text(function(d){ return d.label; });
+  var lT2=lGs.append('text').attr('x',function(d){ return d.w/2; }).attr('y',30)
+    .attr('text-anchor','middle').attr('fill','rgba(0,0,0,0.6)').attr('font-size',7.5).attr('opacity',0)
+    .text(function(d){ return d.sub; });
+  var pi=0;
+  function loop() {
+    if (window.__hybridPiramideGen!==myGen) return;
+    lRects.transition().duration(650).attr('opacity',function(d,i){ return i===pi ? 1 : 0.82; });
+    pi=(pi+1)%layers.length; setTimeout(loop,1100);
+  }
+  var obs=new IntersectionObserver(function(es) {
+    if (!es[0].isIntersecting) return; obs.disconnect();
+    lRects.transition().duration(550).delay(function(d,i){ return (layers.length-1-i)*280; }).attr('opacity',0.85);
+    lT1.transition().duration(400).delay(function(d,i){ return 200+(layers.length-1-i)*280; }).attr('opacity',1);
+    lT2.transition().duration(400).delay(function(d,i){ return 300+(layers.length-1-i)*280; }).attr('opacity',1);
+    setTimeout(function(){ if(window.__hybridPiramideGen===myGen) loop(); },2000);
+  },{ threshold:0.3 }); obs.observe(el);
+})();
+</script>
+
+</body>
+</html>
