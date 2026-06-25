@@ -571,6 +571,21 @@ body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflo
   </div>
 </section>
 
+<!-- S14b · METÁFORA: O GUARDA-ROUPA -->
+<section class="section" id="slide-14b">
+  <div style="max-width:880px;width:100%" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 4 · Taxonomia — Por Que 4 Famílias?</div>
+    <div class="metaphor-card warning">
+      <span class="metaphor-icon">👔</span>
+      <h3 class="metaphor-title">O Guarda-Roupa que Revela a Estratégia</h3>
+      <p class="metaphor-scenario">Imagine quatro pessoas que querem se vestir melhor. A primeira <strong style="color:var(--mira-warning)">compra roupas novas</strong> — investe em peças que chegam de fora (Retriever-Based: melhorar como busca). A segunda <strong style="color:var(--mira-warning)">reorganiza o que já tem</strong> — aprende a combinar melhor o que está no armário (Generator-Based: melhorar como gera). A terceira <strong style="color:var(--mira-warning)">alterna entre comprar e reorganizar</strong> — usa as duas estratégias na hora certa (Hybrid). A quarta <strong style="color:var(--mira-warning)">garante que nada vai estragar</strong> — impermeabiliza o armário, tem backup das peças favoritas (Robustness). Nenhuma estratégia é errada: cada uma resolve um problema diferente.</p>
+      <div class="metaphor-bridge">
+        <strong>Na Taxonomia Sharma 2025 (ACM TOIS):</strong> as 4 famílias organizam <em>onde o campo inova</em> — não o que o sistema faz, mas onde o pesquisador aposta a melhoria. Saber a família ajuda a comparar sistemas e a escolher onde investir esforço de pesquisa.
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- S15 · ROBUSTEZ: A SALA DOS ESPELHOS -->
 <section class="section" id="slide-15">
   <div style="max-width:880px;width:100%" data-aos="fade-up">
@@ -700,6 +715,38 @@ body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflo
   </div>
 </section>
 
+<!-- S19b · RAG EM DADOS PROPRIETÁRIOS -->
+<section class="section" id="slide-19b">
+  <div style="max-width:880px;width:100%" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 5 · Engenharia de Produção — Dados Proprietários</div>
+    <div class="metaphor-card blue">
+      <span class="metaphor-icon">🏦</span>
+      <h3 class="metaphor-title">O Cofre Inteligente do Banco</h3>
+      <p class="metaphor-scenario">Um banco não abre o cofre para qualquer um e não mistura o dinheiro de clientes diferentes. O RAG corporativo enfrenta o mesmo problema: como <strong style="color:var(--mira-blue)">recuperar informação privada sem vazar para outros usuários</strong>, sem expor dados sensíveis ao LLM, e sem dar ao modelo acesso a documentos que o usuário não tem permissão de ver? O cofre precisa ser inteligente — e o agente bancário (LLM) só vê o que o cliente solicitou.</p>
+      <div class="metaphor-bridge">
+        <strong>Systematic Review (Oche et al., Univ Tennessee, Jul 2025):</strong> identificou 3 barreiras principais para RAG em produção proprietária: (1) Federated Retrieval — buscar em silos isolados sem centralizar os dados; (2) Differential Privacy em embeddings — evitar que o vetor revele o texto original; (3) Controle de acesso granular — usuário X não vê o que usuário Y recuperou.
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.85rem;margin-top:1.2rem">
+      <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.85rem;padding:.95rem;text-align:center">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">🔀</div>
+        <div style="font-size:.82rem;font-weight:700;color:var(--mira-blue);margin-bottom:.3rem">Federated Retrieval</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);line-height:1.4">Busca em múltiplos silos sem mover os dados. Cada silo retorna top-k; o orquestrador fusiona os resultados.</div>
+      </div>
+      <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.85rem;padding:.95rem;text-align:center">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">🔐</div>
+        <div style="font-size:.82rem;font-weight:700;color:var(--mira-blue);margin-bottom:.3rem">Privacy-Preserving Embeddings</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);line-height:1.4">Differential privacy no vetor — o embedding não revela o texto original, mesmo se interceptado.</div>
+      </div>
+      <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.85rem;padding:.95rem;text-align:center">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">🎫</div>
+        <div style="font-size:.82rem;font-weight:700;color:var(--mira-blue);margin-bottom:.3rem">Controle Granular</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);line-height:1.4">Acesso por papel (RBAC) ou atributo (ABAC). Documentos filtrados antes de entrar no contexto do LLM.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════════════════════════════════════════════════
      BLOCO 6 · A FÓRMULA QUE UNIFICA
 ═══════════════════════════════════════════════════════ -->
@@ -824,6 +871,26 @@ body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflo
     </div>
     <div style="background:rgba(180,100,255,.07);border:1px solid rgba(180,100,255,.18);border-radius:.85rem;padding:.9rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.65);line-height:1.5">
       <strong style="color:var(--mira-purple)">2025: o ano agêntico.</strong> 55,9% dos trabalhos de Reasoning RAG são prompt-based (S2 sem treino) — sinal de que o campo está em explosão. O S2 training-based tende a superar o prompt-based, mas exige mais recursos.
+    </div>
+  </div>
+</section>
+
+<!-- S24b · D3: RL LOOP DO TREINAMENTO AGÊNTICO -->
+<section class="section" id="slide-24b">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 7 · Sistema 2 — Training-Based: Como o Agente Aprende a Buscar</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">O Ciclo de Reforço: Como Search-R1 Aprende a Buscar</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Não é pipeline — é um agente que melhora jogando. Cada ciclo completo ajusta a política de busca para chegar mais rápido à resposta certa</p>
+    <div class="anim-box" id="anim-rl-loop" style="height:300px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-top:1rem">
+      <div style="background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.85rem;padding:.9rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-success);text-transform:uppercase;margin-bottom:.4rem">Search-R1 (2025)</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">Fine-tuning com GRPO — o modelo aprende <em>quando buscar</em> e <em>o que buscar</em> como habilidade emergente, sem instrução explícita de retrieval. Supera modelos maiores sem RAG.</div>
+      </div>
+      <div style="background:rgba(180,100,255,.07);border:1px solid rgba(180,100,255,.18);border-radius:.85rem;padding:.9rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-purple);text-transform:uppercase;margin-bottom:.4rem">DeepResearcher (2025)</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">Browsing real + RL em ambiente web real. Reward F1 sobre resposta correta. Aprende a formular queries que encontram evidências — não só a responder com o que recebeu.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -1844,6 +1911,69 @@ document.addEventListener('keydown',function(e){
   }
   setTimeout(hLoop,1800);
   new IntersectionObserver(function(es){if(!es[0].isIntersecting)return;},{threshold:0.3}).observe(el);
+})();
+
+// ═══════ ANIM: RL LOOP (S24b) ═══════
+(function(){
+  window.__rlGen=(window.__rlGen||0)+1; var myG=window.__rlGen;
+  var el=document.getElementById('anim-rl-loop'); if(!el)return;
+  var W=el.clientWidth||760,H=300;
+  var svg=d3.select('#anim-rl-loop').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  var cx=W/2,cy=H/2,R=Math.min(W*0.27,H*0.4);
+  var NODES=[
+    {label:'Query',sub:'pergunta',a:-90,c:'#FF904D'},
+    {label:'Busca',sub:'retrieval policy',a:-30,c:'#4DB4FF'},
+    {label:'Docs',sub:'contexto',a:30,c:'#4DFFB4'},
+    {label:'Resposta',sub:'geração LLM',a:90,c:'#FFD54D'},
+    {label:'Reward',sub:'F1 / EM',a:150,c:'#FF6464'},
+    {label:'Update',sub:'GRPO / PPO',a:210,c:'#B464FF'}
+  ];
+  function pt(n){return{x:cx+R*Math.cos(n.a*Math.PI/180),y:cy+R*Math.sin(n.a*Math.PI/180)};}
+  // Draw arcs
+  NODES.forEach(function(n,i){
+    var p0=pt(n),p1=pt(NODES[(i+1)%NODES.length]);
+    var mx=(p0.x+p1.x)/2,my=(p0.y+p1.y)/2;
+    var dx=mx-cx,dy=my-cy,d=Math.sqrt(dx*dx+dy*dy)||1;
+    var cpx=mx+(dx/d)*20,cpy=my+(dy/d)*20;
+    var path=svg.append('path').attr('d','M'+p0.x+','+p0.y+' Q'+cpx+','+cpy+' '+p1.x+','+p1.y).attr('fill','none').attr('stroke','rgba(255,255,255,0.14)').attr('stroke-width',1.5);
+    var len=130;
+    path.attr('stroke-dasharray',len+','+len).attr('stroke-dashoffset',len).transition().duration(350).delay(i*160).attr('stroke-dashoffset',0);
+  });
+  // Draw nodes
+  var gNodes=[];
+  NODES.forEach(function(n,i){
+    var p=pt(n);
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',27).attr('fill','rgba(0,0,0,0.65)').attr('stroke',n.c).attr('stroke-width',1.8);
+    g.append('text').attr('x',p.x).attr('y',p.y-4).attr('text-anchor','middle').attr('fill',n.c).attr('font-size',9.5).attr('font-weight',700).text(n.label);
+    g.append('text').attr('x',p.x).attr('y',p.y+9).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size',7.5).text(n.sub);
+    g.transition().duration(300).delay(i*160).attr('opacity',1);
+    gNodes.push({p:p,n:n});
+  });
+  // Center label
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',30).attr('fill','rgba(255,255,255,0.02)').attr('stroke','rgba(255,255,255,0.07)').attr('stroke-width',1);
+  svg.append('text').attr('x',cx).attr('y',cy-5).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size',9.5).attr('font-weight',700).text('RL Loop');
+  svg.append('text').attr('x',cx).attr('y',cy+9).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.2)').attr('font-size',7.5).text('treinamento');
+  // Perpetual: dot travels node to node
+  var cur=0;
+  function step(){
+    if(window.__rlGen!==myG) return;
+    var from=gNodes[cur],to=gNodes[(cur+1)%NODES.length];
+    var p0=from.p,p1=to.p,n=from.n;
+    var glow=svg.append('circle').attr('cx',p0.x).attr('cy',p0.y).attr('r',27).attr('fill','none').attr('stroke',n.c).attr('stroke-width',2.5).attr('opacity',0.85);
+    glow.transition().duration(680).attr('r',42).attr('opacity',0).remove();
+    var mx=(p0.x+p1.x)/2,my=(p0.y+p1.y)/2;
+    var dx=mx-cx,dy=my-cy,d=Math.sqrt(dx*dx+dy*dy)||1;
+    var cpx=mx+(dx/d)*20,cpy=my+(dy/d)*20;
+    var dot=svg.append('circle').attr('cx',p0.x).attr('cy',p0.y).attr('r',5).attr('fill',n.c).attr('opacity',0.9);
+    dot.transition().duration(680).ease(d3.easeCubicInOut)
+      .attrTween('cx',function(){return function(t){var s=1-t;return s*s*p0.x+2*s*t*cpx+t*t*p1.x;};})
+      .attrTween('cy',function(){return function(t){var s=1-t;return s*s*p0.y+2*s*t*cpy+t*t*p1.y;};})
+      .on('end',function(){dot.remove();});
+    cur=(cur+1)%NODES.length;
+    setTimeout(step,720);
+  }
+  setTimeout(step,1200);
 })();
 </script>
 </body>
