@@ -2,7 +2,7 @@
 
 Apresentações animadas sobre as estratégias que definem como LLMs recuperam, organizam e usam informação.
 
-**5 módulos · 161 slides · 76 animações D3.js · 28 artigos científicos**
+**5 módulos · 164 slides · 77 animações D3.js · 28 artigos científicos**
 
 [Abrir portal →](https://ibukunchife.github.io/rag-studio/)
 
@@ -16,7 +16,7 @@ Apresentações animadas sobre as estratégias que definem como LLMs recuperam, 
 | 02 | [Context Window & Retrieval](context-window/) | 30 | 6 | 11 |
 | 03 | [Busca Híbrida em RAG](hybrid-search/) | 30 | 4 | 11 |
 | 04 | [Avaliação RAG](avaliacao-rag/) | 32 | 7 | 11 |
-| 05 | [Surveys & RAG Avançado](survey-advanced-rag/) | 39 | 7 | 13 |
+| 05 | [Surveys & RAG Avançado](survey-advanced-rag/) | 42 | 7 | 14 |
 
 ## Abordagem
 
