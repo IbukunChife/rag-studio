@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Temporal — Módulo 08</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root{
+  --mira-bg:#000000;
+  --mira-primary:#FF904D;
+  --mira-success:#4DFFB4;
+  --mira-warning:#FFD54D;
+  --mira-error:#FF6464;
+  --mira-blue:#4DB4FF;
+  --mira-purple:#B464FF;
+  --mira-teal:#26C6DA;
+  --mira-surface:rgba(255,255,255,0.04);
+  --mira-border:rgba(255,255,255,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflow-x:hidden}
+#progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--mira-teal),var(--mira-blue),var(--mira-purple));z-index:1000;transition:width .2s}
+.deck-header{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;text-align:center}
+.header-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4;z-index:0}
+.header-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.6),rgba(0,0,0,.25) 50%,rgba(0,0,0,.85));z-index:1}
+.header-content{position:relative;z-index:2;max-width:920px;padding:2rem}
+.header-badge{display:inline-block;background:rgba(38,198,218,.12);border:1px solid rgba(38,198,218,.3);color:var(--mira-teal);font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:.35rem 1rem;border-radius:999px;margin-bottom:1.5rem}
+.header-title{font-size:clamp(2.2rem,5.5vw,4rem);font-weight:900;line-height:1.08;margin-bottom:1rem;background:linear-gradient(135deg,#fff 30%,var(--mira-teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-subtitle{font-size:1.05rem;color:rgba(255,255,255,.65);margin-bottom:2.5rem;max-width:680px;margin-left:auto;margin-right:auto;line-height:1.6}
+.header-stats{display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem}
+.hstat-num{font-size:2.2rem;font-weight:900;color:var(--mira-teal)}
+.hstat-label{font-size:.72rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.1em;margin-top:2px}
+.btn-start{background:var(--mira-teal);color:#000;font-weight:800;font-size:.95rem;padding:.8rem 2.2rem;border-radius:999px;border:none;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.btn-start:hover{transform:scale(1.05);box-shadow:0 0 28px rgba(38,198,218,.55)}
+.section{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:4rem 1.5rem}
+.card{max-width:880px;width:100%;background:var(--mira-surface);border:1px solid var(--mira-border);border-radius:1.5rem;padding:2.5rem;backdrop-filter:blur(14px)}
+.chapter-strip{font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:1.2rem}
+.block-header{display:inline-flex;align-items:center;gap:.6rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:.35rem 1rem;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.2rem}
+.metaphor-card{border-radius:1.5rem;padding:2.5rem;position:relative;overflow:hidden}
+.metaphor-card.teal{background:linear-gradient(135deg,rgba(38,198,218,.09),rgba(38,198,218,.03));border:1px solid rgba(38,198,218,.18)}
+.metaphor-card.blue{background:linear-gradient(135deg,rgba(77,180,255,.1),rgba(77,180,255,.03));border:1px solid rgba(77,180,255,.18)}
+.metaphor-card.success{background:linear-gradient(135deg,rgba(77,255,180,.09),rgba(77,255,180,.03));border:1px solid rgba(77,255,180,.18)}
+.metaphor-card.warning{background:linear-gradient(135deg,rgba(255,213,77,.09),rgba(255,213,77,.03));border:1px solid rgba(255,213,77,.18)}
+.metaphor-card.purple{background:linear-gradient(135deg,rgba(180,100,255,.1),rgba(180,100,255,.03));border:1px solid rgba(180,100,255,.18)}
+.metaphor-icon{font-size:3.5rem;margin-bottom:1rem;display:block}
+.metaphor-title{font-size:1.6rem;font-weight:900;margin-bottom:.6rem}
+.metaphor-scenario{font-size:1rem;color:rgba(255,255,255,.7);line-height:1.65;margin-bottom:1.2rem}
+.metaphor-bridge{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:.85rem;padding:1rem 1.2rem;font-size:.88rem;color:rgba(255,255,255,.75);line-height:1.55}
+.metaphor-bridge strong{color:#fff}
+.anim-box{width:100%;position:relative;margin-top:1.2rem}
+.anim-box svg text{font-family:'Inter',sans-serif}
+.result-bar{display:flex;align-items:center;gap:.8rem;margin-top:.65rem}
+.rb-label{font-size:.78rem;color:rgba(255,255,255,.5);min-width:180px;flex-shrink:0}
+.rb-track{flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden}
+.rb-fill{height:100%;border-radius:999px}
+.rb-val{font-size:.8rem;font-weight:700;min-width:52px;text-align:right;flex-shrink:0}
+.tag{font-size:.72rem;padding:.25rem .7rem;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.65)}
+#next-card{position:fixed;bottom:2rem;right:2rem;background:var(--mira-teal);color:#000;border:none;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:900;opacity:0;transition:opacity .3s,transform .2s;box-shadow:0 4px 20px rgba(38,198,218,.4)}
+#next-card.visible{opacity:1}
+#next-card:hover{transform:scale(1.1)}
+.deck-footer{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center;background:linear-gradient(to top,rgba(38,198,218,.06),transparent)}
+.footer-title{font-size:2rem;font-weight:900;margin-bottom:.7rem}
+.footer-sub{color:rgba(255,255,255,.5);font-size:.95rem;max-width:560px;margin:0 auto}
+@media(max-width:640px){.header-stats{gap:1.5rem}}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+
+<!-- ═══ HEADER ═══ -->
+<header class="deck-header" id="slide-0">
+  <video class="header-video" autoplay loop muted playsinline>
+    <source src="header-bg.mp4" type="video/mp4">
+  </video>
+  <div class="header-overlay"></div>
+  <div class="header-content">
+    <div class="header-badge">Módulo 08 · RAG Temporal</div>
+    <h1 class="header-title">O Tempo que o<br>RAG Esquecia</h1>
+    <p class="header-subtitle">Grafos temporais, versionamento de documentos e drift contínuo — 4 papers que ensinam o RAG a perguntar não só "o quê?" mas "quando?" e "qual versão?"</p>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">20</div><div class="hstat-label">Slides</div></div>
+      <div class="hstat"><div class="hstat-num">4</div><div class="hstat-label">Papers</div></div>
+      <div class="hstat"><div class="hstat-num">2</div><div class="hstat-label">Blocos</div></div>
+      <div class="hstat"><div class="hstat-num">6</div><div class="hstat-label">Anim. D3</div></div>
+    </div>
+    <button class="btn-start" onclick="document.getElementById('slide-1').scrollIntoView({behavior:'smooth'})">Começar jornada</button>
+  </div>
+</header>
+
+<!-- ═══ BLOCO 0: PANORAMA ═══ -->
+
+<!-- S1 · METÁFORA INTRO -->
+<section class="section" id="slide-1">
+  <div style="max-width:880px;width:100%" data-aos="fade-up">
+    <div class="block-header"><span style="color:var(--mira-teal)">●</span> Bloco 0 · Panorama</div>
+    <div class="metaphor-card teal">
+      <span class="metaphor-icon">📅</span>
+      <h3 class="metaphor-title">A Biblioteca que Esquece o Calendário</h3>
+      <p class="metaphor-scenario">Imagine uma biblioteca sem datas nos livros. Você busca "CEO da empresa X" e a biblioteca te traz um livro de 2021 e um de 2024 — sem saber qual é mais recente. <strong style="color:var(--mira-teal)">O sistema não sabe que o CEO mudou duas vezes.</strong> O resultado é semanticamente correto mas temporalmente errado. Agora imagine que os livros são documentação técnica: você busca "como usar assert.deepEqual()" e recebe docs da v10 e da v20 misturados — sem saber que a função foi removida entre versões. O RAG tradicional é cego ao calendário.</p>
+      <div class="metaphor-bridge">
+        <strong>4 papers (Out 2025 – Abr 2026):</strong> dois abordam conhecimento temporal em grafos (<em>TG-RAG e STAR-RAG</em>) e dois abordam evolução de documentos e drift contínuo (<em>VersionRAG e Chronos</em>). A pergunta central: como recuperar a informação <strong>certa para o tempo certo</strong>?
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S2 · D3: 4 DIMENSÕES TEMPORAIS -->
+<section class="section" id="slide-2">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 0 · Os 4 Problemas Temporais do RAG</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">RAG é Cego ao Tempo — 4 Dimensões do Problema</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Cada paper ataca uma dimensão distinta da temporalidade</p>
+    <div class="anim-box" id="anim-dims" style="height:280px"></div>
+  </div>
+</section>
+
+<!-- ═══ BLOCO 1: GRAFOS TEMPORAIS (TG-RAG + STAR-RAG) ═══ -->
+
+<!-- S3 · METÁFORA TG-RAG -->
+<section class="section" id="slide-3">
+  <div style="max-width:880px;width:100%" data-aos="fade-up">
+    <div class="block-header"><span style="color:var(--mira-blue)">■</span> Bloco 1 · Grafos Temporais</div>
+    <div class="metaphor-card blue">
+      <span class="metaphor-icon">🗃️</span>
+      <h3 class="metaphor-title">O Arquivo Policial com Linha do Tempo</h3>
+      <p class="metaphor-scenario">Um arquivo policial eficiente não arquiva crimes apenas por suspeito — ele os organiza em <strong style="color:var(--mira-blue)">dois níveis</strong>: os fatos concretos (quem, o quê, quando) e uma hierarquia de tempo (por ano, trimestre, mês). Quando uma investigação começa, o detetive primeiro identifica "de quando estamos falando?" antes de buscar os fatos. Ele não confunde o depoimento de 2020 com o de 2024 sobre o mesmo suspeito — cada fato carrega seu carimbo temporal.</p>
+      <div class="metaphor-bridge">
+        <strong>TG-RAG (HKUST + U Turku + HSBC, Out 2025):</strong> grafo bi-nível — camada inferior = knowledge graph com timestamps, camada superior = hierarquia de tempo (ano→trimestre→mês→dia). Summaries multi-granulares por nó temporal. ECT-QA: 480 earnings call transcripts, 24 empresas, 2020-2024.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S4 · D3: TG-RAG BI-LEVEL GRAPH -->
+<section class="section" id="slide-4">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 1 · TG-RAG — Arquitetura Bi-Nível</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">TG-RAG: Dois Grafos, Dois Papéis</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Camada de fatos (quádruplos temporais) + camada de tempo (hierarquia de granularidade)</p>
+    <div class="anim-box" id="anim-tgrag" style="height:280px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-top:1rem">
+      <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.85rem;padding:.9rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-blue);text-transform:uppercase;margin-bottom:.4rem">Quádruplo Temporal</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.65);line-height:1.5">(v₁, v₂, relação, τ) — ex: (empresa X, receita, $Y1, 2021-Q1). Fatos da mesma entidade em datas diferentes ficam como arestas paralelas distintas — sem blur semântico.</div>
+      </div>
+      <div style="background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.18);border-radius:.85rem;padding:.9rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-teal);text-transform:uppercase;margin-bottom:.4rem">Hierarquia de Tempo</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.65);line-height:1.5">Ano→Trimestre→Mês→Dia. Cada nó temporal acumula um resumo multi-granular propagado de baixo para cima — visão abrangente ou detalhada conforme necessário.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S5 · TG-RAG RETRIEVAL + ECT-QA -->
+<section class="section" id="slide-5">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 1 · TG-RAG — Recuperação e Contribuições</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">TG-RAG: Como a Recuperação Usa o Tempo</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">Dois modos de recuperação — local (fatos precisos) e global (tendências e sumários)</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:.8rem;padding:.9rem">
+          <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:.3rem">1 · Identificação Temporal</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.6);line-height:1.4">LLM extrai o escopo temporal da query ("em 2023" → alinha ao nó trimestral correspondente na hierarquia)</div>
+        </div>
+        <div style="background:rgba(77,180,255,.06);border:1px solid rgba(77,180,255,.15);border-radius:.8rem;padding:.9rem">
+          <div style="font-size:.72rem;font-weight:700;color:var(--mira-blue);text-transform:uppercase;margin-bottom:.3rem">2 · Subgrafo Dinâmico</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.6);line-height:1.4">Cosine similarity nas arestas de relação → filtra apenas arestas dentro do escopo temporal → conjunto de sementes V_t^q</div>
+        </div>
+        <div style="background:rgba(77,255,180,.06);border:1px solid rgba(77,255,180,.15);border-radius:.8rem;padding:.9rem">
+          <div style="font-size:.72rem;font-weight:700;color:var(--mira-success);text-transform:uppercase;margin-bottom:.3rem">3 · PPR Local + Global</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.6);line-height:1.4">Local: PPR sobre entidades temporalmente filtradas → chunks ranqueados. Global: nós temporais + sumários hierárquicos para contexto amplo</div>
+        </div>
+      </div>
+      <div>
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:.9rem;padding:1.1rem;margin-bottom:.7rem">
+          <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:.5rem">ECT-QA — Novo Dataset</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.6);line-height:1.45;margin-bottom:.5rem">480 earnings call transcripts · 24 empresas listadas · 5 setores · 2020-2024 · 1.58M tokens. Preenche lacuna: único dataset temporal com questões específicas (multi-hop) E abstratas (tendências) sobre conhecimento corporativo em evolução.</div>
+          <div style="font-size:.75rem;color:var(--mira-teal)">Avalia custo incremental — não assume corpus estático</div>
+        </div>
+        <div style="background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.18);border-radius:.85rem;padding:.9rem">
+          <div style="font-size:.72rem;font-weight:700;color:var(--mira-teal);text-transform:uppercase;margin-bottom:.3rem">Atualização Incremental</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.4">Novos documentos → novos quádruplos → inserção em nós folha do grafo temporal → summaries propagados apenas nos nós ancestrais afetados (não regera tudo)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S6 · METÁFORA STAR-RAG -->
+<section class="section" id="slide-6">
+  <div style="max-width:880px;width:100%" data-aos="fade-up">
+    <div class="block-header"><span style="color:var(--mira-success)">■</span> Bloco 1 · STAR-RAG</div>
+    <div class="metaphor-card success">
+      <span class="metaphor-icon">🌦️</span>
+      <h3 class="metaphor-title">O Meteorologista e os Padrões Climáticos</h3>
+      <p class="metaphor-scenario">Um meteorologista não analisa cada observação climática individual para fazer a previsão. Ele trabalha com <strong style="color:var(--mira-success)">categorias de padrões</strong> — "frente fria que se segue a alta pressão" — e foca nos eventos do intervalo de tempo relevante. O GraphRAG padrão equivale ao meteorologista que lê todas as observações de todos os anos sem filtro: semântico mas temporalmente ruidoso. <strong style="color:var(--mira-success)">STAR-RAG é o meteorologista que comprime em padrões e filtra pelo intervalo correto</strong> — mais rápido e mais preciso.</p>
+      <div class="metaphor-bridge">
+        <strong>STAR-RAG (NTU, Out 2025, ICLR 2026):</strong> Rule Graph via MDL (Minimum Description Length) + PPR sem treinamento. +9.1% accuracy vs MedicalGraphRAG, -97% tokens. Eventos brutos → nós de categoria (rule nodes) → PPR no rule graph com propagação temporal. Zero fine-tuning.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S7 · STAR-RAG RULE GRAPH -->
+<section class="section" id="slide-7">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 1 · STAR-RAG — Rule Graph e MDL</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">STAR-RAG: De Eventos Brutos a Padrões Comprimidos</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">3 etapas para construir o rule graph + PPR para recuperação time-aligned</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;margin-bottom:1.2rem">
+      <div style="background:rgba(77,255,180,.06);border:1px solid rgba(77,255,180,.15);border-radius:.8rem;padding:.9rem;text-align:center">
+        <div style="font-size:.78rem;font-weight:700;color:var(--mira-success);margin-bottom:.3rem">1. Entity Labeling</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.5);line-height:1.4">Algoritmo Apriori extrai subconjuntos de relações frequentes → label estrutural por entidade (ex: País₁, País₂)</div>
+      </div>
+      <div style="background:rgba(77,255,180,.06);border:1px solid rgba(77,255,180,.15);border-radius:.8rem;padding:.9rem;text-align:center">
+        <div style="font-size:.78rem;font-weight:700;color:var(--mira-success);margin-bottom:.3rem">2. Rule Nodes</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.5);line-height:1.4">Evento (s,r,o,t) → nó de regra ⟨c_s, r, c_o⟩. Evento bruto individual → padrão de categoria reutilizável</div>
+      </div>
+      <div style="background:rgba(77,255,180,.06);border:1px solid rgba(77,255,180,.15);border-radius:.8rem;padding:.9rem;text-align:center">
+        <div style="font-size:.78rem;font-weight:700;color:var(--mira-success);margin-bottom:.3rem">3. MDL Selection</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.5);line-height:1.4">Minimiza L(G|M) = coverage_cost + temporal_cost. Seleciona arestas que explicam padrões temporais sem ruído</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:.9rem;padding:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
+      <strong style="color:var(--mira-success)">Query time:</strong> top-K₁ eventos por cosine similarity → distribuição semente → <strong>PPR no rule graph</strong> (propaga por "o que tende a vir depois") → top-K₂ rule nodes → eventos mapeados → re-ranking final por similaridade. O rule graph age como "acelerador de propagação temporal" sem precisar de treinamento.
+    </div>
+  </div>
+</section>
+
+<!-- S8 · D3: STAR-RAG vs GraphRAG comparação -->
+<section class="section" id="slide-8">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 1 · STAR-RAG — Resultados</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">STAR-RAG: Mais Preciso com Muito Menos Tokens</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">A redução de tokens vem da compressão semântica do rule graph — menos candidatos, mais temporalmente relevantes</p>
+    <div class="anim-box" id="anim-starrag" style="height:270px"></div>
+    <div style="background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.85rem;padding:1rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
+      <strong style="color:var(--mira-success)">Por que funciona:</strong> GraphRAG recupera eventos temporalmente dispersos (semanticamente similares mas de anos diferentes). STAR-RAG restringe a propagação ao subgrafo temporal alinhado à query — menos noise, menos tokens no contexto, melhor geração.
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BLOCO 2: VERSIONAMENTO E DRIFT (VersionRAG + Chronos) ═══ -->
+
+<!-- S9 · METÁFORA VERSIONRAG -->
+<section class="section" id="slide-9">
+  <div style="max-width:880px;width:100%" data-aos="fade-up">
+    <div class="block-header"><span style="color:var(--mira-warning)">■</span> Bloco 2 · Versionamento e Drift</div>
+    <div class="metaphor-card warning">
+      <span class="metaphor-icon">📦</span>
+      <h3 class="metaphor-title">O Dev Perdido na Documentação</h3>
+      <p class="metaphor-scenario">Um desenvolvedor pergunta: "Qual é o nível de estabilidade de assert.deepEqual() na versão 15.14.0 do Node.js?" O RAG padrão retorna trechos da v14.21.3 ("experimental"), v15.14.0 ("stable") e v16.20.2 ("deprecated") <strong style="color:var(--mira-warning)">misturados sem distinção</strong>. O LLM vê os três e escolhe errado. Pior: quando o dev pergunta "em qual versão assert.deepEqual() foi removida?", o RAG nem entende que a pergunta é sobre uma mudança — não sobre um conteúdo.</p>
+      <div class="metaphor-bridge">
+        <strong>VersionRAG (ZHAW, Suíça, Out 2025):</strong> grafo hierárquico com 5 níveis (Categoria → Documento → Versão → Conteúdo → Mudança). 3 query types mapeados para 3 caminhos de retrieval. 90% accuracy vs 58% (RAG) vs 64% (GraphRAG). 97% menos tokens que GraphRAG durante indexação.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S10 · D3: VERSIONRAG 5 NÍVEIS + 3 PATHS -->
+<section class="section" id="slide-10">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 2 · VersionRAG — Estrutura e Recuperação</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">VersionRAG: 5 Níveis para Cada Tipo de Query</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">O grafo hierárquico permite rotas especializadas por intenção da query</p>
+    <div class="anim-box" id="anim-version" style="height:280px"></div>
+  </div>
+</section>
+
+<!-- S11 · VERSIONRAG RESULTADOS -->
+<section class="section" id="slide-11">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 2 · VersionRAG — Dataset e Resultados</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">VersionQA: 90% de Accuracy — o Triplo do Baseline</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">100 Q&A manuais em 34 documentos técnicos versionados — Apache Spark, Bootstrap, Node.js Assert e Node.js Errors</p>
+    <div style="margin-bottom:1.2rem">
+      <div class="result-bar"><span class="rb-label">VersionRAG (nosso)</span><div class="rb-track"><div class="rb-fill" style="width:90%;background:var(--mira-warning)"></div></div><span class="rb-val" style="color:var(--mira-warning)">90%</span></div>
+      <div class="result-bar"><span class="rb-label">GraphRAG</span><div class="rb-track"><div class="rb-fill" style="width:64%;background:rgba(255,255,255,.2)"></div></div><span class="rb-val" style="color:rgba(255,255,255,.4)">64%</span></div>
+      <div class="result-bar"><span class="rb-label">Naive RAG</span><div class="rb-track"><div class="rb-fill" style="width:58%;background:rgba(255,255,255,.2)"></div></div><span class="rb-val" style="color:rgba(255,255,255,.4)">58%</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+      <div style="background:rgba(255,213,77,.07);border:1px solid rgba(255,213,77,.18);border-radius:.85rem;padding:.9rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-warning);text-transform:uppercase;margin-bottom:.4rem">Change Detection Implícita</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.65);line-height:1.5">VersionRAG: 60% accuracy em mudanças não documentadas (diffs implícitos). GraphRAG: 10%. Naive RAG: 0-10%. A detecção usa DeepDiff library + LLM para gerar descrição semântica da mudança.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:.85rem;padding:.9rem">
+        <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:.4rem">Eficiência de Indexação</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.65);line-height:1.5">186K tokens (VersionRAG) vs 2.970K tokens (GraphRAG) = <strong style="color:var(--mira-warning)">97% menos tokens</strong>. Versões são arestas do grafo, não extraídas por LLM — elimina análise de documentos inteiros para descobrir relações.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S12 · METÁFORA CHRONOS -->
+<section class="section" id="slide-12">
+  <div style="max-width:880px;width:100%" data-aos="fade-up">
+    <div class="block-header"><span style="color:var(--mira-purple)">■</span> Bloco 2 · Chronos</div>
+    <div class="metaphor-card purple">
+      <span class="metaphor-icon">🗞️</span>
+      <h3 class="metaphor-title">O Jornalista com Memória Congelada</h3>
+      <p class="metaphor-scenario">Um jornalista que só leu jornais até 2023 pergunta sobre "o homem mais rico do mundo em agosto de 2025". Sua memória diz "Elon Musk" — mas o mundo mudou. <strong style="color:var(--mira-purple)">Drift contínuo</strong> significa que entidades evoluem: CEOs mudam, políticas mudam, preços de ações flutuam. O problema não é só ter a informação nova — é raciocinar de forma <strong style="color:var(--mira-purple)">temporalmente consistente</strong> com múltiplos eventos em sequência ("em Jan-2024 era X, em Jun-2024 passou a ser Y, então...").</p>
+      <div class="metaphor-bridge">
+        <strong>Chronos (Tsinghua + UIUC + CUHK, Abr 2026):</strong> novo benchmark de 10 domínios dinâmicos (2024-01-01 a 2025-10-31) + sistema de recuperação via Event Evolution Graph (EEG) em 3 estágios (Inicial → Histórico → Aumentado). Sem retreinamento.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S13 · D3: CHRONOS EEG -->
+<section class="section" id="slide-13">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 2 · Chronos — Event Evolution Graph</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Chronos: EEG em 3 Estágios para Consistência Temporal</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Fatos recuperados → ordenados cronologicamente → reconstrução histórica → perspectivas multi-entidade</p>
+    <div class="anim-box" id="anim-chronos" style="height:270px"></div>
+    <div style="background:rgba(180,100,255,.07);border:1px solid rgba(180,100,255,.18);border-radius:.85rem;padding:1rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
+      <strong style="color:var(--mira-purple)">Recuperação time-aware:</strong> Score(k_i) = α·sim_i + (1−α)·TimeScore(k_i), onde TimeScore = exp(−Δ(t_i, t_q)/τ). Eventos dentro do intervalo da query recebem penalidade zero; eventos fora do intervalo decaem exponencialmente.
+    </div>
+  </div>
+</section>
+
+<!-- S14 · CHRONOS BENCHMARK + RESULTADOS -->
+<section class="section" id="slide-14">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Bloco 2 · Chronos — Benchmark e Achados</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Benchmark: 5 Tipos de QA para Avaliar Drift Contínuo</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">Domínios: liderança corporativa, esportes, economia — entidades altamente dinâmicas de 2024 a 2025</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div style="display:flex;flex-direction:column;gap:.55rem">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:.75rem;padding:.8rem">
+          <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.45);margin-bottom:.25rem">Historical QA</div>
+          <div style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.4">Eventos antes de 2024 — testa se RAG não degrada conhecimento que o LLM já tinha</div>
+        </div>
+        <div style="background:rgba(180,100,255,.06);border:1px solid rgba(180,100,255,.15);border-radius:.75rem;padding:.8rem">
+          <div style="font-size:.75rem;font-weight:700;color:var(--mira-purple);margin-bottom:.25rem">C1 — Single-Timestamp</div>
+          <div style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.4">1 quádruplo temporal específico — teste mais direto de atualização factual</div>
+        </div>
+        <div style="background:rgba(180,100,255,.08);border:1px solid rgba(180,100,255,.2);border-radius:.75rem;padding:.8rem">
+          <div style="font-size:.75rem;font-weight:700;color:var(--mira-purple);margin-bottom:.25rem">C2 — Multi-Timestamp</div>
+          <div style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.4">Múltiplos fatos da mesma entidade em datas diferentes — ex: "quem foi CEO em cada trimestre de 2024?"</div>
+        </div>
+        <div style="background:rgba(180,100,255,.1);border:1px solid rgba(180,100,255,.25);border-radius:.75rem;padding:.8rem">
+          <div style="font-size:.75rem;font-weight:700;color:var(--mira-purple);margin-bottom:.25rem">C3 — Multi-Source</div>
+          <div style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.4">Múltiplas entidades + múltiplos timestamps — integra evidências de fontes diferentes mantendo coerência temporal</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:.9rem;padding:1rem">
+          <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:.5rem">Achados Principais</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.6);line-height:1.5;margin-bottom:.4rem"><strong style="color:#fff">Vanilla RAG falha em C2 e C3</strong> — recupera fatos isolados corretos mas não mantém consistência temporal entre eles</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.6);line-height:1.5;margin-bottom:.4rem"><strong style="color:#fff">Fine-tuning contínuo</strong> sofre catastrophic forgetting — histórico se perde à medida que novos fatos são absorvidos</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.6);line-height:1.5"><strong style="color:#fff">Chronos (EEG)</strong> supera todos os métodos, especialmente em C2 e C3, sem retreinamento</div>
+        </div>
+        <div style="background:rgba(180,100,255,.06);border:1px solid rgba(180,100,255,.15);border-radius:.85rem;padding:.9rem;font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">
+          <strong style="color:var(--mira-purple)">Commonsense QA</strong> — controle: mede que o sistema não degrada raciocínio geral ao incorporar conhecimento dinâmico. Chronos não regride.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SÍNTESE ═══ -->
+
+<!-- S15 · D3: MAPA RELACIONAL 4 PAPERS -->
+<section class="section" id="slide-15">
+  <div class="card" data-aos="fade-up">
+    <div class="block-header"><span style="color:var(--mira-teal)">■</span> Síntese</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Os 4 Papers e suas Soluções Ortogonais</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Representação temporal × Eficiência × Versionamento × Consistência de Drift</p>
+    <div class="anim-box" id="anim-map" style="height:290px"></div>
+  </div>
+</section>
+
+<!-- S16 · OS 4 ARTIGOS -->
+<section class="section" id="slide-16">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Síntese — Os 4 Artigos</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.5rem">4 Artigos, 4 Dimensões Temporais</h2>
+    <div style="display:flex;flex-direction:column;gap:.6rem">
+      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(77,180,255,.04);border:1px solid rgba(77,180,255,.1);border-radius:.75rem;padding:.9rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--mira-blue);margin-top:4px;flex-shrink:0"></div>
+        <div style="flex:1"><div style="font-size:.88rem;font-weight:700;margin-bottom:.18rem">01 · TG-RAG — RAG Meets Temporal Graphs</div><div style="font-size:.75rem;color:rgba(255,255,255,.5)">Han, Cheung et al. — HKUST + U Turku + HSBC, Out 2025. Grafo bi-nível: temporal KG + hierarquia de tempo. PPR local + summaries globais. ECT-QA benchmark (2020-2024, earnings calls).</div></div>
+      </div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(77,255,180,.04);border:1px solid rgba(77,255,180,.1);border-radius:.75rem;padding:.9rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--mira-success);margin-top:4px;flex-shrink:0"></div>
+        <div style="flex:1"><div style="font-size:.88rem;font-weight:700;margin-bottom:.18rem">04 · STAR-RAG — Right Answer at the Right Time</div><div style="font-size:.75rem;color:rgba(255,255,255,.5)">Zhu, Liu et al. — NTU, Out 2025, ICLR 2026. Rule graph via Apriori + MDL + PPR zero-training. +9.1% accuracy, -97% tokens vs GraphRAG.</div></div>
+      </div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(255,213,77,.04);border:1px solid rgba(255,213,77,.1);border-radius:.75rem;padding:.9rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--mira-warning);margin-top:4px;flex-shrink:0"></div>
+        <div style="flex:1"><div style="font-size:.88rem;font-weight:700;margin-bottom:.18rem">02 · VersionRAG — Version-Aware RAG</div><div style="font-size:.75rem;color:rgba(255,255,255,.5)">Huwiler, Stockinger, Fürst — ZHAW, Out 2025. 5 níveis hierárquicos + 3 query types. 90% acc vs 58%/64%. 97% menos tokens. VersionQA: 100 Q&A em 34 docs versionados.</div></div>
+      </div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(180,100,255,.04);border:1px solid rgba(180,100,255,.1);border-radius:.75rem;padding:.9rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--mira-purple);margin-top:4px;flex-shrink:0"></div>
+        <div style="flex:1"><div style="font-size:.88rem;font-weight:700;margin-bottom:.18rem">03 · Chronos — RAG or Learning? Knowledge Drift</div><div style="font-size:.75rem;color:rgba(255,255,255,.5)">Liu, Cao, Li — Tsinghua + UIUC + CUHK, Abr 2026. Benchmark 10 domínios dinâmicos 2024-2025 + EEG em 3 estágios. Sem retreinamento. Expõe falha de fine-tuning contínuo.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S17 · GUIA DE DECISÃO -->
+<section class="section" id="slide-17">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Síntese — Guia de Decisão</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.5rem">Qual Abordagem Usar?</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+      <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.9rem;padding:1rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-blue);text-transform:uppercase;margin-bottom:.5rem">Corpus com fatos temporais explícitos<br>(notícias, transcrições, relatórios)</div>
+        <div style="font-size:.85rem;color:#fff;font-weight:700;margin-bottom:.3rem">→ TG-RAG</div>
+        <div style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.4">Grafo bi-nível com quádruplos temporais. Ideal quando há timestamps explícitos e precisão em janelas temporais é crítica.</div>
+      </div>
+      <div style="background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.9rem;padding:1rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-success);text-transform:uppercase;margin-bottom:.5rem">Temporal KG grande com custo de<br>token alto (deploy em produção)</div>
+        <div style="font-size:.85rem;color:#fff;font-weight:700;margin-bottom:.3rem">→ STAR-RAG</div>
+        <div style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.4">Rule graph comprimido + PPR sem treinamento. Menor budget de tokens, melhor eficiência computacional.</div>
+      </div>
+      <div style="background:rgba(255,213,77,.07);border:1px solid rgba(255,213,77,.18);border-radius:.9rem;padding:1rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-warning);text-transform:uppercase;margin-bottom:.5rem">Documentação técnica versionada<br>(APIs, SDKs, changelogs)</div>
+        <div style="font-size:.85rem;color:#fff;font-weight:700;margin-bottom:.3rem">→ VersionRAG</div>
+        <div style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.4">Hierarquia de 5 níveis com nós de mudança explícita. Único a tratar implicit change detection de forma eficaz.</div>
+      </div>
+      <div style="background:rgba(180,100,255,.07);border:1px solid rgba(180,100,255,.18);border-radius:.9rem;padding:1rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mira-purple);text-transform:uppercase;margin-bottom:.5rem">Avaliação de drift em LLMs implantados<br>(world knowledge que muda)</div>
+        <div style="font-size:.85rem;color:#fff;font-weight:700;margin-bottom:.3rem">→ Chronos</div>
+        <div style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.4">EEG para consistência temporal de sequências de eventos. Evita catastrophic forgetting sem retreinar o modelo base.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S18 · D3: TIMELINE RAG TEMPORAL -->
+<section class="section" id="slide-18">
+  <div class="card" data-aos="fade-up">
+    <div class="chapter-strip">Síntese — O Tempo no RAG Moderno</div>
+    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">De Estático a Temporal: A Evolução do RAG</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">RAG temporal não é uma extensão — é um paradigma diferente de relação com o conhecimento</p>
+    <div class="anim-box" id="anim-timeline" style="height:270px"></div>
+    <div style="background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.18);border-radius:.85rem;padding:1rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
+      <strong style="color:var(--mira-teal)">Insight comum dos 4 papers:</strong> o problema central não é só ter informação nova — é manter a <strong>consistência temporal</strong> entre fatos de períodos diferentes. A próxima fronteira é integrar decisão de "quando recuperar" (Módulo 07) com "recuperar da janela temporal certa" (Módulo 08).
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="deck-footer" id="slide-19">
+  <div data-aos="fade-up">
+    <div style="width:60px;height:60px;background:rgba(38,198,218,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem"><i data-lucide="clock" style="width:30px;height:30px;color:var(--mira-teal)"></i></div>
+    <h2 class="footer-title">Módulo 08 Completo</h2>
+    <p class="footer-sub">A biblioteca que esquecia o calendário finalmente ganhou carimbos de data. Do grafo bi-nível ao rule graph comprimido, do versionamento hierárquico ao drift contínuo — o RAG temporal não apenas recupera: ele situa o conhecimento no tempo.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2rem">
+      <span class="tag" style="color:var(--mira-blue);border-color:rgba(77,180,255,.25)">TG-RAG · grafo bi-nível</span>
+      <span class="tag" style="color:var(--mira-success);border-color:rgba(77,255,180,.25)">STAR-RAG · rule graph MDL</span>
+      <span class="tag" style="color:var(--mira-warning);border-color:rgba(255,213,77,.25)">VersionRAG · 5 níveis</span>
+      <span class="tag" style="color:var(--mira-purple);border-color:rgba(180,100,255,.25)">Chronos · EEG drift</span>
+    </div>
+  </div>
+</footer>
+
+<button id="next-card" onclick="nextSlide()"><i data-lucide="chevron-down" style="width:22px;height:22px"></i></button>
+
+<script>
+AOS.init({duration:700,once:true,offset:55});
+lucide.createIcons();
+window.addEventListener('scroll',function(){
+  var pct=window.scrollY/(document.body.scrollHeight-window.innerHeight);
+  document.getElementById('progress-bar').style.width=(pct*100)+'%';
+  var btn=document.getElementById('next-card');
+  if(window.scrollY>280) btn.classList.add('visible'); else btn.classList.remove('visible');
+});
+var slides=Array.from(document.querySelectorAll('[id^="slide-"]'));
+function nextSlide(){
+  var cur=slides.findIndex(function(s){return s.getBoundingClientRect().top>-80;});
+  if(cur<slides.length-1) slides[cur+1].scrollIntoView({behavior:'smooth'});
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='PageDown') nextSlide();
+});
+
+// ═══════ ANIM 1 · 4 DIMENSÕES (S2) ═══════
+(function(){
+  window.__dimsGen=(window.__dimsGen||0)+1; var myG=window.__dimsGen;
+  var el=document.getElementById('anim-dims'); if(!el)return;
+  var W=el.clientWidth||760,H=280;
+  var svg=d3.select('#anim-dims').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  var dims=[
+    {label:'Temporal Blur',sub:'Fatos do mesmo tema\nem épocas diferentes\nviram o mesmo embedding',x:0.14,y:0.5,color:'#FF6464',paper:'TG-RAG'},
+    {label:'Custo de Token',sub:'GraphRAG padrão\ntraz eventos de\ntodos os anos',x:0.38,y:0.5,color:'#4DFFB4',paper:'STAR-RAG'},
+    {label:'Version Conflation',sub:'Docs de versões\ndiferentes misturam\nrespostas contraditórias',x:0.62,y:0.5,color:'#FFD54D',paper:'VersionRAG'},
+    {label:'Knowledge Drift',sub:'LLM com cutoff 2023\nnão sabe o que mudou\nem 2024-2025',x:0.86,y:0.5,color:'#B464FF',paper:'Chronos'}
+  ];
+  dims.forEach(function(d,i){
+    var x=W*d.x, y=H*d.y;
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',x).attr('cy',y).attr('r',52).attr('fill','rgba(0,0,0,0.6)').attr('stroke',d.color).attr('stroke-width',2);
+    g.append('text').attr('x',x).attr('y',y-28).attr('text-anchor','middle').attr('fill',d.color).attr('font-size',9.5).attr('font-weight',700).text(d.label);
+    var lines=d.sub.split('\n');
+    lines.forEach(function(l,li){g.append('text').attr('x',x).attr('y',y-12+li*12).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size',7.5).text(l);});
+    g.append('text').attr('x',x).attr('y',y+34).attr('text-anchor','middle').attr('fill',d.color).attr('font-size',8.5).attr('font-weight',700).text('→ '+d.paper);
+    g.transition().duration(400).delay(i*180).attr('opacity',1);
+  });
+  // Connector line
+  svg.append('line').attr('x1',W*0.14).attr('y1',H*0.5).attr('x2',W*0.86).attr('y2',H*0.5).attr('stroke','rgba(255,255,255,0.04)').attr('stroke-width',1).attr('stroke-dasharray','4,4').lower();
+  // Title
+  svg.append('text').attr('x',W/2).attr('y',H*0.08).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.2)').attr('font-size',9).text('← RAG Temporal: 4 Problemas Distintos →');
+  // Perpetual: pulse each dim
+  var di=0;
+  function pulseDim(){
+    if(window.__dimsGen!==myG) return;
+    var d=dims[di%4];
+    var x=W*d.x, y=H*d.y;
+    var glow=svg.append('circle').attr('cx',x).attr('cy',y).attr('r',52).attr('fill','none').attr('stroke',d.color).attr('stroke-width',2.5).attr('opacity',0.8);
+    glow.transition().duration(700).attr('r',68).attr('opacity',0).remove();
+    di++; setTimeout(pulseDim,900);
+  }
+  setTimeout(pulseDim,1000);
+})();
+
+// ═══════ ANIM 2 · TG-RAG BI-LEVEL (S4) ═══════
+(function(){
+  window.__tgGen=(window.__tgGen||0)+1; var myG=window.__tgGen;
+  var el=document.getElementById('anim-tgrag'); if(!el)return;
+  var W=el.clientWidth||760,H=280;
+  var svg=d3.select('#anim-tgrag').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  // Upper layer: time hierarchy
+  var timeNodes=[
+    {x:0.5,y:0.1,label:'2022',color:'#26C6DA',r:22},
+    {x:0.28,y:0.26,label:'Q1',color:'#4DB4FF',r:16},
+    {x:0.5,y:0.26,label:'Q2',color:'#4DB4FF',r:16},
+    {x:0.72,y:0.26,label:'Q3',color:'#4DB4FF',r:16}
+  ];
+  // Lower layer: fact nodes
+  var factNodes=[
+    {x:0.14,y:0.58,label:'EmpA',sub:'CEO=X',color:'rgba(255,144,77,0.8)',r:20},
+    {x:0.3,y:0.58,label:'EmpA',sub:'Rev=Y',color:'rgba(255,144,77,0.6)',r:20},
+    {x:0.5,y:0.58,label:'EmpB',sub:'CEO=Z',color:'rgba(255,100,100,0.7)',r:20},
+    {x:0.7,y:0.58,label:'EmpA',sub:'CEO=W',color:'rgba(255,144,77,0.8)',r:20},
+    {x:0.86,y:0.58,label:'EmpC',sub:'Rev=P',color:'rgba(77,255,180,0.7)',r:20}
+  ];
+  // Layer label
+  svg.append('text').attr('x',10).attr('y',H*0.1+5).attr('fill','rgba(38,198,218,0.5)').attr('font-size',8).attr('font-weight',700).text('CAMADA TEMPORAL (hierarquia)');
+  svg.append('line').attr('x1',8).attr('y1',H*0.42).attr('x2',W-8).attr('y2',H*0.42).attr('stroke','rgba(255,255,255,0.04)').attr('stroke-dasharray','5,4');
+  svg.append('text').attr('x',10).attr('y',H*0.5+4).attr('fill','rgba(255,144,77,0.5)').attr('font-size',8).attr('font-weight',700).text('CAMADA DE FATOS (quádruplos temporais)');
+  // Time edges
+  [[0,1],[0,2],[0,3]].forEach(function(e){
+    var s=timeNodes[e[0]],t=timeNodes[e[1]];
+    svg.append('line').attr('x1',W*s.x).attr('y1',H*s.y).attr('x2',W*t.x).attr('y2',H*t.y).attr('stroke','rgba(38,198,218,0.3)').attr('stroke-width',1.5);
+  });
+  // Cross-layer edges (time→fact)
+  [[1,0],[1,1],[2,2],[3,3],[3,4]].forEach(function(e){
+    var s=timeNodes[e[0]],t=factNodes[e[1]];
+    svg.append('line').attr('x1',W*s.x).attr('y1',H*s.y+16).attr('x2',W*t.x).attr('y2',H*t.y-20).attr('stroke','rgba(255,255,255,0.06)').attr('stroke-width',1).attr('stroke-dasharray','3,3');
+  });
+  // Draw nodes
+  timeNodes.forEach(function(n,i){
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',W*n.x).attr('cy',H*n.y).attr('r',n.r).attr('fill','rgba(0,0,0,0.6)').attr('stroke',n.color).attr('stroke-width',1.8);
+    g.append('text').attr('x',W*n.x).attr('y',H*n.y+4).attr('text-anchor','middle').attr('fill',n.color).attr('font-size',9).attr('font-weight',700).text(n.label);
+    g.transition().duration(300).delay(i*120).attr('opacity',1);
+  });
+  factNodes.forEach(function(n,i){
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',W*n.x).attr('cy',H*n.y).attr('r',n.r).attr('fill','rgba(0,0,0,0.65)').attr('stroke',n.color).attr('stroke-width',1.5);
+    g.append('text').attr('x',W*n.x).attr('y',H*n.y-3).attr('text-anchor','middle').attr('fill',n.color).attr('font-size',7.5).attr('font-weight',600).text(n.label);
+    g.append('text').attr('x',W*n.x).attr('y',H*n.y+9).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size',7).text(n.sub);
+    g.transition().duration(300).delay(600+i*100).attr('opacity',1);
+  });
+  // Summaries label
+  svg.append('text').attr('x',W*0.5).attr('y',H*0.9).attr('text-anchor','middle').attr('fill','rgba(38,198,218,0.5)').attr('font-size',8).attr('font-weight',600).attr('opacity',0).text('summaries multi-granulares propagam de baixo para cima ↑').transition().duration(400).delay(1100).attr('opacity',1);
+  // Perpetual: wave up from facts
+  var fi=0;
+  function waveUp(){
+    if(window.__tgGen!==myG) return;
+    var fn=factNodes[fi%factNodes.length];
+    var tn=timeNodes[0];
+    var dot=svg.append('circle').attr('cx',W*fn.x).attr('cy',H*fn.y).attr('r',4).attr('fill','rgba(38,198,218,0.8)').attr('opacity',0.9);
+    dot.transition().duration(700).ease(d3.easeCubicOut).attr('cx',W*tn.x).attr('cy',H*tn.y).on('end',function(){dot.remove();});
+    fi++; setTimeout(waveUp,700);
+  }
+  setTimeout(waveUp,1200);
+})();
+
+// ═══════ ANIM 3 · STAR-RAG (S8) ═══════
+(function(){
+  window.__starGen=(window.__starGen||0)+1; var myG=window.__starGen;
+  var el=document.getElementById('anim-starrag'); if(!el)return;
+  var W=el.clientWidth||760,H=270;
+  var svg=d3.select('#anim-starrag').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  var methods=['Vanilla GraphRAG','STAR-RAG'];
+  var data={
+    'Vanilla GraphRAG':{acc:0.353,tokens:0.97,color:'rgba(255,255,255,0.3)'},
+    'STAR-RAG':{acc:0.444,tokens:0.03,color:'#4DFFB4'}
+  };
+  var margin={l:130,r:20,t:30,b:40};
+  var cw=W-margin.l-margin.r,ch=H-margin.t-margin.b;
+  var g=svg.append('g').attr('transform','translate('+margin.l+','+margin.t+')');
+  // Two metrics: accuracy and token usage
+  var metrics=[
+    {label:'Accuracy (EM)',key:'acc',y:ch*0.25,range:[0,0.6]},
+    {label:'Token Budget (rel.)',key:'tokens',y:ch*0.72,range:[0,1.2]}
+  ];
+  metrics.forEach(function(m){
+    var xSc=d3.scaleLinear().domain(m.range).range([0,cw]);
+    g.append('text').attr('x',0).attr('y',m.y-14).attr('fill','rgba(255,255,255,0.3)').attr('font-size',9).attr('font-weight',600).text(m.label);
+    methods.forEach(function(meth,i){
+      var val=data[meth][m.key];
+      var col=data[meth].color;
+      var by=m.y+i*22;
+      g.append('text').attr('x',-4).attr('y',by+8).attr('text-anchor','end').attr('fill',col).attr('font-size',9).text(meth);
+      g.append('rect').attr('x',0).attr('y',by).attr('width',0).attr('height',16).attr('rx',4).attr('fill',col).attr('opacity',m.key==='tokens'&&i===0?0.6:0.85).transition().duration(600).delay(i*150).attr('width',xSc(val));
+      g.append('text').attr('x',xSc(val)+5).attr('y',by+12).attr('fill',col).attr('font-size',9).attr('font-weight',700).attr('opacity',0).text(m.key==='acc'?(val*100).toFixed(1)+'%':val===0.03?'−97% ↓':val).transition().duration(200).delay(700+i*150).attr('opacity',1);
+    });
+  });
+  // Arrow annotation
+  svg.append('text').attr('x',W*0.6).attr('y',H*0.5).attr('text-anchor','middle').attr('fill','rgba(77,255,180,0.7)').attr('font-size',9).attr('font-weight',700).attr('opacity',0).text('STAR-RAG: mais preciso, muito mais eficiente').transition().duration(400).delay(900).attr('opacity',1);
+  // Perpetual: blink STAR-RAG bars
+  function blinkStar(){
+    if(window.__starGen!==myG) return;
+    var bar=svg.append('rect').attr('x',margin.l).attr('y',margin.t+metrics[0].y+22).attr('width',cw*data['STAR-RAG'].acc/0.6).attr('height',16).attr('rx',4).attr('fill','#4DFFB4').attr('opacity',0.3);
+    bar.transition().duration(600).attr('opacity',0).remove();
+    setTimeout(blinkStar,2000);
+  }
+  setTimeout(blinkStar,1200);
+})();
+
+// ═══════ ANIM 4 · VERSIONRAG 5 NÍVEIS (S10) ═══════
+(function(){
+  window.__versionGen=(window.__versionGen||0)+1; var myG=window.__versionGen;
+  var el=document.getElementById('anim-version'); if(!el)return;
+  var W=el.clientWidth||760,H=280;
+  var svg=d3.select('#anim-version').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  // Graph hierarchy left side
+  var levels=[
+    {label:'Category',y:0.1,color:'#26C6DA',x:0.22},
+    {label:'Document',y:0.28,color:'#4DB4FF',x:0.22},
+    {label:'Version',y:0.47,color:'#FFD54D',x:0.22},
+    {label:'Content',y:0.65,color:'rgba(255,255,255,0.5)',x:0.22},
+    {label:'Change',y:0.83,color:'#FF6464',x:0.22}
+  ];
+  var w=68;
+  levels.forEach(function(l,i){
+    var x=W*l.x, y=H*l.y;
+    var g=svg.append('g').attr('opacity',0);
+    g.append('rect').attr('x',x-w/2).attr('y',y-10).attr('width',w).attr('height',22).attr('rx',5).attr('fill','rgba(0,0,0,0.6)').attr('stroke',l.color).attr('stroke-width',1.5);
+    g.append('text').attr('x',x).attr('y',y+5).attr('text-anchor','middle').attr('fill',l.color).attr('font-size',9).attr('font-weight',600).text(l.label);
+    if(i<levels.length-1){
+      svg.append('line').attr('x1',x).attr('y1',y+12).attr('x2',x).attr('y2',H*levels[i+1].y-10).attr('stroke','rgba(255,255,255,0.1)').attr('stroke-width',1.5);
+    }
+    g.transition().duration(300).delay(i*140).attr('opacity',1);
+  });
+  // 3 query types right side
+  var qTypes=[
+    {label:'Content Retrieval',desc:'Vector search\n+ version filter',x:0.68,y:0.22,color:'#4DB4FF',connects:[1,2,3]},
+    {label:'Version Listing',desc:'Graph traversal\npor metadados',x:0.68,y:0.5,color:'#FFD54D',connects:[2]},
+    {label:'Change Retrieval',desc:'Nós de mudança\nexplícita/implícita',x:0.68,y:0.78,color:'#FF6464',connects:[4]}
+  ];
+  svg.append('text').attr('x',W*0.68).attr('y',H*0.05).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.25)').attr('font-size',8.5).attr('font-weight',700).text('3 Tipos de Query');
+  qTypes.forEach(function(qt,i){
+    var x=W*qt.x, y=H*qt.y;
+    var g=svg.append('g').attr('opacity',0);
+    g.append('rect').attr('x',x-65).attr('y',y-18).attr('width',130).attr('height',42).attr('rx',7).attr('fill','rgba(0,0,0,0.6)').attr('stroke',qt.color).attr('stroke-width',1.8);
+    g.append('text').attr('x',x).attr('y',y-5).attr('text-anchor','middle').attr('fill',qt.color).attr('font-size',9).attr('font-weight',700).text(qt.label);
+    qt.desc.split('\n').forEach(function(line,li){g.append('text').attr('x',x).attr('y',y+8+li*11).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size',7.5).text(line);});
+    // Arrow to graph level
+    qt.connects.forEach(function(lvl){
+      var targetY=H*levels[lvl].y;
+      svg.append('line').attr('x1',x-65).attr('y1',y).attr('x2',W*0.22+w/2).attr('y2',targetY).attr('stroke',qt.color).attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',0.4);
+    });
+    g.transition().duration(300).delay(750+i*160).attr('opacity',1);
+  });
+  // Perpetual: highlight path
+  var qi=0;
+  function hlPath(){
+    if(window.__versionGen!==myG) return;
+    var qt=qTypes[qi%3];
+    qt.connects.forEach(function(lvl){
+      var lv=levels[lvl];
+      var glow=svg.append('circle').attr('cx',W*lv.x).attr('cy',H*lv.y).attr('r',20).attr('fill','none').attr('stroke',qt.color).attr('stroke-width',2).attr('opacity',0.8);
+      glow.transition().duration(600).attr('r',30).attr('opacity',0).remove();
+    });
+    qi++; setTimeout(hlPath,1100);
+  }
+  setTimeout(hlPath,1200);
+})();
+
+// ═══════ ANIM 5 · CHRONOS EEG (S13) ═══════
+(function(){
+  window.__eegGen=(window.__eegGen||0)+1; var myG=window.__eegGen;
+  var el=document.getElementById('anim-chronos'); if(!el)return;
+  var W=el.clientWidth||760,H=270;
+  var svg=d3.select('#anim-chronos').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  // Timeline axis
+  var tl_y=H*0.5, tl_x0=W*0.08, tl_x1=W*0.92;
+  svg.append('line').attr('x1',tl_x0).attr('y1',tl_y).attr('x2',tl_x1).attr('y2',tl_y).attr('stroke','rgba(255,255,255,0.08)').attr('stroke-width',2);
+  svg.append('polygon').attr('points',tl_x1+','+tl_y+' '+(tl_x1-8)+','+(tl_y-5)+' '+(tl_x1-8)+','+(tl_y+5)).attr('fill','rgba(255,255,255,0.08)');
+  svg.append('text').attr('x',tl_x1+2).attr('y',tl_y+4).attr('fill','rgba(255,255,255,0.2)').attr('font-size',8).text('→ tempo');
+  // Events on timeline
+  var events=[
+    {t:0.15,label:'CEO=A',sub:'Jan 2024',color:'#4DB4FF',entity:'E1'},
+    {t:0.3,label:'CEO=B',sub:'Mar 2024',color:'#FF904D',entity:'E1'},
+    {t:0.45,label:'CEO=A',sub:'Jul 2024',color:'#4DB4FF',entity:'E1'},
+    {t:0.6,label:'Stock↑',sub:'Jun 2024',color:'#4DFFB4',entity:'E2'},
+    {t:0.75,label:'Stock↓',sub:'Sep 2024',color:'#FF6464',entity:'E2'},
+    {t:0.88,label:'CEO=C',sub:'Oct 2025',color:'#B464FF',entity:'E1'}
+  ];
+  events.forEach(function(ev,i){
+    var x=tl_x0+(tl_x1-tl_x0)*ev.t;
+    var above=i%2===0;
+    var gy=tl_y+(above?-1:1)*48;
+    var g=svg.append('g').attr('opacity',0);
+    g.append('line').attr('x1',x).attr('y1',tl_y-(above?0:8)).attr('x2',x).attr('y2',gy+(above?20:-20)).attr('stroke',ev.color).attr('stroke-width',1).attr('opacity',0.4);
+    g.append('circle').attr('cx',x).attr('cy',tl_y).attr('r',5).attr('fill',ev.color);
+    g.append('rect').attr('x',x-24).attr('y',gy-(above?20:0)).attr('width',48).attr('height',24).attr('rx',5).attr('fill','rgba(0,0,0,0.7)').attr('stroke',ev.color).attr('stroke-width',1.2);
+    g.append('text').attr('x',x).attr('y',gy-(above?8:-9)).attr('text-anchor','middle').attr('fill',ev.color).attr('font-size',8).attr('font-weight',700).text(ev.label);
+    g.append('text').attr('x',x).attr('y',gy+(above?-20:2)).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size',7).text(ev.sub);
+    g.transition().duration(300).delay(i*130).attr('opacity',1);
+  });
+  // EEG label
+  svg.append('text').attr('x',W/2).attr('y',H*0.92).attr('text-anchor','middle').attr('fill','rgba(180,100,255,0.6)').attr('font-size',8.5).attr('font-weight',700).attr('opacity',0).text('EEG — Event Evolution Graph: conecta entidades ao longo do tempo').transition().duration(400).delay(900).attr('opacity',1);
+  // Perpetual: scan timeline arrow
+  var scanX=tl_x0;
+  function scanTl(){
+    if(window.__eegGen!==myG) return;
+    var scan=svg.append('line').attr('x1',scanX).attr('y1',tl_y-60).attr('x2',scanX).attr('y2',tl_y+60).attr('stroke','rgba(180,100,255,0.4)').attr('stroke-width',1.5).attr('opacity',0.8);
+    scan.transition().duration(1000).ease(d3.easeLinear).attr('x1',tl_x1-20).attr('x2',tl_x1-20).attr('opacity',0).remove();
+    setTimeout(scanTl,1800);
+  }
+  setTimeout(scanTl,1100);
+})();
+
+// ═══════ ANIM 6 · MAPA RELACIONAL (S15) ═══════
+(function(){
+  window.__mapGen=(window.__mapGen||0)+1; var myG=window.__mapGen;
+  var el=document.getElementById('anim-map'); if(!el)return;
+  var W=el.clientWidth||760,H=290;
+  var svg=d3.select('#anim-map').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  var cx=W/2, cy=H/2;
+  // Central node
+  var cg=svg.append('g').attr('opacity',0);
+  cg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',30).attr('fill','rgba(255,255,255,0.04)').attr('stroke','rgba(255,255,255,0.12)').attr('stroke-width',1.5);
+  cg.append('text').attr('x',cx).attr('y',cy-5).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.5)').attr('font-size',8.5).attr('font-weight',700).text('RAG');
+  cg.append('text').attr('x',cx).attr('y',cy+8).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size',7.5).text('Temporal');
+  cg.transition().duration(300).attr('opacity',1);
+  var papers=[
+    {x:0.2,y:0.2,label:'TG-RAG',sub:'Bi-Level Graph\n+ ECT-QA',color:'#4DB4FF',dim:'Representação\nTemporal'},
+    {x:0.8,y:0.2,label:'STAR-RAG',sub:'Rule Graph\n+ MDL + PPR',color:'#4DFFB4',dim:'Eficiência\nde Token'},
+    {x:0.2,y:0.8,label:'VersionRAG',sub:'5 Níveis\n+ VersionQA',color:'#FFD54D',dim:'Versionamento\nde Docs'},
+    {x:0.8,y:0.8,label:'Chronos',sub:'EEG\n+ Drift Bench',color:'#B464FF',dim:'Consistência\nde Drift'}
+  ];
+  papers.forEach(function(p,i){
+    var x=W*p.x, y=H*p.y;
+    svg.append('line').attr('x1',cx).attr('y1',cy).attr('x2',x).attr('y2',y).attr('stroke','rgba(255,255,255,0.06)').attr('stroke-dasharray','4,4').attr('stroke-width',1);
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',x).attr('cy',y).attr('r',38).attr('fill','rgba(0,0,0,0.6)').attr('stroke',p.color).attr('stroke-width',1.8);
+    g.append('text').attr('x',x).attr('y',y-18).attr('text-anchor','middle').attr('fill',p.color).attr('font-size',10).attr('font-weight',800).text(p.label);
+    p.sub.split('\n').forEach(function(l,li){g.append('text').attr('x',x).attr('y',y-4+li*11).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size',7.5).text(l);});
+    g.append('text').attr('x',x).attr('y',y+26).attr('text-anchor','middle').attr('fill',p.color).attr('font-size',8).attr('font-weight',600).text(p.dim.split('\n')[0]);
+    g.append('text').attr('x',x).attr('y',y+37).attr('text-anchor','middle').attr('fill',p.color).attr('font-size',8).attr('font-weight',600).text(p.dim.split('\n')[1]);
+    g.transition().duration(300).delay(200+i*180).attr('opacity',1);
+  });
+  // Perpetual: pulse connection
+  var pi=0;
+  function pulsePaper(){
+    if(window.__mapGen!==myG) return;
+    var p=papers[pi%4];
+    var glow=svg.append('circle').attr('cx',W*p.x).attr('cy',H*p.y).attr('r',38).attr('fill','none').attr('stroke',p.color).attr('stroke-width',2).attr('opacity',0.8);
+    glow.transition().duration(700).attr('r',50).attr('opacity',0).remove();
+    var dot=svg.append('circle').attr('cx',W*p.x).attr('cy',H*p.y).attr('r',4).attr('fill',p.color).attr('opacity',0.9);
+    dot.transition().duration(600).attr('cx',cx).attr('cy',cy).on('end',function(){dot.remove();});
+    pi++; setTimeout(pulsePaper,1000);
+  }
+  setTimeout(pulsePaper,1000);
+})();
+
+// ═══════ ANIM 7 · TIMELINE (S18) ═══════
+(function(){
+  window.__tlGen=(window.__tlGen||0)+1; var myG=window.__tlGen;
+  var el=document.getElementById('anim-timeline'); if(!el)return;
+  var W=el.clientWidth||760,H=270;
+  var svg=d3.select('#anim-timeline').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  var eras=[
+    {label:'RAG Estático',sub:'Corpus fixo\nSem timestamps',x:0.1,color:'rgba(255,255,255,0.3)',r:36},
+    {label:'RAG Graph',sub:'Knowledge Graph\nSem tempo',x:0.3,color:'rgba(77,180,255,0.5)',r:36},
+    {label:'RAG Temporal\n(Fatos)',sub:'TG-RAG\nSTAR-RAG',x:0.55,color:'#26C6DA',r:42},
+    {label:'RAG Temporal\n(Docs)',sub:'VersionRAG\nChronos',x:0.8,color:'#FF904D',r:42}
+  ];
+  var cy=H*0.48;
+  // Arrow
+  svg.append('line').attr('x1',W*0.04).attr('y1',cy).attr('x2',W*0.96).attr('y2',cy).attr('stroke','rgba(255,255,255,0.07)').attr('stroke-width',2);
+  svg.append('polygon').attr('points',(W*0.96)+','+cy+' '+(W*0.96-8)+','+(cy-5)+' '+(W*0.96-8)+','+(cy+5)).attr('fill','rgba(255,255,255,0.07)');
+  eras.forEach(function(era,i){
+    var x=W*era.x;
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',x).attr('cy',cy).attr('r',era.r).attr('fill','rgba(0,0,0,0.7)').attr('stroke',era.color).attr('stroke-width',i>1?2.5:1.5);
+    era.label.split('\n').forEach(function(l,li){g.append('text').attr('x',x).attr('y',cy-era.r-8+li*12).attr('text-anchor','middle').attr('fill',era.color).attr('font-size',9).attr('font-weight',i>1?700:400).text(l);});
+    era.sub.split('\n').forEach(function(l,li){g.append('text').attr('x',x).attr('y',cy-4+li*12).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size',7.5).text(l);});
+    g.transition().duration(350).delay(i*220).attr('opacity',1);
+  });
+  // Perpetual: pulse last two
+  var pi=2;
+  function pulseEra(){
+    if(window.__tlGen!==myG) return;
+    var era=eras[pi%2+2];
+    var glow=svg.append('circle').attr('cx',W*era.x).attr('cy',cy).attr('r',era.r).attr('fill','none').attr('stroke',era.color).attr('stroke-width',2.5).attr('opacity',0.8);
+    glow.transition().duration(700).attr('r',era.r+14).attr('opacity',0).remove();
+    pi++; setTimeout(pulseEra,1400);
+  }
+  setTimeout(pulseEra,1300);
+})();
+</script>
+</body>
+</html>
