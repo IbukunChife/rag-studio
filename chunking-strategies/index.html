@@ -42,7 +42,7 @@ body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;
 <div class="absolute inset-0 pointer-events-none" style="background-image:radial-gradient(circle at 20% 70%,rgba(255,144,77,.2) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(255,144,77,.12) 0%,transparent 50%);"></div>
 <div class="text-center relative z-10 px-4" data-aos="fade-down">
   <span class="inline-block bg-[#FF904D] text-black text-sm font-bold px-6 py-2 rounded-full mb-8 tracking-widest uppercase">10 Artigos Científicos · RAG · ICLR 2025–2026</span>
-  <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight">Chunking Strategies<br><span style="color:#FF904D;">em 20 Metáforas</span></h1>
+  <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight">Chunking Strategies<br><span style="color:#FF904D;">30 Slides · 30 Animações D3</span></h1>
   <p class="text-xl text-white/75 max-w-3xl mx-auto mb-6">Da pizza cortada a régua ao GPS que calcula rotas: cada estratégia de chunking tem sua dinâmica cotidiana que revela prós, contras e o momento ideal de usar.</p>
   <p class="text-sm text-white/35 max-w-2xl mx-auto">Baseado em: Shaukat et al. 2026, Zhao et al. 2025, TurboRAG ICLR 2025, UncertaintyRAG ICLR 2025, Discourse-RAG ICLR 2026, Mix-of-Granularity ACL 2025, QChunker, Multimodal Chunking e mais.</p>
 </div>
@@ -1750,6 +1750,234 @@ function r19(){
     setTimeout(pulseRoute,1200);
   }
   setTimeout(pulseRoute,400);
+}})();</script>
+
+<!-- M28: O Juiz do Chunk (ChunkScore — QChunker WWW 2026) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Juiz do Chunk</h3>
+<p class="text-white/50 text-sm italic mb-2">ChunkScore: avalia qualidade do chunk diretamente — sem esperar pelo resultado de QA downstream</p>
+<p class="text-white/65 text-sm mb-3">Imagine o árbitro de mergulho que pontua a saída da plataforma sem esperar o atleta chegar à medalha. O <strong style="color:rgba(100,200,130,.9)">ChunkScore</strong> avalia chunks diretamente em dois níveis: <em>micro</em> (independência lógica entre chunks adjacentes — nenhum chunk precisa do vizinho para fazer sentido) e <em>macro</em> (o conjunto cobre os temas centrais do documento sem redundância). Validado em 45K amostras e domínio de segurança química.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Duas dimensões do ChunkScore</div>
+    <div class="prc">Micro: cada chunk = unidade semântica autônoma</div>
+    <div class="prc">Macro: cobertura total dos temas do documento</div>
+    <div class="prc">Direto: sem downstream QA, sem labels externos</div>
+  </div>
+  <div><div class="sec-lbl">Vantagem sobre métricas tradicionais</div>
+    <div class="prc">Feedback imediato durante segmentação — sem pipeline completa</div>
+    <div class="prc">Funciona com Small LMs (baixo custo) via fine-tuning</div>
+    <div class="cnc">Chunk c/ termos sem definição → micro score baixo</div>
+    <div class="cnc">Chunk que corta raciocínio → macro score penalizado</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">45K amostras</span><span class="mbadge">QChunker WWW 2026</span><span class="mbadge">Small LMs validados</span><span class="mbadge">domínio: segurança química</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">ChunkScore</span><span class="pill">micro-independência</span><span class="pill">macro-cobertura</span><span class="pill">avaliação direta</span></div>
+<div id="cs-m28" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM28)window.__csM28=0;var g=++window.__csM28;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r28();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m28'));
+function r28(){
+  if(g!==window.__csM28)return;
+  var s=d3.select('#cs-m28').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%').attr('preserveAspectRatio','xMidYMid meet');
+  /* esq: pipeline indireta */
+  s.append('text').attr('x',155).attr('y',14).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.5)').attr('font-size',9.5).attr('font-family','Inter,sans-serif').text('Avaliação Indireta');
+  var steps=[{l:'Chunks',y:28},{l:'Embed',y:72},{l:'Retrieval',y:116},{l:'LLM Gen.',y:160},{l:'QA Score',y:204}];
+  steps.forEach(function(p,i){
+    var c=i===4?'rgba(220,80,80,.65)':'rgba(180,180,180,.45)';
+    s.append('rect').attr('x',50).attr('y',p.y).attr('width',210).attr('height',30).attr('rx',6).attr('fill',c.replace(/[\d.]+\)$/,'.08)')).attr('stroke',c).attr('stroke-width',1.5);
+    s.append('text').attr('x',155).attr('y',p.y+20).attr('text-anchor','middle').attr('fill',c).attr('font-size',10).attr('font-family','Inter,sans-serif').text(p.l);
+    if(i<steps.length-1)s.append('line').attr('x1',155).attr('y1',p.y+30).attr('x2',155).attr('y2',steps[i+1].y).attr('stroke','rgba(200,200,200,.2)').attr('stroke-width',1.5).attr('stroke-dasharray','3,3');
+  });
+  s.append('text').attr('x',155).attr('y',252).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.4)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('⚠ pipeline longa, cara, enviesada');
+  /* separador */
+  s.append('line').attr('x1',290).attr('y1',20).attr('x2',290).attr('y2',265).attr('stroke','rgba(255,255,255,.08)').attr('stroke-width',1);
+  /* dir: ChunkScore */
+  var rx=310;
+  s.append('text').attr('x',rx+290).attr('y',14).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.7)').attr('font-size',9.5).attr('font-family','Inter,sans-serif').text('ChunkScore Direto (QChunker)');
+  /* chunk A e B */
+  var chunks=[{l:'Chunk A',x:rx,c:'rgba(100,200,130,.75)',ct:'def. oxidação... reação...'},
+              {l:'Chunk B',x:rx+220,c:'rgba(100,180,220,.75)',ct:'H₂SO₄ concentrado...'}];
+  chunks.forEach(function(c){
+    s.append('rect').attr('x',c.x).attr('y',28).attr('width',200).attr('height',85).attr('rx',8).attr('fill',c.c.replace(',.75)','.10)')).attr('stroke',c.c).attr('stroke-width',2);
+    s.append('text').attr('x',c.x+100).attr('y',52).attr('text-anchor','middle').attr('fill',c.c).attr('font-size',11).attr('font-weight','bold').attr('font-family','Inter,sans-serif').text(c.l);
+    s.append('text').attr('x',c.x+100).attr('y',82).attr('text-anchor','middle').attr('fill',c.c.replace(',.75)','.45)')).attr('font-size',8.5).attr('font-family','Inter,sans-serif').text(c.ct);
+  });
+  /* fronteira pulsante */
+  var border=s.append('line').attr('x1',rx+205).attr('y1',28).attr('x2',rx+205).attr('y2',113).attr('stroke','rgba(255,200,80,.9)').attr('stroke-width',2.5);
+  s.append('text').attr('x',rx+210).attr('y',22).attr('fill','rgba(255,200,80,.7)').attr('font-size',8.5).attr('font-family','Inter,sans-serif').text('← fronteira →');
+  /* score boxes animados */
+  var scoreData=[
+    {l:'Micro Score',v:'0.82 — independência lógica OK',y:138,c:'rgba(100,200,130,.85)'},
+    {l:'Macro Score',v:'0.91 — cobertura semântica alta',y:178,c:'rgba(100,180,220,.85)'},
+    {l:'ChunkScore',v:'0.87 ↑ chunk de alta qualidade',y:222,c:'rgba(255,200,80,.9)'}
+  ];
+  scoreData.forEach(function(sc,i){
+    s.append('text').attr('x',rx).attr('y',sc.y).attr('fill',sc.c.replace(',.85)','.4)').replace(',.9)','.4)')).attr('font-size',9.5).attr('font-family','Inter,sans-serif').text(sc.l+':');
+    var vt=s.append('text').attr('x',rx+100).attr('y',sc.y).attr('fill',sc.c).attr('font-size',9.5).attr('font-weight','bold').attr('font-family','Inter,sans-serif').text('—').attr('opacity',0);
+    vt.transition().delay(900+i*300).duration(400).attr('opacity',1).on('end',function(){d3.select(this).text(sc.v);});
+  });
+  /* pulse loop */
+  function pulseBorder(){
+    if(g!==window.__csM28)return;
+    border.transition().duration(550).attr('opacity',0.15).transition().duration(550).attr('opacity',1).on('end',function(){setTimeout(pulseBorder,700);});
+  }
+  setTimeout(pulseBorder,500);
+}})();</script>
+
+<!-- M29: O Campeonato dos 6 Domínios (Shaukat et al. 2026) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">O Campeonato dos 6 Domínios</h3>
+<p class="text-white/50 text-sm italic mb-2">Cada domínio tem seu campeão — 1.080 configurações, 6 arenas, resultados surpreendentes</p>
+<p class="text-white/65 text-sm mb-3">Na Copa do Mundo, times diferentes dominam terrenos diferentes: seleções de planície fracassam em altitude. O maior benchmark de chunking da história (36 estratégias × 5 embeddings × 6 domínios) mostra que <strong style="color:rgba(255,200,80,.9)">nenhuma estratégia domina todos os domínios</strong>. PGC vence em jurídico e matemático, DFC + LCTS vencem em biologia e física. A escolha errada custa até 47% de queda no nDCG.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Campeões por domínio</div>
+    <div class="prc">Jurídico: PGC (nDCG 0.459) — estrutura parágrafo importa</div>
+    <div class="prc">Matemático: PGC + HPGC — conteúdo hierárquico</div>
+    <div class="prc">Biologia: DFC + LCTS — adaptação dinâmica + late chunking</div>
+    <div class="prc">Física: DFC + LCTS — mesmo padrão biologia</div>
+    <div class="prc">Saúde: HPGC — hierarquia de seções médicas</div>
+    <div class="prc">Agricultura: PGC / HPGC / LCTS — variado</div>
+  </div>
+  <div><div class="sec-lbl">Descobertas da pesquisa</div>
+    <div class="prc">Token sizing dinâmico domina biologia e física</div>
+    <div class="prc">Paragraph grouping superior em jurídico e matemático</div>
+    <div class="prc">bge-m3 = melhor embedding global (nDCG 0.456)</div>
+    <div class="cnc">FCC perde em TODOS os 6 domínios (nDCG 0.244)</div>
+    <div class="cnc">Errar o domínio → queda de até 47% no nDCG</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">36 estratégias × 5 embeddings × 6 domínios</span><span class="mbadge">Shaukat et al. 2026</span><span class="mbadge">1.080 configs avaliadas</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">domain-first</span><span class="pill">PGC jurídico</span><span class="pill">DFC bio/física</span><span class="pill">nDCG@5</span></div>
+<div id="cs-m29" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM29)window.__csM29=0;var g=++window.__csM29;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r29();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m29'));
+function r29(){
+  if(g!==window.__csM29)return;
+  var s=d3.select('#cs-m29').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%').attr('preserveAspectRatio','xMidYMid meet');
+  var domains=[
+    {name:'Jurídico',winner:'PGC',ndcg:0.459,wcol:'rgba(255,144,77,.85)',x:90,y:100},
+    {name:'Matemático',winner:'HPGC',ndcg:0.443,wcol:'rgba(255,144,77,.7)',x:230,y:60},
+    {name:'Biologia',winner:'DFC+LCTS',ndcg:0.441,wcol:'rgba(100,180,220,.85)',x:380,y:95},
+    {name:'Física',winner:'DFC+LCTS',ndcg:0.435,wcol:'rgba(100,180,220,.7)',x:530,y:65},
+    {name:'Saúde',winner:'HPGC',ndcg:0.428,wcol:'rgba(180,140,220,.8)',x:680,y:100},
+    {name:'Agricultura',winner:'PGC/LCTS',ndcg:0.418,wcol:'rgba(100,200,130,.75)',x:830,y:70}
+  ];
+  var fccLine=s.append('line').attr('x1',50).attr('y1',220).attr('x2',950).attr('y2',220).attr('stroke','rgba(220,80,80,.3)').attr('stroke-dasharray','5,4').attr('stroke-width',1.5);
+  s.append('text').attr('x',960).attr('y',223).attr('fill','rgba(220,80,80,.4)').attr('font-size',8.5).attr('font-family','Inter,sans-serif').text('FCC 0.244');
+  var maxNdcg=0.5;
+  domains.forEach(function(d,i){
+    var barH=Math.round((d.ndcg/maxNdcg)*170);
+    var barY=215-barH;
+    var barEl=s.append('rect').attr('x',d.x-28).attr('y',215).attr('width',56).attr('height',0).attr('rx',5).attr('fill',d.wcol.replace(/[\d.]+\)$/,'.18)')).attr('stroke',d.wcol).attr('stroke-width',2);
+    barEl.transition().delay(i*140+300).duration(700).attr('y',barY).attr('height',barH);
+    var domLbl=s.append('text').attr('x',d.x).attr('y',232).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.45)').attr('font-size',9).attr('font-family','Inter,sans-serif').attr('opacity',0).text(d.name);
+    domLbl.transition().delay(i*140+900).duration(300).attr('opacity',1);
+    var winLbl=s.append('text').attr('x',d.x).attr('y',barY-8).attr('text-anchor','middle').attr('fill',d.wcol).attr('font-size',9.5).attr('font-weight','bold').attr('font-family','Inter,sans-serif').attr('opacity',0).text(d.winner);
+    winLbl.transition().delay(i*140+1000).duration(300).attr('opacity',1);
+    var ndcgLbl=s.append('text').attr('x',d.x).attr('y',barY-22).attr('text-anchor','middle').attr('fill',d.wcol.replace(/[\d.]+\)$/,'.55)')).attr('font-size',8.5).attr('font-family','Inter,sans-serif').attr('opacity',0).text(d.ndcg);
+    ndcgLbl.transition().delay(i*140+1100).duration(300).attr('opacity',1);
+  });
+  /* highlight rotativo */
+  var hi2=0;
+  function highlightDomain(){
+    if(g!==window.__csM29)return;
+    var d=domains[hi2];
+    var barH=Math.round((d.ndcg/maxNdcg)*170);
+    s.selectAll('.dom-pulse').remove();
+    s.append('rect').attr('class','dom-pulse').attr('x',d.x-32).attr('y',215-barH-4).attr('width',64).attr('height',barH+4).attr('rx',7)
+      .attr('fill','none').attr('stroke',d.wcol).attr('stroke-width',3).attr('opacity',0)
+      .transition().duration(300).attr('opacity',0.8).transition().delay(600).duration(400).attr('opacity',0).remove();
+    hi2=(hi2+1)%domains.length;
+    setTimeout(highlightDomain,1200);
+  }
+  setTimeout(highlightDomain,2200);
+}})();</script>
+
+<!-- M30: A Receita do Químico (Chunk Twice, Embed Once) -->
+<div class="glass-card rounded-xl p-8 w-full max-w-5xl" data-aos="fade-up" data-aos-delay="100">
+<h3 class="text-3xl font-bold text-white mb-1">A Receita do Químico</h3>
+<p class="text-white/50 text-sm italic mb-2">Chunk Twice, Embed Once: optimize chunking e embedding separadamente antes de combinar os dois</p>
+<p class="text-white/65 text-sm mb-3">O químico nunca testa reagente e catalisador ao mesmo tempo — ele isola uma variável de cada vez. <strong style="color:rgba(100,200,130,.9)">Chunk Twice, Embed Once</strong> aplica isso ao RAG: primeiro acha a configuração de chunking ideal (25 configurações testadas), depois escolhe o melhor embedding (48 modelos avaliados) — sempre separados. Resultado surpreendente: <em>recursive token-based chunking R100-0 supera estratégias semânticas</em> em química, e <em>Nomic + Intfloat E5 vencem SciBERT</em> especializado.</p>
+<div class="grid grid-cols-2 gap-4 mb-3">
+  <div><div class="sec-lbl">Achados em química (Amiri & Bocklitz 2025)</div>
+    <div class="prc">Melhor chunking: R100-0 (recursive, 100 tokens, overlap 0)</div>
+    <div class="prc">Supera semantic chunking e fixed-size em todos os 3 benchmarks</div>
+    <div class="prc">Melhor embedding: Nomic + Intfloat E5 (general-purpose)</div>
+    <div class="cnc">SciBERT (domínio específico) perde para embeddings gerais</div>
+  </div>
+  <div><div class="sec-lbl">Benchmarks: FSUChemRxivQuest + 2 outros</div>
+    <div class="prc">25 configs de chunking × 48 embedding models = 1.200 combos</div>
+    <div class="prc">Estratégia: isolar chunking primeiro (com embedding fixo)</div>
+    <div class="prc">Depois: usar melhor chunking para avaliar todos os embeddings</div>
+    <div class="cnc">Embeddings especializados NÃO garantem superioridade</div>
+  </div>
+</div>
+<div class="mb-3"><span class="mbadge">25 configs chunking</span><span class="mbadge">48 embedding models</span><span class="mbadge">3 benchmarks química</span><span class="mbadge">Amiri & Bocklitz Jun 2025</span></div>
+<div class="flex flex-wrap gap-1 mb-4"><span class="pill">R100-0</span><span class="pill">recursive chunking</span><span class="pill">Nomic embed</span><span class="pill">chemistry RAG</span><span class="pill">domain-specific</span></div>
+<div id="cs-m30" class="anim-stage" style="height:280px;"></div>
+</div>
+<script>(function(){
+if(!window.__csM30)window.__csM30=0;var g=++window.__csM30;
+var ob=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){r30();ob.disconnect();}});},{threshold:0.3});
+ob.observe(document.getElementById('cs-m30'));
+function r30(){
+  if(g!==window.__csM30)return;
+  var s=d3.select('#cs-m30').append('svg').attr('viewBox','0 0 1000 280').attr('width','100%').attr('height','100%').attr('preserveAspectRatio','xMidYMid meet');
+  /* grid 5x5 = 25 chunking configs */
+  var gcols=5,grows=5,gcw=36,gch=28,gox=50,goy=30;
+  s.append('text').attr('x',gox+gcols*gcw/2).attr('y',18).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.25)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('25 configs chunking');
+  var configNames=['Fixed-50','Fixed-100','Fixed-200','Rec-50','Rec-100-0','Rec-100-25','Rec-200','Rec-200-25','Semantic','Late'];
+  for(var ci=0;ci<gcols*grows;ci++){
+    var gx=gox+(ci%gcols)*gcw;var gy=goy+Math.floor(ci/gcols)*gch;
+    var isWinner=(ci===4);
+    var bc=isWinner?'rgba(100,200,130,.8)':'rgba(255,255,255,.12)';
+    var fc=isWinner?'rgba(100,200,130,.18)':'rgba(255,255,255,.04)';
+    s.append('rect').attr('x',gx+1).attr('y',gy+1).attr('width',gcw-2).attr('height',gch-2).attr('rx',3).attr('fill',fc).attr('stroke',bc).attr('stroke-width',isWinner?2:0.8).attr('opacity',0)
+      .transition().delay(ci*30+200).duration(300).attr('opacity',1);
+    if(isWinner){
+      s.append('text').attr('x',gx+gcw/2).attr('y',gy+gch/2+4).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.9)').attr('font-size',7.5).attr('font-weight','bold').attr('font-family','Inter,sans-serif').text('R100-0').attr('opacity',0).transition().delay(600).duration(300).attr('opacity',1);
+    }
+  }
+  /* seta fase 1 */
+  s.append('text').attr('x',gox+gcols*gcw/2).attr('y',178).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.55)').attr('font-size',9).attr('font-family','Inter,sans-serif').attr('opacity',0).text('↓ vencedor: R100-0').transition().delay(1800).duration(400).attr('opacity',1);
+  /* grid 6x8 = 48 embeddings */
+  var ecols=8,erows=6,ecw=60,ech=26,eox=430,eoy=30;
+  s.append('text').attr('x',eox+ecols*ecw/2).attr('y',18).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.25)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('48 embedding models');
+  var winnerEmbs=[0,1];
+  for(var ei=0;ei<ecols*erows;ei++){
+    var ex2=eox+(ei%ecols)*ecw;var ey2=eoy+Math.floor(ei/ecols)*ech;
+    var isWinEmb=(ei===0||ei===1);
+    var domSp=(ei>=40&&ei<44);
+    var ebc=isWinEmb?'rgba(100,200,130,.8)':domSp?'rgba(220,80,80,.5)':'rgba(255,255,255,.10)';
+    var efc=isWinEmb?'rgba(100,200,130,.15)':domSp?'rgba(220,80,80,.08)':'rgba(255,255,255,.03)';
+    s.append('rect').attr('x',ex2+1).attr('y',ey2+1).attr('width',ecw-2).attr('height',ech-2).attr('rx',3).attr('fill',efc).attr('stroke',ebc).attr('stroke-width',isWinEmb?2:0.8).attr('opacity',0)
+      .transition().delay(ei*18+400).duration(250).attr('opacity',1);
+    if(isWinEmb){
+      var eLabel=ei===0?'Nomic':'Intfl.E5';
+      s.append('text').attr('x',ex2+ecw/2).attr('y',ey2+ech/2+4).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.9)').attr('font-size',7).attr('font-weight','bold').attr('font-family','Inter,sans-serif').text(eLabel).attr('opacity',0).transition().delay(1500).duration(300).attr('opacity',1);
+    }
+    if(domSp&&ei===41){
+      s.append('text').attr('x',ex2+ecw/2).attr('y',ey2+ech/2+4).attr('text-anchor','middle').attr('fill','rgba(220,80,80,.7)').attr('font-size',7).attr('font-family','Inter,sans-serif').text('SciBERT').attr('opacity',0).transition().delay(1500).duration(300).attr('opacity',1);
+    }
+  }
+  s.append('text').attr('x',eox+ecols*ecw/2).attr('y',178).attr('text-anchor','middle').attr('fill','rgba(100,200,130,.55)').attr('font-size',9).attr('font-family','Inter,sans-serif').attr('opacity',0).text('↑ Nomic + E5 > SciBERT especializado').transition().delay(2200).duration(400).attr('opacity',1);
+  /* legenda domínio */
+  s.append('circle').attr('cx',50).attr('cy',220).attr('r',5).attr('fill','rgba(100,200,130,.7)');
+  s.append('text').attr('x',60).attr('y',224).attr('fill','rgba(255,255,255,.4)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('vencedor');
+  s.append('circle').attr('cx',50).attr('cy',242).attr('r',5).attr('fill','rgba(220,80,80,.5)');
+  s.append('text').attr('x',60).attr('y',246).attr('fill','rgba(255,255,255,.4)').attr('font-size',9).attr('font-family','Inter,sans-serif').text('específico (SciBERT) — perde');
+  /* fase 2 pulsing winner highlight */
+  var winRect=s.append('rect').attr('x',eox-2).attr('y',eoy-2).attr('width',ecw*2).attr('height',ech+2).attr('rx',5).attr('fill','none').attr('stroke','rgba(100,200,130,.7)').attr('stroke-width',2.5).attr('opacity',0);
+  function pulseWinner(){
+    if(g!==window.__csM30)return;
+    winRect.transition().delay(0).duration(600).attr('opacity',0.9).transition().duration(600).attr('opacity',0).on('end',function(){setTimeout(pulseWinner,1000);});
+  }
+  setTimeout(pulseWinner,2500);
 }})();</script>
 
 <!-- M20: A Sinfonia do Chunking (Encerramento) -->
