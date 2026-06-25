@@ -2,7 +2,7 @@
 
 Apresentações animadas sobre as estratégias que definem como LLMs recuperam, organizam e usam informação.
 
-**5 módulos · 164 slides · 77 animações D3.js · 28 artigos científicos**
+**5 módulos · 164 slides · 77 animações D3.js · 34 artigos científicos**
 
 [Abrir portal →](https://ibukunchife.github.io/rag-studio/)
 
