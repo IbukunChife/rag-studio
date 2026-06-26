@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robustez &amp; Segurança em RAG — Módulo 17 | RAG Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+:root {
+  --mira-bg: #000000;
+  --mira-primary: #FF904D;
+  --mira-success: #4DFFB4;
+  --mira-warning: #FFD54D;
+  --mira-error: #FF6464;
+  --mira-blue: #4DB4FF;
+  --mira-purple: #B464FF;
+  --mira-teal: #26C6DA;
+  --mira-text: #E8E8E8;
+  --mira-muted: #888888;
+  --mira-card: rgba(255,255,255,0.04);
+  --mira-border: rgba(255,255,255,0.08);
+  --accent: var(--mira-error);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--mira-bg);color:var(--mira-text);font-family:'Inter',sans-serif;overflow-x:hidden}
+.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 24px;position:relative}
+.inner{width:100%;max-width:860px}
+.tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,100,100,0.12);border:1px solid rgba(255,100,100,0.3);color:var(--mira-error);padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px}
+h1.hero{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;line-height:1.1;letter-spacing:-.02em;margin-bottom:20px}
+h2.title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;line-height:1.2;margin-bottom:16px}
+.accent{color:var(--mira-error)}
+.lead{font-size:1.08rem;color:var(--mira-muted);line-height:1.7;margin-bottom:26px}
+.card{background:var(--mira-card);border:1px solid var(--mira-border);border-radius:16px;padding:24px 28px;margin-bottom:18px;backdrop-filter:blur(10px)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.g2,.g3{grid-template-columns:1fr}}
+.cell{background:rgba(255,255,255,0.03);border:1px solid var(--mira-border);border-radius:12px;padding:18px 20px}
+.num{font-size:1.9rem;font-weight:900;color:var(--accent);line-height:1;margin-bottom:6px}
+.cell h3{font-size:.92rem;font-weight:700;margin-bottom:6px}
+.cell p{font-size:.82rem;color:var(--mira-muted);line-height:1.5}
+.metaphor{background:rgba(255,100,100,0.07);border:1px solid rgba(255,100,100,0.2);border-left:4px solid var(--mira-error);border-radius:12px;padding:22px 26px;margin-bottom:22px}
+.mlabel{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-error);margin-bottom:10px}
+.metaphor p{font-size:.97rem;line-height:1.7;color:#f0c0c0}
+.anim-box{width:100%;border:1px solid var(--mira-border);border-radius:12px;overflow:hidden;background:rgba(0,0,0,0.4);margin-bottom:14px}
+ul.li{list-style:none;padding:0}
+ul.li li{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.92rem;line-height:1.5}
+ul.li li:last-child{border-bottom:none}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0}
+.pills{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.pill{background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.25);border-radius:10px;padding:10px 18px;text-align:center}
+.pill .pv{font-size:1.5rem;font-weight:900;color:var(--accent)}
+.pill .pl{font-size:.68rem;color:var(--mira-muted);text-transform:uppercase;letter-spacing:.05em}
+.pbadge{display:inline-flex;align-items:center;background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.2);border-radius:6px;padding:3px 10px;font-size:.7rem;color:var(--mira-error);font-weight:600;margin-bottom:10px}
+.formula{background:rgba(0,0,0,0.6);border:1px solid rgba(255,100,100,0.2);border-radius:8px;padding:14px 20px;font-family:'Courier New',monospace;font-size:.92rem;color:var(--mira-error);text-align:center;margin:14px 0}
+.capa-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 70% 60% at 50% 40%,rgba(255,100,100,0.14) 0%,transparent 70%);pointer-events:none}
+.capa-c{position:relative;z-index:1;text-align:center}
+.mbadge{display:inline-block;padding:5px 16px;background:rgba(255,100,100,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:30px;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-error);margin-bottom:26px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:26px}
+.chip{padding:4px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;font-size:.69rem;color:var(--mira-muted)}
+.progress-bar{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.06);z-index:1000}
+.progress-fill{height:100%;background:var(--mira-error);width:0%;transition:width .2s}
+.nav-btn{position:fixed;bottom:30px;right:30px;z-index:1000;width:46px;height:46px;border-radius:50%;background:var(--mira-error);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(255,100,100,0.4);transition:transform .2s,opacity .3s;opacity:0}
+.nav-btn.show{opacity:1}
+.nav-btn:hover{transform:scale(1.1)}
+.nav-btn svg{width:18px;height:18px;stroke:#000}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+<button class="nav-btn" id="nav-btn" onclick="goNext()">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+</button>
+
+<!-- ═══ SLIDE 01 — CAPA ═══ -->
+<section class="slide" id="s01">
+  <div class="capa-bg"></div>
+  <div class="inner capa-c">
+    <div class="mbadge">Módulo 17 · RAG Studio</div>
+    <h1 class="hero" data-aos="fade-up">Robustez &amp;<br><span class="accent">Segurança em RAG</span></h1>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Ataques de envenenamento, manipulação imperceptível e avaliação<br>
+      de robustez: quando o conhecimento externo vira vetor de ameaça.
+    </p>
+    <div class="pills" data-aos="fade-up" data-aos-delay="200" style="justify-content:center">
+      <div class="pill"><div class="pv">5</div><div class="pl">artigos</div></div>
+      <div class="pill"><div class="pv">6</div><div class="pl">animações D3</div></div>
+      <div class="pill"><div class="pv">2024–26</div><div class="pl">arXiv · Cornell · CAS</div></div>
+    </div>
+    <div class="chips" data-aos="fade-up" data-aos-delay="300">
+      <span class="chip">SLOT Taxonomy (PolyU 2026)</span>
+      <span class="chip">Robust RAG (Cornell 2025)</span>
+      <span class="chip">ReGENT Silent Saboteur (CAS 2025)</span>
+      <span class="chip">RAAT Noise Robustness (UESTC 2024)</span>
+      <span class="chip">Retrieval Robustness (Bloomberg 2025)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 02 — O PROBLEMA ═══ -->
+<section class="slide" id="s02">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">O Problema</div>
+    <h2 class="title" data-aos="fade-up">Conhecimento Externo<br>como <span class="accent">Vetor de Ataque</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      O RAG amplia o LLM com acesso externo — mas esse mesmo acesso abre superfícies de ataque inexistentes em modelos parametricamente isolados. Um atacante não precisa modificar os pesos do modelo; basta contaminar o que o retriever entrega.
+    </p>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">S1</div>
+        <h3>Envenenamento da Base</h3>
+        <p>Documentos maliciosos injetados no corpus persistem entre sessões e afetam múltiplas queries futuras.</p>
+      </div>
+      <div class="cell">
+        <div class="num">S2</div>
+        <h3>Manipulação do Retriever</h3>
+        <p>Ataques manipulam rankings para que evidências atacantes cheguem ao contexto antes das verdadeiras.</p>
+      </div>
+      <div class="cell">
+        <div class="num">S4</div>
+        <h3>Exfiltração de Dados</h3>
+        <p>RAG pode vazar conhecimento privado do corpus através de queries cuidadosamente formuladas.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <p style="font-size:.92rem;line-height:1.7;color:var(--mira-muted)">
+        <strong style="color:var(--mira-text)">A assimetria central:</strong> ataques RAG podem ser executados sem acesso ao modelo, aos pesos ou ao sistema de retrieval — basta controlar parte do conteúdo que será ingerido. Defesas, em contraste, requerem intervenção em múltiplos pontos do pipeline.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 03 — METÁFORA SLOT ═══ -->
+<section class="slide" id="s03">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · SLOT Taxonomy</div>
+    <h2 class="title" data-aos="fade-up">O Mapa do<br><span class="accent">Campo Minado</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Sapadores militares não saem desativando minas aleatoriamente — eles primeiro elaboram um <strong style="color:var(--mira-error)">mapa do campo</strong>: onde cada mina está (superfície S), quem pode desativá-la (camada de defesa L), o que ela explode quando ativada (objetivo O) e qual o alvo real do campo (T). O SLOT framework é esse mapa para segurança RAG: cada ameaça tem coordenadas precisas no pipeline, e cada defesa espelha exatamente a superfície que ela protege. Sem o mapa, defensores ficam apagando incêndios; com ele, podem construir escudos no ponto certo antes que o ataque aconteça.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">SLOT = S + L + O + T</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Surface (onde o ataque age) · Layer (onde a defesa intervém) · Objective (qual propriedade CIA viola) · Target (query única T1 vs. manipulação de narrativa T2).</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">Dois Diagnósticos Estruturais</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">1) Ataques ficam cada vez mais naturais e difíceis de detectar. 2) Defesas se concentram downstream (L3/L4) e são escassas upstream (L1/L2) — onde o dano começa.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 04 — SLOT + D3 ═══ -->
+<section class="slide" id="s04">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">SLOT · Pipeline de Ataque-Defesa</div>
+    <h2 class="title" data-aos="fade-up">4 Superfícies, 4 Camadas,<br><span class="accent">1 Pipeline</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:260px">
+      <div id="anim-slot" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="pbadge">Objetivos CIA (O)</div>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)"><strong style="color:#FF6464">O1 Integridade:</strong> respostas incorretas ou manipuladas. <strong style="color:#FFD54D">O2 Disponibilidade:</strong> recusa ou degradação. <strong style="color:#4DB4FF">O3 Confidencialidade:</strong> vazamento do corpus.</p>
+      </div>
+      <div class="cell">
+        <div class="pbadge">Alvos (T)</div>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)"><strong style="color:rgba(255,255,255,0.8)">T1:</strong> query conhecida — flip de resposta pontual. <strong style="color:rgba(255,255,255,0.8)">T2:</strong> target-claim manipulation — shifting da narrativa sobre uma entidade em queries futuras desconhecidas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 05 — DEFESAS SLOT ═══ -->
+<section class="slide" id="s05">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">SLOT · Camadas de Defesa</div>
+    <h2 class="title" data-aos="fade-up">Defesas que Espelham<br><span class="accent">as Superfícies de Ataque</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">O princípio central do SLOT: cada superfície de ataque tem uma camada de defesa espelhada. A escolha da defesa não é livre — ela precisa intervir no mesmo ponto do pipeline onde o ataque age.</p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>L1 — Integridade, Proveniência e Remediação</strong> (espelha S1): verificação de fonte, deteção de adulteração, watermarking de conteúdo, quarentena de documentos suspeitos antes da indexação.</div></li>
+        <li><span class="dot"></span><div><strong>L2 — Endurecimento de Acesso no Retrieval</strong> (espelha S2): hardening do retriever contra manipulação de ranking; acesso time, filtros de consulta, detecção de query adversarial.</div></li>
+        <li><span class="dot"></span><div><strong>L3 — Isolamento Pós-Retrieval e Geração Robusta</strong> (espelha S3): filtrar contexto recuperado antes de enviar ao LLM; skeptical prompting; geração com raciocínio crítico sobre as fontes.</div></li>
+        <li><span class="dot"></span><div><strong>L4 — Controle de Acesso e Confidencialidade</strong> (espelha S4): autenticação de queries, auditoria de saídas, prevenção de exfiltração de dados do corpus privado.</div></li>
+        <li><span class="dot" style="background:rgba(255,255,255,0.3)"></span><div><strong style="color:var(--mira-muted)">Gap identificado:</strong> L1 e L2 têm cobertura de pesquisa muito menor que L3/L4 — precisamente onde ataques persistentes (T2) são mais eficazes e mais difíceis de remediar depois.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 06 — METÁFORA ROBUST RAG ═══ -->
+<section class="slide" id="s06">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · Robust RAG (Cornell)</div>
+    <h2 class="title" data-aos="fade-up">O Livro com<br><span class="accent">Página Falsificada</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Imagine uma biblioteca pública onde alguém imprimiu uma página falsa — com o mesmo tipo de letra, papel e estilo do livro original — e a inseriu discretamente. A página diz que a 4ª temporada de Chicago Fire tem 24 episódios (a resposta correta é 23). <strong style="color:var(--mira-error)">O ataque de envenenamento RAG é exatamente isso:</strong> um parágrafo fabricado que soa verdadeiro, foi gerado para a query específica, e acaba com similaridade coseno <em>maior</em> que o parágrafo legítimo — porque foi construído para isso. Dos 5 documentos injetados, 4 são recuperados e ranqueados no topo.</p>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">4/5</div>
+        <h3>Taxa de Recuperação</h3>
+        <p>Dos documentos adversariais injetados num corpus de milhões, 4 em 5 são recuperados com alta similaridade.</p>
+      </div>
+      <div class="cell">
+        <div class="num">3</div>
+        <h3>Tipos de Contexto</h3>
+        <p>Adversarial (fabricado), Untouched (real mas insuficiente), Guiding (gerado para contra-atacar o adversarial).</p>
+      </div>
+      <div class="cell">
+        <div class="num">Céticos</div>
+        <h3>Prompts que Ajudam</h3>
+        <p>"Se o contexto parece errado, use seu próprio julgamento" — efetivo em GPT-4, Claude; prejudicial em modelos menores.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 07 — ROBUST RAG + D3 ═══ -->
+<section class="slide" id="s07">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Robust RAG · Contextos &amp; Impacto</div>
+    <h2 class="title" data-aos="fade-up">Contexto Adversarial<br>vs. <span class="accent">Prompting Cético</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:270px">
+      <div id="anim-poison" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">Prompting Cético: Faca de Dois Gumes</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Modelos avançados (GPT-4o, Claude, Llama-70b) respondem bem ao ceticismo: ativam raciocínio crítico interno. Modelos menores (GPT-3.5, Llama-8b) ficam mais confusos — a capacidade de raciocínio crítico é pré-requisito.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">Contexto Guiding como Antídoto</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Gerar um parágrafo que explicitamente contraria a afirmação adversarial e o inclui no contexto recupera performance próxima ao baseline limpo. Custo: requer detecção prévia do ataque.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 08 — SKEPTICAL PROMPTING ═══ -->
+<section class="slide" id="s08">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Robust RAG · Findings</div>
+    <h2 class="title" data-aos="fade-up">O Que a Pesquisa<br><span class="accent">Realmente Revela</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">Experimentos controlados em NQ, HotpotQA e MS-MARCO revelam que a vulnerabilidade RAG é sistêmica — não pode ser resolvida apenas com filtros ou prompting simples.</p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>DPR é ligeiramente mais resiliente:</strong> embeds passagens incorretas mais longe das queries — ataque adversarial tem similarity score menor comparado ao Contriever, mas ainda suficiente para entrar no top-k.</div></li>
+        <li><span class="dot"></span><div><strong>Non-RAG supera RAG adversarial:</strong> LLMs respondendo sem contexto externo batem o RAG envenenado — o modelo parametricamente "sabe mais" do que o retriever contaminado entrega.</div></li>
+        <li><span class="dot"></span><div><strong>Contextos untouched também prejudicam:</strong> contextos facturalmente corretos mas incompletos distraem o LLM, resultando em performance abaixo do Non-RAG — retrieval imperfeito é mais perigoso que ausência de retrieval.</div></li>
+        <li><span class="dot"></span><div><strong>Taxa de poluição importa:</strong> com k=10, aumentar de 1 para 3 passagens adversariais aumenta dramaticamente o impacto — mas adicionar mais passagens legítimas (dilution effect) ajuda a mitigar.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 09 — METÁFORA SILENT SABOTEUR ═══ -->
+<section class="slide" id="s09">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · Silent Saboteur (ReGENT)</div>
+    <h2 class="title" data-aos="fade-up">O Espião que Aprendeu<br>a <span class="accent">Não Parecer Espião</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Um espião inexperiente usa roupas suspeitas, fala sotaque estrangeiro e é pego na primeira inspeção. Um espião de elite investe anos aprendendo a se <strong style="color:var(--mira-error)">fundir com o ambiente</strong>: fala o dialeto local, veste roupas da região, comporta-se como um morador. O ReGENT treina o documento adversarial da mesma forma: via substituição gradual de palavras por sinônimos, o agente RL aprende a fazer o texto parecer completamente natural — similaridade semântica acima de τ — enquanto ainda manipula o retriever e o gerador. O resultado: documentos imperceptíveis que enganam tanto sistemas automáticos quanto avaliadores humanos.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">IRG-Attack: Dois Objetivos</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">(i) Entrar no top-k retrieval — documento inicialmente excluído. (ii) Influenciar a geração — LLM produz resposta y* desejada pelo atacante. Tudo mantendo sim(d_t, d_t') ≥ τ.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">Black-Box Realista</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Atacante vê apenas: top-k documents retornados e resposta final do LLM. Sem acesso a pesos, retriever, embeddings ou prompt. Cenário mais próximo do mundo real.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 10 — REGENT + D3 ═══ -->
+<section class="slide" id="s10">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">ReGENT · Framework RL</div>
+    <h2 class="title" data-aos="fade-up">Ataque como<br><span class="accent">Processo de Decisão de Markov</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:250px">
+      <div id="anim-regent" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">~50%</div>
+        <h3>Taxa de Sucesso</h3>
+        <p>1 documento imperceptível injetado em corpus de 8,8 milhões — 50% das queries manipuladas com sucesso.</p>
+      </div>
+      <div class="cell">
+        <div class="num">≥ τ</div>
+        <h3>Limiar de Naturalidade</h3>
+        <p>sim(d_t, d_t') ≥ τ garante que o documento modificado mantém alta consistência semântica com o original.</p>
+      </div>
+      <div class="cell">
+        <div class="num">MDP</div>
+        <h3>Estado / Ação / Reward</h3>
+        <p>Estado: doc + posições vulneráveis. Ação: substituição de sinônimo. Reward: relevância retrieval + naturalidade geração.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 11 — IRG-ATTACK DETALHES ═══ -->
+<section class="slide" id="s11">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">ReGENT · Treino do Agente</div>
+    <h2 class="title" data-aos="fade-up">Surrogate Model +<br><span class="accent">Agente RL Iterativo</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">O ReGENT resolve o problema bootstrap: o agente precisa de feedback do retriever real, mas não tem acesso a ele. Solução: treinar um surrogate retriever que imita o comportamento do alvo.</p>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="pbadge">Coarse-grained Training</div>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Treino BERT com top-k positivos e negativos aleatórios. Minimiza L_c = -1/|Q| Σ log[R_s(d+) / (R_s(d+) + Σ R_s(d-))]. Dá capacidade básica de recall ao surrogate.</p>
+      </div>
+      <div class="cell">
+        <div class="pbadge">Fine-grained Training</div>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">3 grupos de negativos: hard H(q), hard não-retrieved N(q), random. L_f maximiza separação hierárquica d_q+ ≻ d_h ≻ d_e — capturando estrutura de preferência do retriever real.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <p style="font-size:.88rem;line-height:1.65;color:var(--mira-muted)">
+        <strong style="color:var(--mira-text)">Implicação prática:</strong> o ReGENT demonstra que sistemas RAG em produção podem ser atacados sem conhecimento interno. A defesa upstream (L1: verificação de proveniência e integridade do corpus antes da ingestão) é a única camada que para o ataque antes que ele entre na base.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 12 — METÁFORA RAAT ═══ -->
+<section class="slide" id="s12">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · RAAT</div>
+    <h2 class="title" data-aos="fade-up">O Atleta que Treina<br>em <span class="accent">Condições Adversas</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Maratonistas de elite não treinam só em pistas lisas e clima perfeito. Eles correm em altitude (pouco oxigênio), em chuva (pista escorregadia) e carregando pesos extras (resistência). <strong style="color:var(--mira-error)">O RAAT é esse treinamento adversarial para LLMs</strong>: em vez de treinar sempre com contextos limpos e corretos, o modelo é exposto sistematicamente a três tipos de "condições difíceis" — ruído relevante (contexto que parece certo mas não responde), ruído irrelevante (off-topic) e ruído contrafactual (contexto que responde errado). O modelo aprende a reconhecer e resistir a cada tipo de interferência internamente, sem precisar de filtros externos.</p>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num" style="color:#FFD54D">c_r</div>
+        <h3>Ruído Relevante</h3>
+        <p>Superficialmente relacionado à query, mas sem a resposta correta. Distrai sem informar.</p>
+      </div>
+      <div class="cell">
+        <div class="num" style="color:#4DB4FF">c_i</div>
+        <h3>Ruído Irrelevante</h3>
+        <p>Off-topic. Impacto menor nos modelos maiores — o modelo consegue descartar.</p>
+      </div>
+      <div class="cell">
+        <div class="num" style="color:#FF6464">c_c</div>
+        <h3>Ruído Contrafactual</h3>
+        <p>Topicamente correto mas factualmente errado. O mais perigoso — declínio de até 13,43%.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 13 — RAAT + D3 ═══ -->
+<section class="slide" id="s13">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">RAAT · Treinamento Adversarial</div>
+    <h2 class="title" data-aos="fade-up">Três Ruídos,<br><span class="accent">Uma Solução Adaptativa</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:260px">
+      <div id="anim-raat" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="pbadge">Min-Max Adaptativo</div>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">min_θ E[max_{da∈DA} L(θ, da(x), y)]. Maximiza perda com pior ruído → minimiza parâmetros contra esse pior caso. Adaptativo: prioriza amostras mais difíceis dinamicamente.</p>
+      </div>
+      <div class="cell">
+        <div class="pbadge">Multi-Task Learning</div>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Além da resposta correta, o modelo aprende a classificar qual tipo de ruído está presente no contexto — reconhecimento interno do ruído como tarefa auxiliar que melhora a robustez geral.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 14 — RAAT RESULTADOS ═══ -->
+<section class="slide" id="s14">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">RAAT · Resultados RAG-Bench</div>
+    <h2 class="title" data-aos="fade-up">Ruído Contrafactual:<br><span class="accent">O Verdadeiro Inimigo</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">Os experimentos no RAG-Bench (NQ + TriviaQA + WebQ) com 6 modelos revelam uma hierarquia clara de perigo entre os tipos de ruído — e a eficácia do RAAT em neutralizá-la.</p>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="margin-bottom:10px">Queda por Tipo de Ruído</h3>
+        <ul class="li" style="margin:0">
+          <li><span class="dot" style="background:#4DB4FF"></span><div>Ruído <strong>Irrelevante (c_i):</strong> impacto mínimo em modelos grandes. Modelos com capacidade alta descartam naturalmente.</div></li>
+          <li><span class="dot" style="background:#FFD54D"></span><div>Ruído <strong>Relevante (c_r):</strong> impacto médio. O modelo hesita entre contexto parcial e conhecimento parametrizado.</div></li>
+          <li><span class="dot" style="background:#FF6464"></span><div>Ruído <strong>Contrafactual (c_c):</strong> queda de 0,2% a 13,43%. Modelos confiam no contexto topicamente correto, mesmo errado.</div></li>
+        </ul>
+      </div>
+      <div class="cell">
+        <h3 style="margin-bottom:10px">RAAT: LLaMA-2 7B</h3>
+        <p style="font-size:.85rem;line-height:1.6;color:var(--mira-muted)">Melhoras significativas em F1 e EM sob todos os tipos de ruído — especialmente contrafactual. O modelo aprende a questionar contextos que parecem corretos topicamente mas diferem do seu conhecimento parametrizado. Generaliza para domínios fora do treinamento adversarial.</p>
+        <p style="font-size:.82rem;margin-top:10px;color:var(--mira-error)">
+          Benchmark RAG-Bench e código disponíveis em: github.com/calubkk/RAAT
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 15 — METÁFORA RETRIEVAL ROBUSTNESS ═══ -->
+<section class="slide" id="s15">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · Retrieval Robustness (Bloomberg)</div>
+    <h2 class="title" data-aos="fade-up">O Teste de<br><span class="accent">Resiliência de Pontes</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Engenheiros civis testam pontes com três testes obrigatórios: (1) <strong style="color:var(--mira-error)">Carga sem degradação</strong> — a ponte aguenta o peso normal sem colapsar? (2) <strong style="color:var(--mira-error)">Carga crescente</strong> — mais caminhões melhoram a eficiência ou causam rachadura? (3) <strong style="color:var(--mira-error)">Invariância de direção</strong> — funciona igual com tráfego da esquerda e da direita? Os pesquisadores da Bloomberg aplicaram exatamente essa lógica ao RAG: NDR (sem degradação com retrieval), RSR (mais documentos = melhor?), ROR (a ordem dos documentos importa?). Resultado: LLMs modernos são surpreendentemente robustos — mas imperfeição no retrieval gera trade-offs perigosos que impedem o uso pleno do RAG.</p>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">NDR</div>
+        <h3>No-Degradation Rate</h3>
+        <p>P(RAG ≥ Non-RAG). RAG não piora o modelo. Alta NDR = retrieval sempre ajuda ou é neutro.</p>
+      </div>
+      <div class="cell">
+        <div class="num">RSR</div>
+        <h3>Retrieval Size Robustness</h3>
+        <p>Mais documentos recuperados → melhor ou igual. Alta RSR = pode escalar retrieval com segurança.</p>
+      </div>
+      <div class="cell">
+        <div class="num">ROR</div>
+        <h3>Retrieval Order Robustness</h3>
+        <p>1 - 2σ de performance entre permutações. Alta ROR = resultado não muda com a ordem dos documentos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 16 — RETRIEVAL ROBUSTNESS + D3 ═══ -->
+<section class="slide" id="s16">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Retrieval Robustness · 11 LLMs</div>
+    <h2 class="title" data-aos="fade-up">LLMs Modernos São<br><span class="accent">Mais Robustos que Pensávamos</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:280px">
+      <div id="anim-robust" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">3 Achados Principais</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">(1) RAG é quase sempre melhor que Non-RAG em QA knowledge-intensive. (2) Mais documentos (5→100) geralmente ajuda. (3) Ordem dos documentos tem impacto mínimo na média — mas cria trade-offs em queries individuais.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">Paradoxo da Robustez</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Augmentar o modelo com conhecimento próprio melhora robustez mas limita o ganho potencial do RAG. O modelo que "já sabe" mais depende menos do retriever — mas quando o retriever atrapalha, ele resiste melhor.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 17 — TRÊS MÉTRICAS ═══ -->
+<section class="slide" id="s17">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Retrieval Robustness · Métricas</div>
+    <h2 class="title" data-aos="fade-up">Benchmark: 1.500 Questões,<br><span class="accent">11 LLMs, 3 Perspectivas</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">Primeira avaliação de robustez de retrieval em settings realistas — retrievers reais (BM25 e BGE), corpus real (Wikipedia), 1500 questões de NQ+HotpotQA+ASQA.</p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>GPT-4o / O3-mini: robustez &gt;0.90</strong> na média geométrica das 3 métricas — líderes absolutos. Mesmo com documentos irrelevantes ou em ordem errada, mantêm performance.</div></li>
+        <li><span class="dot"></span><div><strong>Claude 3.5 Sonnet: ~0.86</strong> — alta robustez com performance de tarefa comparável ao GPT-4o. Trade-off robustez/task varia por modelo de forma não-linear.</div></li>
+        <li><span class="dot"></span><div><strong>Llama 70B: ~0.88</strong> — surpreendentemente robusto para modelo open-source. Llama 1B e 3B mostram robustez limitada — gap claro relacionado a capacidade parametrizada.</div></li>
+        <li><span class="dot"></span><div><strong>Todos os 11 LLMs: &gt;80%</strong> na média geométrica NDR×RSR×ROR — resultado inesperadamente positivo. LLMs modernos sobrevivem melhor ao retrieval imperfeto do que pesquisas anteriores sugeriam.</div></li>
+        <li><span class="dot" style="background:#FF6464"></span><div><strong>Imperfect retrieval gera trade-offs:</strong> mesmo com robustez global alta, algumas queries individuais degradam. Esse trade-off impede o uso pleno dos benefícios do RAG em produção.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 18 — COMPARATIVO ═══ -->
+<section class="slide" id="s18">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Comparativo</div>
+    <h2 class="title" data-aos="fade-up">Cinco Perspectivas sobre<br><span class="accent">RAG Seguro e Robusto</span></h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="100">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,100,100,0.3)">
+              <th style="text-align:left;padding:9px 12px;color:var(--mira-error);font-weight:700">Paper</th>
+              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Foco</th>
+              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Contribuição Central</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">SLOT (PolyU 2026)</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Taxonomia</td>
+              <td style="padding:9px 8px;text-align:center;color:#4DFFB4">Framework S+L+O+T para organizar todo ataque/defesa RAG</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">Robust RAG (Cornell)</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Avaliação</td>
+              <td style="padding:9px 8px;text-align:center;color:#4DB4FF">Taxonomia context + skeptical prompting como mitigação</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">ReGENT (CAS 2025)</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Ataque</td>
+              <td style="padding:9px 8px;text-align:center;color:#FF6464">~50% ASR com 1 doc em 8,8M — RL imperceptível black-box</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">RAAT (UESTC 2024)</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Defesa</td>
+              <td style="padding:9px 8px;text-align:center;color:#FFD54D">Adversarial training adaptativo para 3 tipos de ruído</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 12px;font-weight:600">Retrieval Robust (Bloomberg)</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Benchmark</td>
+              <td style="padding:9px 8px;text-align:center;color:#B464FF">NDR/RSR/ROR — LLMs &gt;80% robustos em settings realistas</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 19 — PRINCÍPIOS ═══ -->
+<section class="slide" id="s19">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Princípios</div>
+    <h2 class="title" data-aos="fade-up">Construindo RAG<br><span class="accent">Seguro por Design</span></h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="100">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>Princípio 1 — Defenda na Fonte:</strong> L1 (integridade do corpus antes da ingestão) é mais eficaz que L3 (filtrar depois de recuperar). Atacantes que envenenam o corpus antes da indexação são invisíveis para defesas downstream.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 2 — Imperceptibilidade é o Novo Normal:</strong> ataques naturais (ReGENT) são mais perigosos que ataques óbvios. Filtros baseados em anomalias lexicais são insuficientes — a defesa precisa verificar fatos, não apenas forma.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 3 — Ruído Contrafactual é Pior que Ruído Irrelevante:</strong> contexto topicamente correto mas factualmente errado enganam mais que contexto off-topic. Treine modelos especificamente para reconhecer contradições factuais com conhecimento parametrizado.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 4 — Skeptical Prompting Requer Capacidade:</strong> instrução "questione o contexto se parecer errado" funciona em modelos avançados (GPT-4, Claude) e prejudica modelos menores. Defesa dependente do modelo não é defesa universal.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 5 — Robustez tem Custo:</strong> modelos mais robustos ao retrieval imperfeto ganham menos com retrieval perfeito. O trade-off robustez/utilidade deve ser dimensionado pelo perfil de risco da aplicação.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 20 — PANORAMA + D3 ═══ -->
+<section class="slide" id="s20">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Panorama</div>
+    <h2 class="title" data-aos="fade-up">Paisagem de<br><span class="accent">Ataque e Defesa RAG</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:310px">
+      <div id="anim-compare17" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">Tendência: Ataques Evoluem Mais Rápido</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">O SLOT framework expõe a assimetria: ataques são cada vez mais naturais, baratos e eficazes (black-box, sem acesso ao modelo). Defesas ainda se concentram downstream, onde o dano já ocorreu.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-error);margin-bottom:8px">Boas Notícias: Robustez Emergiu</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">LLMs modernos são naturalmente mais robustos a retrieval imperfeto do que se pensava. RAAT e skeptical prompting oferecem defesas complementares — uma paramétrica, outra em inferência.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+AOS.init({duration:700, once:true, offset:55});
+lucide.createIcons();
+
+var slides = document.querySelectorAll('.slide');
+var total  = slides.length;
+function getActive(){
+  var cy = window.scrollY + window.innerHeight/2;
+  var best=0, bd=Infinity;
+  slides.forEach(function(s,i){
+    var d=Math.abs(s.getBoundingClientRect().top+window.scrollY+s.offsetHeight/2 - cy);
+    if(d<bd){bd=d;best=i;}
+  });
+  return best;
+}
+function goNext(){
+  var i=getActive();
+  if(i<total-1) slides[i+1].scrollIntoView({behavior:'smooth'});
+}
+document.addEventListener('keydown',function(e){
+  var i=getActive();
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key==='PageDown'){if(i<total-1)slides[i+1].scrollIntoView({behavior:'smooth'});}
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){if(i>0)slides[i-1].scrollIntoView({behavior:'smooth'});}
+});
+window.addEventListener('scroll',function(){
+  var p=window.scrollY/(document.body.scrollHeight-window.innerHeight);
+  document.getElementById('prog').style.width=(p*100)+'%';
+  document.getElementById('nav-btn').classList.toggle('show',window.scrollY>300);
+});
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-slot: SLOT pipeline S1→S4 with L1→L4
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__slotGen=(window.__slotGen||0)+1; var myG=window.__slotGen;
+  var el=document.getElementById('anim-slot'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=260;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var stages=[
+    {id:'S1',label:'Knowledge\nPoisoning',   ldef:'L1: Integridade',  clr:'#FF6464'},
+    {id:'S2',label:'Retrieval\nManipulation',ldef:'L2: Access Hard.', clr:'#FF904D'},
+    {id:'S3',label:'Context\nExploitation', ldef:'L3: Isolamento',   clr:'#FFD54D'},
+    {id:'S4',label:'Knowledge\nExtraction', ldef:'L4: Controle',     clr:'#B464FF'}
+  ];
+
+  var n=stages.length, bw=Math.min((W-60)/n-10, 110), bh=56, gap=(W-60-bw*n)/(n-1);
+  var startX=30, topY=40, botY=topY+bh+80;
+
+  // pipe line top
+  svg.append('line').attr('x1',startX).attr('y1',topY+bh/2).attr('x2',W-startX).attr('y2',topY+bh/2)
+    .style('stroke','rgba(255,100,100,0.15)').style('stroke-width',1.5);
+  svg.append('text').attr('x',W/2).attr('y',14).attr('text-anchor','middle')
+    .style('fill','rgba(255,100,100,0.5)').style('font-size','9px').style('font-weight','700')
+    .text('↑ SUPERFÍCIES DE ATAQUE (S1→S4) ↑');
+  svg.append('text').attr('x',W/2).attr('y',H-8).attr('text-anchor','middle')
+    .style('fill','rgba(77,180,255,0.4)').style('font-size','9px').style('font-weight','700')
+    .text('↓ CAMADAS DE DEFESA (L1→L4) ↓');
+
+  var attackBoxes=[], defBoxes=[];
+  stages.forEach(function(s,i){
+    var x=startX+i*(bw+gap);
+
+    // attack box (top)
+    var abg=svg.append('rect').attr('x',x).attr('y',topY).attr('width',bw).attr('height',bh)
+      .attr('rx',6).style('fill','rgba(255,255,255,0.03)').style('stroke',s.clr).style('stroke-width',0.8).style('stroke-opacity',0.4);
+    var lines=s.label.split('\n');
+    lines.forEach(function(ln,li){
+      svg.append('text').attr('x',x+bw/2).attr('y',topY+15+li*15).attr('text-anchor','middle')
+        .style('fill','rgba(255,255,255,0.8)').style('font-size','9.5px').style('font-weight','700').text(s.id);
+      if(li===0) svg.append('text').attr('x',x+bw/2).attr('y',topY+28+li*13).attr('text-anchor','middle')
+        .style('fill',s.clr).style('font-size','8px').text(ln);
+      if(li===1) svg.append('text').attr('x',x+bw/2).attr('y',topY+40).attr('text-anchor','middle')
+        .style('fill',s.clr).style('font-size','8px').text(ln);
+    });
+
+    // connector
+    svg.append('line').attr('x1',x+bw/2).attr('y1',topY+bh).attr('x2',x+bw/2).attr('y2',botY)
+      .style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1).style('stroke-dasharray','3,3');
+
+    // defense box (bottom)
+    var dbg=svg.append('rect').attr('x',x).attr('y',botY).attr('width',bw).attr('height',44)
+      .attr('rx',6).style('fill','rgba(77,180,255,0.04)').style('stroke','#4DB4FF').style('stroke-width',0.8).style('stroke-opacity',0.35);
+    svg.append('text').attr('x',x+bw/2).attr('y',botY+16).attr('text-anchor','middle')
+      .style('fill','#4DB4FF').style('font-size','8.5px').style('font-weight','700').text(s.ldef.split(':')[0]+':');
+    svg.append('text').attr('x',x+bw/2).attr('y',botY+30).attr('text-anchor','middle')
+      .style('fill','rgba(255,255,255,0.45)').style('font-size','8px').text(s.ldef.split(': ')[1]);
+
+    attackBoxes.push({bg:abg, clr:s.clr});
+    defBoxes.push({bg:dbg});
+  });
+
+  var cur=0;
+  function highlight(){
+    if(window.__slotGen!==myG) return;
+    attackBoxes.forEach(function(b,i){
+      b.bg.transition().duration(250)
+        .style('fill', i===cur ? 'rgba(255,100,100,0.14)' : 'rgba(255,255,255,0.03)')
+        .style('stroke-opacity', i===cur ? 1 : 0.4)
+        .style('stroke-width', i===cur ? 2 : 0.8);
+    });
+    defBoxes.forEach(function(b,i){
+      b.bg.transition().duration(250)
+        .style('fill', i===cur ? 'rgba(77,180,255,0.12)' : 'rgba(77,180,255,0.04)')
+        .style('stroke-opacity', i===cur ? 1 : 0.35);
+    });
+    cur=(cur+1)%stages.length;
+    setTimeout(highlight, 900);
+  }
+  setTimeout(highlight, 1200);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-poison: context types impact comparison
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__poisonGen=(window.__poisonGen||0)+1; var myG=window.__poisonGen;
+  var el=document.getElementById('anim-poison'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=270;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var conditions=[
+    {label:'Non-RAG',       val:62, clr:'#888888', note:'baseline parametrizado'},
+    {label:'Guiding',       val:61, clr:'#4DFFB4', note:'antídoto gerado'},
+    {label:'Untouched',     val:54, clr:'#FFD54D', note:'real mas incompleto'},
+    {label:'Adversarial',   val:38, clr:'#FF6464', note:'envenenado'},
+  ];
+
+  var ml=130, mr=80, mt=32, mb=36;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var yBand=d3.scaleBand().domain(conditions.map(function(d){return d.label;})).range([0,ph]).padding(0.3);
+  var xSc=d3.scaleLinear().domain([0,80]).range([0,pw]);
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',18).attr('text-anchor','middle')
+    .style('fill','#555').style('font-size','9.5px').text('F1 Score (%) por tipo de contexto — NQ dataset, GPT-4o');
+
+  [20,40,60,80].forEach(function(v){
+    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('text').attr('x',xSc(v)).attr('y',ph+18).attr('text-anchor','middle')
+      .style('fill','#444').style('font-size','9px').text(v+'%');
+  });
+
+  var bars=[];
+  conditions.forEach(function(d,i){
+    var y=yBand(d.label);
+    var bw=yBand.bandwidth();
+    g.append('text').attr('x',-8).attr('y',y+bw/2+4).attr('text-anchor','end')
+      .style('fill','rgba(255,255,255,0.75)').style('font-size','11px').style('font-weight','700').text(d.label);
+    g.append('text').attr('x',-8).attr('y',y+bw-2).attr('text-anchor','end')
+      .style('fill','rgba(255,255,255,0.3)').style('font-size','7.5px').text(d.note);
+    g.append('rect').attr('x',0).attr('y',y).attr('width',pw).attr('height',bw)
+      .attr('rx',4).style('fill','rgba(255,255,255,0.02)');
+    var bar=g.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',bw)
+      .attr('rx',4).style('fill',d.clr).style('opacity',0.8);
+    bar.transition().delay(300+i*200).duration(900).attr('width',xSc(d.val));
+    var vt=g.append('text').attr('x',xSc(d.val)+6).attr('y',y+bw/2+4)
+      .style('fill',d.clr).style('font-size','12px').style('font-weight','800').style('opacity',0).text(d.val+'%');
+    vt.transition().delay(1250+i*200).duration(300).style('opacity',1);
+    bars.push({bar:bar, vt:vt, val:d.val, clr:d.clr});
+  });
+
+  function refill(){
+    if(window.__poisonGen!==myG) return;
+    bars.forEach(function(b,i){
+      b.bar.transition().delay(i*120).duration(500).attr('width',0)
+        .transition().duration(800).attr('width',xSc(b.val))
+        .on('end',function(){ if(i===bars.length-1) setTimeout(refill,2200); });
+    });
+  }
+  setTimeout(refill, 3200);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-regent: RL attack MDP loop
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__regentGen=(window.__regentGen||0)+1; var myG=window.__regentGen;
+  var el=document.getElementById('anim-regent'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=250;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var cx=W/2, cy=H/2+10;
+  var nodes=[
+    {label:'Doc\nAlvo',         sub:'estado inicial',      clr:'#FF6464', a:-90},
+    {label:'Identifica\nPosição',sub:'vulnerabilidade',    clr:'#FF904D', a:-18},
+    {label:'Substitui\nSinônimo',sub:'sim(d,d\')≥τ',      clr:'#FFD54D', a:54},
+    {label:'RAG\nResposta',     sub:'observação',          clr:'#4DB4FF', a:126},
+    {label:'Reward\nRetrieval', sub:'+naturalidade',       clr:'#4DFFB4', a:198}
+  ];
+  var r=Math.min(W,H)*0.3, bw=70, bh=44;
+
+  nodes.forEach(function(n,i){
+    var next=nodes[(i+1)%nodes.length];
+    var a1=n.a*Math.PI/180, a2=next.a*Math.PI/180;
+    var x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+    var x2=cx+r*Math.cos(a2), y2=cy+r*Math.sin(a2);
+    var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+    var ux=dx/len, uy=dy/len, off=22;
+    var ex=x2-ux*off, ey=y2-uy*off;
+    svg.append('line').attr('x1',x1+ux*off).attr('y1',y1+uy*off).attr('x2',ex-ux*4).attr('y2',ey-uy*4)
+      .style('stroke','rgba(255,255,255,0.12)').style('stroke-width',1.5).style('stroke-dasharray','4,3');
+    var nx=-uy, ny=ux;
+    svg.append('polygon')
+      .attr('points',(ex-ux*5+nx*3)+','+(ey-uy*5+ny*3)+' '+ex+','+ey+' '+(ex-ux*5-nx*3)+','+(ey-uy*5-ny*3))
+      .style('fill','rgba(255,255,255,0.18)');
+  });
+
+  var boxes=[];
+  nodes.forEach(function(n,i){
+    var a=n.a*Math.PI/180;
+    var nx=cx+r*Math.cos(a), ny=cy+r*Math.sin(a);
+    var bg=svg.append('rect').attr('x',nx-bw/2).attr('y',ny-bh/2).attr('width',bw).attr('height',bh)
+      .attr('rx',6).style('fill','rgba(255,255,255,0.03)').style('stroke',n.clr).style('stroke-width',0.8).style('stroke-opacity',0.45);
+    var lns=n.label.split('\n');
+    lns.forEach(function(ln,li){
+      svg.append('text').attr('x',nx).attr('y',ny-6+li*13).attr('text-anchor','middle')
+        .style('fill','rgba(255,255,255,0.85)').style('font-size','9.5px').style('font-weight','700').text(ln);
+    });
+    svg.append('text').attr('x',nx).attr('y',ny+bh/2-7).attr('text-anchor','middle')
+      .style('fill','rgba(255,255,255,0.28)').style('font-size','7.5px').text(n.sub);
+    boxes.push({bg:bg, clr:n.clr});
+  });
+
+  svg.append('text').attr('x',cx).attr('y',cy+5).attr('text-anchor','middle')
+    .style('fill','rgba(255,100,100,0.3)').style('font-size','9px').text('ReGENT');
+  svg.append('text').attr('x',cx).attr('y',cy+18).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.15)').style('font-size','7.5px').text('MDP iterativo');
+
+  var cur=0;
+  function step(){
+    if(window.__regentGen!==myG) return;
+    boxes.forEach(function(b,i){
+      b.bg.transition().duration(250)
+        .style('fill', i===cur ? 'rgba(255,100,100,0.18)' : 'rgba(255,255,255,0.03)')
+        .style('stroke-opacity', i===cur ? 1 : 0.45)
+        .style('stroke-width', i===cur ? 2 : 0.8);
+    });
+    cur=(cur+1)%nodes.length;
+    setTimeout(step, 800);
+  }
+  setTimeout(step, 1200);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-raat: 3 noise types + RAAT improvement
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__raatGen=(window.__raatGen||0)+1; var myG=window.__raatGen;
+  var el=document.getElementById('anim-raat'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=260;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var noises=[
+    {label:'Irrelevante (c_i)', base:50, raat:51, clr:'#4DB4FF'},
+    {label:'Relevante (c_r)',   base:44, raat:49, clr:'#FFD54D'},
+    {label:'Contrafactual (c_c)',base:40, raat:47, clr:'#FF6464'}
+  ];
+
+  var ml=150, mr=70, mt=28, mb=36;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var yBand=d3.scaleBand().domain(noises.map(function(d){return d.label;})).range([0,ph]).padding(0.32);
+  var xSc=d3.scaleLinear().domain([30,60]).range([0,pw]);
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',16).attr('text-anchor','middle')
+    .style('fill','#555').style('font-size','9.5px').text('EM Score — LLaMA-2 7B, antes vs. depois do RAAT (representativo)');
+
+  [35,40,45,50,55].forEach(function(v){
+    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('text').attr('x',xSc(v)).attr('y',ph+18).attr('text-anchor','middle')
+      .style('fill','#444').style('font-size','9px').text(v);
+  });
+
+  var barPairs=[];
+  noises.forEach(function(d,i){
+    var y=yBand(d.label);
+    var bw=yBand.bandwidth();
+    var half=bw*0.42;
+
+    g.append('text').attr('x',-8).attr('y',y+bw/2+4).attr('text-anchor','end')
+      .style('fill',d.clr).style('font-size','10px').style('font-weight','700').text(d.label);
+
+    g.append('rect').attr('x',0).attr('y',y).attr('width',pw).attr('height',half)
+      .attr('rx',3).style('fill','rgba(255,255,255,0.02)');
+    var bBase=g.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',half)
+      .attr('rx',3).style('fill','rgba(255,255,255,0.2)');
+    bBase.transition().delay(300+i*200).duration(800).attr('width',xSc(d.base));
+
+    g.append('rect').attr('x',0).attr('y',y+half+2).attr('width',pw).attr('height',half)
+      .attr('rx',3).style('fill','rgba(255,255,255,0.02)');
+    var bRaat=g.append('rect').attr('x',0).attr('y',y+half+2).attr('width',0).attr('height',half)
+      .attr('rx',3).style('fill',d.clr).style('opacity',0.85);
+    bRaat.transition().delay(500+i*200).duration(900).attr('width',xSc(d.raat));
+
+    var gain=d.raat-d.base;
+    var lbl=g.append('text').attr('x',xSc(d.raat)+6).attr('y',y+bw/2+4)
+      .style('fill',d.clr).style('font-size','11px').style('font-weight','800').style('opacity',0)
+      .text('+'+gain+'%');
+    lbl.transition().delay(1400+i*200).duration(300).style('opacity',1);
+    barPairs.push({bBase:bBase,bRaat:bRaat,lbl:lbl,base:d.base,raat:d.raat,clr:d.clr});
+  });
+
+  // legend
+  svg.append('rect').attr('x',ml).attr('y',H-16).attr('width',10).attr('height',7)
+    .attr('rx',2).style('fill','rgba(255,255,255,0.2)');
+  svg.append('text').attr('x',ml+14).attr('y',H-9).style('fill','rgba(255,255,255,0.4)').style('font-size','8px').text('Sem RAAT');
+  svg.append('rect').attr('x',ml+72).attr('y',H-16).attr('width',10).attr('height',7)
+    .attr('rx',2).style('fill','#FF6464').style('opacity',0.85);
+  svg.append('text').attr('x',ml+86).attr('y',H-9).style('fill','rgba(255,255,255,0.4)').style('font-size','8px').text('Com RAAT');
+
+  function refill(){
+    if(window.__raatGen!==myG) return;
+    barPairs.forEach(function(b,i){
+      b.bBase.transition().delay(i*150).duration(500).attr('width',0)
+        .transition().duration(800).attr('width',xSc(b.base));
+      b.bRaat.transition().delay(i*150+200).duration(800).attr('width',0)
+        .transition().duration(900).attr('width',xSc(b.raat))
+        .on('end',function(){ if(i===barPairs.length-1) setTimeout(refill,2200); });
+    });
+  }
+  setTimeout(refill, 3500);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-robust: scatter 11 LLMs robustness vs perf
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__robustGen=(window.__robustGen||0)+1; var myG=window.__robustGen;
+  var el=document.getElementById('anim-robust'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=280;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var ml=50, mr=28, mt=24, mb=44;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  var xSc=d3.scaleLinear().domain([0.25,0.75]).range([0,pw]);
+  var ySc=d3.scaleLinear().domain([0.78,0.95]).range([ph,0]);
+
+  g.append('line').attr('x1',0).attr('y1',ph).attr('x2',pw).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
+  g.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
+
+  g.append('text').attr('x',pw/2).attr('y',ph+32).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Task Performance (acurácia média) →');
+  g.append('text').attr('x',-30).attr('y',ph/2).attr('text-anchor','middle')
+    .attr('transform','translate(-30,'+ph/2+') rotate(-90)')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Robustez de Retrieval →');
+
+  [0.35,0.45,0.55,0.65].forEach(function(v){
+    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+  });
+  [0.80,0.85,0.90].forEach(function(v){
+    g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v))
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('text').attr('x',-6).attr('y',ySc(v)+4).attr('text-anchor','end')
+      .style('fill','#444').style('font-size','8.5px').text(v.toFixed(2));
+  });
+
+  var llms=[
+    {label:'GPT-4o/O3',  x:0.64, y:0.91, clr:'#4DFFB4', r:12},
+    {label:'Claude 3.5', x:0.58, y:0.86, clr:'#B464FF', r:11},
+    {label:'Llama 70B',  x:0.51, y:0.88, clr:'#4DB4FF', r:11},
+    {label:'Llama 32B',  x:0.48, y:0.87, clr:'#4DB4FF', r:10},
+    {label:'Qwen 14B',   x:0.44, y:0.85, clr:'#FF904D', r:10},
+    {label:'Mistral',    x:0.40, y:0.84, clr:'#FFD54D', r:10},
+    {label:'Command',    x:0.38, y:0.83, clr:'#FF904D', r:10},
+    {label:'Llama 8B',   x:0.36, y:0.85, clr:'#4DB4FF', r:9},
+    {label:'Llama 3B',   x:0.32, y:0.82, clr:'#888888', r:9},
+    {label:'Llama 1B',   x:0.28, y:0.80, clr:'#888888', r:9}
+  ];
+
+  var crefs=[];
+  llms.forEach(function(p,i){
+    var c=g.append('circle').attr('cx',xSc(p.x)).attr('cy',ySc(p.y)).attr('r',0)
+      .style('fill',p.clr).style('fill-opacity',0.18).style('stroke',p.clr).style('stroke-width',1.5);
+    c.transition().delay(300+i*130).duration(500).attr('r',p.r);
+    g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)+4).attr('text-anchor','middle')
+      .style('fill',p.clr).style('font-size','7.5px').style('font-weight','700')
+      .style('opacity',0).transition().delay(900+i*130).duration(200).style('opacity',1).text(p.label);
+    crefs.push({c:c, r:p.r, clr:p.clr});
+  });
+
+  function glow(){
+    if(window.__robustGen!==myG) return;
+    var idx=Math.floor(Math.random()*crefs.length);
+    var ref=crefs[idx];
+    ref.c.transition().duration(400).attr('r',ref.r+5).style('fill-opacity',0.4).style('stroke-width',2.5)
+      .transition().duration(400).attr('r',ref.r).style('fill-opacity',0.18).style('stroke-width',1.5)
+      .on('end',function(){ setTimeout(glow,700); });
+  }
+  setTimeout(glow,2200);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-compare17: scatter 5 papers threat vs defense
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__cmp17Gen=(window.__cmp17Gen||0)+1; var myG=window.__cmp17Gen;
+  var el=document.getElementById('anim-compare17'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=310;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var ml=52, mr=30, mt=28, mb=44;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  var xSc=d3.scaleLinear().domain([0,10]).range([0,pw]);
+  var ySc=d3.scaleLinear().domain([0,10]).range([ph,0]);
+
+  g.append('line').attr('x1',0).attr('y1',ph).attr('x2',pw).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
+  g.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
+
+  g.append('text').attr('x',pw/2).attr('y',ph+32).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Severidade da Ameaça Mapeada →');
+  g.append('text').attr('transform','translate(-34,'+ph/2+') rotate(-90)').attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Cobertura de Defesa →');
+
+  [2,4,6,8].forEach(function(v){
+    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v))
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+  });
+
+  var papers=[
+    {label:'SLOT',             x:9.5, y:9.5, clr:'#4DFFB4', r:16, sub:'Taxonomia\ncompleta S+L+O+T'},
+    {label:'Robust RAG',       x:7.0, y:6.5, clr:'#FF6464', r:16, sub:'Contexto\nenvenenado'},
+    {label:'ReGENT',           x:8.8, y:3.5, clr:'#FF904D', r:16, sub:'Ataque RL\nimperceptível'},
+    {label:'RAAT',             x:6.5, y:8.0, clr:'#FFD54D', r:16, sub:'Defesa via\nadversarial training'},
+    {label:'Ret. Robustness',  x:5.5, y:7.0, clr:'#B464FF', r:16, sub:'Benchmark\nNDR/RSR/ROR'}
+  ];
+
+  var crefs=[];
+  papers.forEach(function(p,i){
+    var c=g.append('circle').attr('cx',xSc(p.x)).attr('cy',ySc(p.y)).attr('r',0)
+      .style('fill',p.clr).style('fill-opacity',0.18).style('stroke',p.clr).style('stroke-width',1.5);
+    c.transition().delay(300+i*200).duration(600).attr('r',p.r);
+    g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)+4).attr('text-anchor','middle')
+      .style('fill',p.clr).style('font-size','8px').style('font-weight','700')
+      .style('opacity',0).transition().delay(1000+i*200).duration(200).style('opacity',1).text(p.label);
+    var lns=p.sub.split('\n');
+    lns.forEach(function(ln,li){
+      g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)-p.r-8+li*11).attr('text-anchor','middle')
+        .style('fill','rgba(255,255,255,0.38)').style('font-size','7.5px')
+        .style('opacity',0).transition().delay(1200+i*200).duration(200).style('opacity',1).text(ln);
+    });
+    crefs.push({c:c, r:p.r, clr:p.clr});
+  });
+
+  function glow(){
+    if(window.__cmp17Gen!==myG) return;
+    var idx=Math.floor(Math.random()*crefs.length);
+    var ref=crefs[idx];
+    ref.c.transition().duration(500).attr('r',ref.r+6).style('fill-opacity',0.4).style('stroke-width',2.5)
+      .transition().duration(500).attr('r',ref.r).style('fill-opacity',0.18).style('stroke-width',1.5)
+      .on('end',function(){ setTimeout(glow,900); });
+  }
+  setTimeout(glow,2600);
+})();
+</script>
+</body>
+</html>
