@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Módulo 10 · Banco Vetorial &amp; Índices — RAG Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --mira-primary: #FF904D;
+      --mira-bg: #000000;
+      --mira-success: #4DFFB4;
+      --mira-warning: #FFD54D;
+      --mira-error: #FF6464;
+      --mira-blue: #4DB4FF;
+      --mira-purple: #B464FF;
+      --mira-teal: #26C6DA;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--mira-bg); color: #fff; overflow-x: hidden; }
+
+    #progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--mira-blue); z-index: 9999; width: 0%; transition: width 0.2s ease; }
+    #back-btn { position: fixed; bottom: 2rem; right: 2rem; width: 3rem; height: 3rem; border-radius: 50%; background: var(--mira-blue); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; z-index: 100; box-shadow: 0 4px 24px rgba(77,180,255,0.45); }
+    #back-btn.visible { opacity: 1; }
+
+    .slide { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 4rem 1.5rem; position: relative; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; backdrop-filter: blur(10px); max-width: 900px; width: 100%; padding: 2.75rem; }
+
+    .slide-hero { background: radial-gradient(ellipse 65% 55% at 15% 55%, rgba(77,180,255,0.12) 0%, transparent 60%), radial-gradient(ellipse 45% 40% at 85% 25%, rgba(38,198,218,0.07) 0%, transparent 50%), var(--mira-bg); }
+    .module-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(77,180,255,0.12); border: 1px solid rgba(77,180,255,0.3); color: var(--mira-blue); border-radius: 2rem; padding: 0.4rem 1rem; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+    .hero-title { font-size: clamp(2.8rem, 7vw, 5rem); font-weight: 900; line-height: 1.0; letter-spacing: -0.03em; }
+    .hero-accent { color: var(--mira-blue); }
+
+    .sec-label { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(77,180,255,0.1); border: 1px solid rgba(77,180,255,0.25); border-radius: 2rem; padding: 0.3rem 0.9rem; font-size: 0.7rem; color: var(--mira-blue); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+    .metaphor-box { background: rgba(77,180,255,0.05); border: 1px solid rgba(77,180,255,0.18); border-radius: 1rem; padding: 1.5rem; }
+    .metaphor-icon { width: 3.5rem; height: 3.5rem; border-radius: 50%; background: rgba(77,180,255,0.14); border: 1px solid rgba(77,180,255,0.3); display: flex; align-items: center; justify-content: center; color: var(--mira-blue); flex-shrink: 0; }
+
+    .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 1rem; padding: 1.5rem; text-align: center; }
+    .stat-num { font-size: 2.6rem; font-weight: 900; line-height: 1; }
+    .stat-lbl { font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; font-weight: 500; }
+
+    .gi { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.2rem; }
+
+    .tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.65rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
+    .t-b { background: rgba(77,180,255,0.15); color: var(--mira-blue); border: 1px solid rgba(77,180,255,0.3); }
+    .t-p { background: rgba(180,100,255,0.15); color: var(--mira-purple); border: 1px solid rgba(180,100,255,0.3); }
+    .t-g { background: rgba(77,255,180,0.15); color: var(--mira-success); border: 1px solid rgba(77,255,180,0.3); }
+    .t-y { background: rgba(255,213,77,0.15); color: var(--mira-warning); border: 1px solid rgba(255,213,77,0.3); }
+    .t-o { background: rgba(255,144,77,0.15); color: var(--mira-primary); border: 1px solid rgba(255,144,77,0.3); }
+    .t-t { background: rgba(38,198,218,0.15); color: var(--mira-teal); border: 1px solid rgba(38,198,218,0.3); }
+    .t-r { background: rgba(255,100,100,0.15); color: var(--mira-error); border: 1px solid rgba(255,100,100,0.3); }
+
+    .d3-wrap { width: 100%; border-radius: 1rem; overflow: hidden; background: rgba(255,255,255,0.02); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { background: rgba(77,180,255,0.1); color: var(--mira-blue); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.7rem 1rem; text-align: left; }
+    td { padding: 0.65rem 1rem; font-size: 0.83rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .alert { border-radius: 0.875rem; padding: 1.1rem 1.4rem; border-left: 4px solid; }
+    .alert-b { background: rgba(77,180,255,0.07); border-color: var(--mira-blue); }
+    .alert-r { background: rgba(255,100,100,0.07); border-color: var(--mira-error); }
+    .alert-g { background: rgba(77,255,180,0.07); border-color: var(--mira-success); }
+    .alert-y { background: rgba(255,213,77,0.07); border-color: var(--mira-warning); }
+
+    .tl-num { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; }
+
+    hr.div { border: none; border-top: 1px solid rgba(255,255,255,0.07); }
+    .accent-bar { width: 2.5rem; height: 3px; background: var(--mira-blue); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<button id="back-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<!-- ═══ SLIDE 1 · CAPA ═══ -->
+<div class="slide slide-hero" id="slide-1">
+  <div class="card" style="border-color:rgba(77,180,255,0.18); max-width:960px;">
+    <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="module-badge mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M9 9h6v6H9z"/></svg>
+        Módulo 10 · RAG Studio
+      </div>
+      <h1 class="hero-title mb-4">Banco Vetorial<br><span class="hero-accent">&amp; Índices</span></h1>
+      <p style="color:rgba(255,255,255,0.5); font-size:1rem;" class="mb-8">Benchmarks ANN · Busca com Filtros · GPU-Native · Índice Híbrido Unificado</p>
+    </div>
+    <hr class="div mb-8" />
+    <div class="grid grid-cols-4 gap-4 mb-8" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">5</div>
+        <div class="stat-lbl">artigos científicos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">22</div>
+        <div class="stat-lbl">slides animados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">6</div>
+        <div class="stat-lbl">animações D3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">21</div>
+        <div class="stat-lbl">implementações ANN</div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-b">VIBE · ANN Benchmark</span>
+      <span class="tag t-t">RAGPerf · End-to-End</span>
+      <span class="tag t-g">FANNS · Filtered ANN</span>
+      <span class="tag t-y">IVF-RaBitQ · GPU 2.2×</span>
+      <span class="tag t-p">Allan-Poe · Híbrido 186×</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 2 · METÁFORA 1 — A Biblioteca com 1 Bilhão de Livros ═══ -->
+<div class="slide" id="slide-2">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · O Problema do ANN</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">A Biblioteca com 1 Bilhão de Livros</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Imagine uma biblioteca com 1 bilhão de livros. Alguém lhe entrega um livro e pergunta: <em>"Quais são os 10 livros mais parecidos com este?"</em> Comparar um por um levaria anos. O <strong>Approximate Nearest Neighbor (ANN)</strong> é como um sistema de catálogos inteligentes que chega perto da resposta certa em milissegundos — aceitando uma margem mínima de erro. O VIBE mede quão bons esses sistemas de catálogos realmente são com embeddings modernos.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mb-5" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.85rem; color:var(--mira-error);">Busca Exata (kNN)</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Compare um por um — sempre correto, mas O(n) impossível em escala</p>
+      </div>
+      <div class="gi text-center" style="border-color:rgba(77,180,255,0.25); background:rgba(77,180,255,0.05);">
+        <div class="font-bold mb-1" style="font-size:0.85rem; color:var(--mira-blue);">ANN (Aproximado)</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Resposta em sub-linear time — recall ≥ 95% a milissegundos</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.85rem; color:var(--mira-success);">Índice Vetorial</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Estrutura de dados que torna ANN possível — grafo, cluster, árvore, hash</p>
+      </div>
+    </div>
+    <div class="flex gap-2 flex-wrap" data-aos="fade-up" data-aos-delay="280" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-b">Helsinki · Aalto · Padova · Copenhagen</span>
+      <span class="tag t-y">arXiv Mai 2025</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 3 · VIBE — Benchmark Moderno ═══ -->
+<div class="slide" id="slide-3">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">VIBE · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">Por que os Benchmarks <span style="color:var(--mira-error);">Antigos Falham</span></h2>
+      <div class="accent-bar mb-6"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">Datasets Desatualizados</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">MNIST, Fashion-MNIST, SIFT — pixels e descritores de imagem. Embeddings modernos (Nomic, CLIP, OpenAI) têm características completamente diferentes.</p>
+      </div>
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">Ausência do Cenário OOD</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Em produção real, corpus e queries têm distribuições diferentes (texto vs. imagem, domínio vs. multi-domínio). Benchmarks antigos ignoram o cenário Out-of-Distribution.</p>
+      </div>
+    </div>
+    <div class="alert alert-b mb-6" data-aos="fade-up" data-aos-delay="260" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.88rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-blue);">VIBE</strong> cria datasets usando modelos de embedding modernos (Nomic, CLIP, MXBAI, DINOv2, OpenAI) a partir de fontes reais como ArXiv, ImageNet e Google Q&A — 12 datasets in-distribution + 6 OOD para refletir cargas de trabalho reais.</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4" data-aos="fade-up" data-aos-delay="340" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">21</div>
+        <div class="stat-lbl">implementações avaliadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">18</div>
+        <div class="stat-lbl">datasets (12 in-dist + 6 OOD)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">3072</div>
+        <div class="stat-lbl">dims max (Simple Wiki OpenAI)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 4 · VIBE — 4 Famílias de Algoritmos ANN [D3] ═══ -->
+<div class="slide" id="slide-4">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">VIBE · Taxonomia</div>
+      <h2 class="text-3xl font-black mb-1">Quatro <span style="color:var(--mira-blue);">Famílias de Algoritmos</span> ANN</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Cada família usa uma estrutura de dados diferente para aproximar os vizinhos mais próximos</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-families" style="height:200px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-4 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-blue);">Grafos</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.6);">HNSW, SymphonyQG — busca por grafo de proximidade</p>
+        <div class="mt-1"><span class="tag t-b" style="font-size:0.62rem;">alto recall</span></div>
+      </div>
+      <div class="gi">
+        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-success);">Clustering</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.6);">IVF-PQ, ScaNN — partição em clusters, probe dos mais próximos</p>
+        <div class="mt-1"><span class="tag t-g" style="font-size:0.62rem;">escalável</span></div>
+      </div>
+      <div class="gi">
+        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-warning);">Árvores</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.6);">KD-tree, Annoy, MRPT — partição recursiva do espaço</p>
+        <div class="mt-1"><span class="tag t-y" style="font-size:0.62rem;">memória eficiente</span></div>
+      </div>
+      <div class="gi">
+        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-purple);">Hashing</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.6);">LSH, PUFFINN — funções de hash com garantias probabilísticas</p>
+        <div class="mt-1"><span class="tag t-p" style="font-size:0.62rem;">sub-linear</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 5 · VIBE — Resultados ═══ -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">VIBE · Achados</div>
+      <h2 class="text-3xl font-black mb-1">Três <span style="color:var(--mira-blue);">Descobertas Surpreendentes</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Avaliando 21 implementações em 18 datasets modernos de embeddings</p>
+    </div>
+    <div class="space-y-4 mb-6">
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,180,255,0.2); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">①</div>
+        <div>
+          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-blue);">Grafos e Clustering dominam — com quantização diferente</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">SymphonyQG, Glass, NGT-QG (grafos) e LoRaNN, ScaNN, IVF-PQ (clustering) são top. Cada família usa métodos de quantização distintos para compressão de vetores.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(255,213,77,0.2); color:var(--mira-warning); border:1px solid rgba(255,213,77,0.3);">②</div>
+        <div>
+          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-warning);">Em OOD text-to-image, métodos genéricos superam especialistas</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Surpreendentemente, algoritmos ANN regulares (não especializados em OOD) superam métodos OOD especializados em queries text-to-image — o campo ainda tem muito a descobrir.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,255,180,0.2); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">③</div>
+        <div>
+          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-success);">Attention computation exige métodos especializados OOD</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Para approximate attention computation em LLMs, métodos ANN regulares não atingem os níveis de recall necessários — métodos OOD especializados são essenciais.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 6 · RAGPerf — O RAG Vai Além do Índice ═══ -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">RAGPerf · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">O RAG Vai Muito Além <span style="color:var(--mira-blue);">do Índice Vetorial</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Benchmarks de recall isolado não capturam o comportamento real do pipeline — UIUC + IBM Research</p>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">Benchmarks Existentes — Limitações</div>
+        <ul style="font-size:0.8rem; color:rgba(255,255,255,0.7); list-style:disc; padding-left:1rem; line-height:1.6;">
+          <li>Focam só em métricas semânticas (recall, hallucination)</li>
+          <li>Ignoram throughput, latência, GPU/CPU utilização</li>
+          <li>Usam datasets estáticos — sem updates/deletes</li>
+          <li>Não permitem customizar embedding + VectorDB + LLM</li>
+        </ul>
+      </div>
+      <div class="alert alert-b" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-blue); font-size:0.88rem;">RAGPerf — O que adiciona</div>
+        <ul style="font-size:0.8rem; color:rgba(255,255,255,0.7); list-style:disc; padding-left:1rem; line-height:1.6;">
+          <li>End-to-end: Embedding → IndexDB → Retrieval → Rerank → LLM</li>
+          <li>Workload generator: Query + Insert + Update + Remove</li>
+          <li>5 vector databases: LanceDB, Milvus, Qdrant, Chroma, Elasticsearch</li>
+          <li>Overhead de profiling negligível no pipeline</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flex gap-2 flex-wrap" data-aos="fade-up" data-aos-delay="260" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-b">UIUC · IBM Research</span>
+      <span class="tag t-y">arXiv Mar 2026</span>
+      <span class="tag t-g">Open-source</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 7 · RAGPerf — Workload Generator ═══ -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">RAGPerf · Workload</div>
+      <h2 class="text-3xl font-black mb-1">Quatro Operações do <span style="color:var(--mira-blue);">Mundo Real</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Bases de conhecimento reais são dinâmicas — não estáticas. RAGPerf simula isso.</p>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,180,255,0.2); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">Q</div>
+        <div>
+          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-blue);">Query</div>
+          <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Pergunta do usuário → embedding → top-K retrieval → reranking → geração LLM</p>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="130" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,255,180,0.2); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">I</div>
+        <div>
+          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-success);">Insert</div>
+          <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Ingestão de novos chunks — embedding + indexação no vector DB</p>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(255,213,77,0.2); color:var(--mira-warning); border:1px solid rgba(255,213,77,0.3);">U</div>
+        <div>
+          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-warning);">Update</div>
+          <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Atualização de documento com dados factuais novos — testa a capacidade de refletir mudanças</p>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="230" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(255,100,100,0.2); color:var(--mira-error); border:1px solid rgba(255,100,100,0.3);">R</div>
+        <div>
+          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-error);">Remove</div>
+          <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Remoção de documento específico pelo ID — testa integridade do índice</p>
+        </div>
+      </div>
+    </div>
+    <div class="alert alert-b" data-aos="fade-up" data-aos-delay="310" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);">Distribuições de acesso: <strong style="color:var(--mira-blue);">Uniform</strong> (todos os arquivos igual probabilidade) ou <strong style="color:var(--mira-blue);">Zipfian</strong> ("hotspot" — poucos arquivos recebem a maioria das operações, como Wikipedia em tendências).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 8 · RAGPerf — Arquitetura e Métricas [D3] ═══ -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">RAGPerf · Arquitetura</div>
+      <h2 class="text-3xl font-black mb-1">Pipeline <span style="color:var(--mira-blue);">End-to-End</span> Completo</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Métricas coletadas em cada estágio — sistema + qualidade — sem overhead significativo</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-ragperf" style="height:180px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-semibold mb-2" style="font-size:0.85rem; color:var(--mira-blue);">Métricas de Sistema</div>
+        <ul style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li>Throughput (QPS) &amp; latência end-to-end</li>
+          <li>GPU/CPU utilização e I/O bandwidth</li>
+          <li>Memory footprint (host + device)</li>
+        </ul>
+      </div>
+      <div class="gi">
+        <div class="font-semibold mb-2" style="font-size:0.85rem; color:var(--mira-success);">Métricas de Qualidade</div>
+        <ul style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li>Context recall (recuperou os chunks certos?)</li>
+          <li>Query accuracy (resposta correta?)</li>
+          <li>Factual consistency (alucinação?)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 9 · FANNS — Busca com Restrições de Atributos ═══ -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">FANNS · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">ANN com <span style="color:var(--mira-blue);">Filtros de Atributos</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">ETH Zurich · arXiv Abr 2026 — dataset: 2.7M artigos arXiv com 11 atributos reais</p>
+    </div>
+    <div class="gi mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.9rem; color:rgba(255,255,255,0.8); line-height:1.65;">
+        Em sistemas de RAG reais, não basta encontrar os k documentos mais similares — frequentemente precisamos impor <strong style="color:var(--mira-blue);">restrições de atributos</strong>: "apenas artigos de 2024", "apenas autores de uma instituição específica", "apenas artigos de uma determinada categoria". Isso é <strong>FANNS (Filtered Approximate Nearest Neighbor Search)</strong>.
+      </p>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="gi text-center" data-aos="fade-up" data-aos-delay="150" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-blue);">EM — Exact Match</div>
+        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">categoria = "CS.LG" exatamente</div>
+      </div>
+      <div class="gi text-center" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-teal);">R — Range</div>
+        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">ano &ge; 2023 &amp; ano &le; 2026</div>
+      </div>
+      <div class="gi text-center" data-aos="fade-up" data-aos-delay="250" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-purple);">EMIS — Exact Match in Set</div>
+        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">autores &cap; {"Alice", "Bob"} ≠ ∅</div>
+      </div>
+    </div>
+    <div class="alert alert-b" data-aos="fade-up" data-aos-delay="320" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-blue);">Dataset arxiv-for-fanns:</strong> 2.7M abstracts do arXiv com 11 atributos reais (venue, publication year, authors, categories). Benchmark 11 métodos FANNS diferentes.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 10 · METÁFORA 2 — O Catálogo Duplo ═══ -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · FANNS</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">O Catálogo Duplo</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Na mesma biblioteca com 1 bilhão de livros, agora você quer: <em>"os 10 livros mais parecidos com este, mas apenas os publicados após 2020, de autores brasileiros, sobre tecnologia."</em> Você precisa usar dois catálogos ao mesmo tempo: o catálogo de <strong style="color:var(--mira-blue);">conteúdo</strong> (similaridade semântica do embedding) e o catálogo de <strong style="color:var(--mira-teal);">atributos</strong> (filtros por data, autor, tema). A ordem em que você usa cada catálogo muda dramaticamente a eficiência.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-blue);">Pré-Filtragem</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Filtra atributos primeiro → depois busca ANN. Eficiente com baixa seletividade.</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-warning);">Índice Híbrido</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Um único índice combina vetores e atributos. Melhor para seletividade moderada.</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-teal);">Pós-Filtragem</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Busca ANN primeiro → filtra os resultados. Eficiente com alta seletividade.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 11 · FANNS — 3 Abordagens + Selectivity [D3] ═══ -->
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">FANNS · Abordagens</div>
+      <h2 class="text-3xl font-black mb-1">Seletividade Define <span style="color:var(--mira-blue);">a Estratégia Ótima</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Seletividade = fração de itens que satisfazem o filtro — determina qual método usar</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-fanns" style="height:180px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="gi" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="font-semibold mb-3" style="font-size:0.85rem; color:var(--mira-blue);">8 Observações Práticas (resumo)</div>
+      <div class="grid grid-cols-2 gap-2">
+        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• Nenhum método domina em todos os cenários</div>
+        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• Pré-filtragem: ideal para seletividade baixa (&lt;1%)</div>
+        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• Pós-filtragem: ideal para seletividade alta (&gt;50%)</div>
+        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• Índice híbrido: melhor para seletividade moderada</div>
+        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• In-filtering em grafos: cobre todos os tipos de filtro</div>
+        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• EMIS (multi-valor) é o caso mais difícil</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 12 · IVF-RaBitQ — GPU-Native ANN ═══ -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">IVF-RaBitQ · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">ANN <span style="color:var(--mira-blue);">Nativo em GPU</span> — Rápido e Compacto</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">NTU Singapura + NVIDIA · arXiv Fev 2026 · integrado ao NVIDIA cuVS</p>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">Grafos GPU (CAGRA, cuHNSW)</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Alto recall, mas construção lenta e grande footprint de memória. Acesso irregular à memória → warp divergence em GPUs.</p>
+      </div>
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">IVF-PQ (Cluster-Based)</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Build rápido, mas codebook PQ precisa de treinamento adicional. Para alto recall, exige reranking com vetores brutos — memória no host, latência alta.</p>
+      </div>
+    </div>
+    <div class="alert alert-b mb-5" data-aos="fade-up" data-aos-delay="260" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.88rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-blue);">IVF-RaBitQ (GPU)</strong> combina IVF (clusters) com a quantização RaBitQ — sem codebook, com garantias teóricas de erro, e sem acesso a vetores brutos para reranking. GPU-native com kernels fusionados.</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4" data-aos="fade-up" data-aos-delay="340" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">2.2×</div>
+        <div class="stat-lbl">QPS vs. CAGRA<br>(Recall ≥ 0.95)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">7.7×</div>
+        <div class="stat-lbl">build mais rápido<br>vs. IVF-PQ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">2.7×</div>
+        <div class="stat-lbl">throughput vs. IVF-PQ<br>sem reranking bruto</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 13 · METÁFORA 3 — O Depósito por Corredores ═══ -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · IVF-RaBitQ</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">O Depósito Organizado por Corredores</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Imagine um depósito com 1 bilhão de produtos. O <strong style="color:var(--mira-blue);">IVF</strong> organiza os produtos em corredores temáticos (clusters). Ao buscar um produto, você não vasculha o depósito inteiro — verifica apenas os 3-4 corredores mais próximos do que você quer. <strong style="color:var(--mira-teal);">RaBitQ</strong> comprime a etiqueta de cada produto para apenas 1 bit (endereço ultrarreduzido), tornando a varredura dentro do corredor ultra-rápida. A <strong style="color:var(--mira-warning);">GPU</strong> é como ter 10.000 funcionários varrendo os corredores em paralelo ao mesmo tempo.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-blue);">IVF = Corredores</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">k-means divide vetores em N clusters (corredores). Busca verifica os nprobe corredores mais próximos.</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-teal);">RaBitQ = Etiquetas 1-bit</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Quantiza cada vetor em 1 bit (filtro) + ex-code (refinamento). Sem codebook, com garantias de erro.</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-warning);">GPU = 10K Funcionários</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Paralelismo massivo com kernels fusionados — filtro 1-bit + refinamento ex-code em único kernel.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 14 · IVF-RaBitQ — Pipeline [D3] ═══ -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">IVF-RaBitQ · Pipeline</div>
+      <h2 class="text-3xl font-black mb-1">Build + Search em <span style="color:var(--mira-blue);">2 Fases GPU</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Quantização em 1 bit (filtro rápido) + ex-code (refinamento preciso) — tudo sem vetores brutos</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-ivf" style="height:200px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.85rem; color:var(--mira-blue);">Index Build</div>
+        <ol style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:decimal; padding-left:1rem; line-height:1.7;">
+          <li>k-means → N clusters (IVF index)</li>
+          <li>RaBitQ quantize → 1-bit codes + ex-codes por vetor</li>
+          <li>GPU-native layout (coalesced memory access)</li>
+        </ol>
+      </div>
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.85rem; color:var(--mira-teal);">Search (2 fases)</div>
+        <ol style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:decimal; padding-left:1rem; line-height:1.7;">
+          <li>Fase 1 — Filter: 1-bit RaBitQ code (kernel rápido)</li>
+          <li>Fase 2 — Refinement: ex-code (candidatos da fase 1)</li>
+          <li>Top-K seleção — tudo em kernel fusionado</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 15 · IVF-RaBitQ — Resultados ═══ -->
+<div class="slide" id="slide-15">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">IVF-RaBitQ · Resultados</div>
+      <h2 class="text-3xl font-black mb-1">Fronteira <span style="color:var(--mira-success);">Pareto-Ótima</span> em GPU</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Recall-throughput-build time-memória: IVF-RaBitQ domina em todas as dimensões</p>
+    </div>
+    <div class="overflow-x-auto mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <table>
+        <thead>
+          <tr><th>Métrica (Recall ≥ 0.95)</th><th>CAGRA (Grafos GPU)</th><th>IVF-PQ (GPU)</th><th>IVF-RaBitQ (GPU)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Throughput (QPS)</td><td>baseline</td><td>~0.7× CAGRA</td><td style="color:var(--mira-success);">2.2× CAGRA</td></tr>
+          <tr><td>Tempo de Build</td><td>baseline</td><td>7.7× mais lento</td><td style="color:var(--mira-success);">até 13.1× mais rápido</td></tr>
+          <tr><td>Footprint de Memória</td><td>alta</td><td>menor</td><td style="color:var(--mira-success);">menor (sem vetores brutos)</td></tr>
+          <tr><td>Reranking com vetores brutos</td><td>não</td><td style="color:var(--mira-error);">sim (bottleneck)</td><td style="color:var(--mira-success);">não necessário</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-g" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);">Integrado ao <strong style="color:var(--mira-success);">NVIDIA cuVS Library</strong> — disponível como solução de produção para cargas GPU de grande escala. Valida em cuVS Bench com múltiplos datasets.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 16 · Allan-Poe — O Trilemma da Busca Híbrida ═══ -->
+<div class="slide" id="slide-16">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Allan-Poe · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">O <span style="color:var(--mira-error);">Trilemma</span> da Busca Híbrida</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Zhejiang University + Huawei Cloud · PVLDB 2026 · Allan-Poe: índice grafo unificado em GPU</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.82rem;">Paradigma 1: Fusion</div>
+        <p style="font-size:0.78rem; color:rgba(255,255,255,0.7);">Mapeia dense + sparse para espaço unificado. Sacrifica flexibilidade para mudar pesos de fusão.</p>
+      </div>
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="150" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.82rem;">Paradigma 2: Multi-path</div>
+        <p style="font-size:0.78rem; color:rgba(255,255,255,0.7);">Índices separados por tipo. Flexível, mas grande overhead de armazenamento (5× mais espaço) e menor precisão.</p>
+      </div>
+      <div class="gi" style="border-color:rgba(77,180,255,0.25); background:rgba(77,180,255,0.04);" data-aos="fade-up" data-aos-delay="220" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-blue); font-size:0.82rem;">Allan-Poe: Unificado</div>
+        <p style="font-size:0.78rem; color:rgba(255,255,255,0.7);">Grafo único que integra dense, sparse e full-text. Pesos dinâmicos em query-time sem reconstruir o índice.</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">1.5–186×</div>
+        <div class="stat-lbl">throughput vs. métodos atuais</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">3</div>
+        <div class="stat-lbl">caminhos integrados no mesmo índice<br>(dense + sparse + full-text)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 17 · METÁFORA 4 — O Motor de Busca Unificado ═══ -->
+<div class="slide" id="slide-17">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · Allan-Poe</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">O Motor de Busca que Tudo Une</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Imagine uma cidade com três sistemas de transporte separados: metrô, ônibus e bicicleta — cada um com seu próprio mapa. Para ir do ponto A ao B, você consulta três mapas diferentes e combina as rotas manualmente. <strong style="color:var(--mira-blue);">Allan-Poe</strong> é como construir <em>um único mapa integrado</em> da cidade — você encontra a melhor rota usando qualquer combinação dos três meios de transporte, sem precisar de mapas separados. E o mais importante: você pode mudar o peso de cada modal (<em>"hoje prefiro bicicleta 70%, metrô 30%"</em>) sem reconstruir o mapa inteiro.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-4 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-blue);">Dense Vector</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">significado semântico</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-teal);">Sparse Vector</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">palavras-chave aprendidas</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-warning);">Full-text</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">busca lexical exata</div>
+      </div>
+      <div class="gi text-center" style="border-color:rgba(77,180,255,0.25); background:rgba(77,180,255,0.05);">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-blue);">Allan-Poe</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">todos no mesmo grafo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 18 · Allan-Poe — Índice Grafo Unificado [D3] ═══ -->
+<div class="slide" id="slide-18">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Allan-Poe · Arquitetura</div>
+      <h2 class="text-3xl font-black mb-1">Grafo <span style="color:var(--mira-blue);">Híbrido All-in-One</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Warp-level GPU kernel + RNG-IP pruning + dynamic fusion weights em query-time</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-allanpoe" style="height:210px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.82rem; color:var(--mira-blue);">Construção — GPU Pipeline</div>
+        <ul style="font-size:0.76rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li>Warp-level hybrid distance kernel (dense + sparse)</li>
+          <li>RNG-IP joint pruning — qualidade + eficiência</li>
+          <li>Keyword-aware neighbor recycling (full-text)</li>
+          <li>Logical edge augmentation (Knowledge Graph opcional)</li>
+        </ul>
+      </div>
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.82rem; color:var(--mira-success);">Query — Framework Dinâmico</div>
+        <ul style="font-size:0.76rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li>Qualquer combinação de paths em runtime</li>
+          <li>Pesos dinâmicos sem reconstruir o índice</li>
+          <li>Dynamic heterogeneous edges loading</li>
+          <li>Entity-document joint traversal (KG complex queries)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 19 · Allan-Poe — Resultados ═══ -->
+<div class="slide" id="slide-19">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Allan-Poe · Resultados</div>
+      <h2 class="text-3xl font-black mb-1">Superiority <span style="color:var(--mira-success);">até 186× de Throughput</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Avaliado em 6 datasets reais — PVLDB 2026</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">1.5–186×</div>
+        <div class="stat-lbl">throughput vs.<br>métodos estado-da-arte</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">6</div>
+        <div class="stat-lbl">datasets reais<br>avaliados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-warning);">23%</div>
+        <div class="stat-lbl">footprint de memória<br>(Infinity usa 5GB para 1M docs)</div>
+      </div>
+    </div>
+    <div class="gi mb-5" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="font-semibold mb-2" style="font-size:0.85rem; color:var(--mira-blue);">Vantagens concretas vs. Infinity (multi-path baseline)</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.75); padding:0.5rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">✓ Mesmo índice para qualquer combinação de retrieval paths</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.75); padding:0.5rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">✓ Storage 4-5× menor (índice unificado vs. 3 índices separados)</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.75); padding:0.5rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">✓ Fusão sem index reconstruction para qualquer peso</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.75); padding:0.5rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">✓ Suporte nativo a Knowledge Graph para queries complexas</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 20 · MAPA COMPARATIVO [D3] ═══ -->
+<div class="slide" id="slide-20">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 10 · Síntese</div>
+      <h2 class="text-3xl font-black mb-1">Cinco <span style="color:var(--mira-blue);">Perspectivas Complementares</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Cada paper resolve um aspecto diferente do banco vetorial em produção</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-compare10" style="height:220px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-5 gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-blue);">VIBE</div>
+        <div class="tag t-b" style="font-size:0.6rem; display:table; margin:0 auto;">Benchmarkar</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-teal);">RAGPerf</div>
+        <div class="tag t-t" style="font-size:0.6rem; display:table; margin:0 auto;">Medir E2E</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-success);">FANNS</div>
+        <div class="tag t-g" style="font-size:0.6rem; display:table; margin:0 auto;">Filtrar</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-warning);">IVF-RaBitQ</div>
+        <div class="tag t-y" style="font-size:0.6rem; display:table; margin:0 auto;">Acelerar GPU</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-purple);">Allan-Poe</div>
+        <div class="tag t-p" style="font-size:0.6rem; display:table; margin:0 auto;">Unificar</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 21 · SÍNTESE — 4 Lições ═══ -->
+<div class="slide" id="slide-21">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 10 · Aprendizados</div>
+      <h2 class="text-3xl font-black mb-6">Quatro <span style="color:var(--mira-blue);">Lições de Produção</span></h2>
+    </div>
+    <div class="space-y-4">
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(77,180,255,0.15); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">①</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-blue);">Benchmark com embeddings modernos — datasets antigos enganam</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">VIBE prova que MNIST e SIFT não representam cargas de trabalho RAG reais. Avalie seu índice com embeddings do mesmo modelo que você usa em produção.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(38,198,218,0.15); color:var(--mira-teal); border:1px solid rgba(38,198,218,0.3);">②</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-teal);">Recall isolado não captura o bottleneck real do pipeline</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">RAGPerf mostra que throughput, latência e utilização de hardware são tão críticos quanto recall. Pipelines com bases dinâmicas (insert/update/remove) têm degradação de performance que benchmarks estáticos escondem.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(255,213,77,0.15); color:var(--mira-warning); border:1px solid rgba(255,213,77,0.3);">③</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-warning);">A estratégia de filtragem depende da seletividade, não da preferência</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">FANNS + IVF-RaBitQ demonstram: não existe "melhor método" universal. A seletividade do filtro determina qual abordagem usar — pré, híbrida ou pós-filtragem.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="320" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(180,100,255,0.15); color:var(--mira-purple); border:1px solid rgba(180,100,255,0.3);">④</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-purple);">Índices híbridos unificados superam a soma das partes</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">Allan-Poe prova que dense + sparse + full-text num único grafo GPU entrega 1.5×-186× de throughput versus sistemas multi-path separados, com 4-5× menos storage.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 22 · PRÓXIMO MÓDULO ═══ -->
+<div class="slide" id="slide-22" style="background:radial-gradient(ellipse 60% 50% at 80% 50%, rgba(77,255,180,0.1) 0%, transparent 55%), var(--mira-bg);">
+  <div class="card" style="border-color:rgba(77,255,180,0.18);">
+    <div data-aos="fade-up" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="inline-flex items-center gap-2 mb-6" style="background:rgba(77,255,180,0.1); border:1px solid rgba(77,255,180,0.25); border-radius:2rem; padding:0.35rem 0.9rem; font-size:0.7rem; color:var(--mira-success); font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">
+        A Seguir · Módulo 11
+      </div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem); font-weight:900; line-height:1.05; letter-spacing:-0.02em; margin-bottom:1rem;">
+        Reranking<br><span style="color:var(--mira-success);">em RAG</span>
+      </h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.95rem; margin-bottom:2rem;">Como reordenar os documentos recuperados para maximizar a relevância antes de passar ao LLM — a camada que transforma recall em precision.</p>
+    </div>
+    <hr class="div mb-6" />
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">3</div>
+        <div class="stat-lbl">artigos científicos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">Cross</div>
+        <div class="stat-lbl">encoder rerankers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">LLM</div>
+        <div class="stat-lbl">reranking methods</div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mb-6" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-g">Cross-encoder vs. bi-encoder</span>
+      <span class="tag t-g">LLM-based reranking</span>
+      <span class="tag t-g">Efficiency trade-offs</span>
+    </div>
+    <div data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <a href="../index.html" style="display:inline-flex; align-items:center; gap:0.5rem; color:var(--mira-success); font-weight:600; font-size:0.9rem; text-decoration:none; border:1px solid rgba(77,255,180,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; background:rgba(77,255,180,0.08);">
+        ← Voltar ao Portal
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     D3 ANIMATIONS
+════════════════════════════════════ -->
+<script>
+/* ── ANIM-FAMILIES: 4 Famílias ANN ── */
+(function(){
+  window.__famGen=(window.__famGen||0)+1; var myG=window.__famGen;
+  var el=document.getElementById('anim-families'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=200;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  var families=[
+    {label:'Grafos',sub:'HNSW · SymphonyQG',color:'var(--mira-blue)',icon:'🕸',x:W*0.18,y:H/2},
+    {label:'Clustering',sub:'IVF-PQ · ScaNN',color:'var(--mira-success)',icon:'⚫',x:W*0.38,y:H/2},
+    {label:'Árvores',sub:'Annoy · MRPT',color:'var(--mira-warning)',icon:'🌳',x:W*0.62,y:H/2},
+    {label:'Hashing',sub:'LSH · PUFFINN',color:'var(--mira-purple)',icon:'#',x:W*0.82,y:H/2}
+  ];
+  /* center "ANN" */
+  var cx=W/2, cy=H/2;
+  families.forEach(function(f,i){
+    var g=svg.append('g').attr('opacity',0);
+    var bw=W*0.18, bh=70;
+    g.append('rect').attr('x',f.x-bw/2).attr('y',f.y-bh/2).attr('width',bw).attr('height',bh)
+      .attr('rx',10).attr('fill',f.color+'18').attr('stroke',f.color).attr('stroke-width',1.5);
+    g.append('text').text(f.label).attr('x',f.x).attr('y',f.y-12)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill',f.color).attr('font-size','12px').attr('font-weight','800');
+    g.append('text').text(f.sub).attr('x',f.x).attr('y',f.y+8)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.55)').attr('font-size','9px');
+    g.transition().duration(500).delay(i*180+600).attr('opacity',1);
+  });
+  /* QPS label */
+  svg.append('text').text('QPS ↑ Recall ↑').attr('x',W/2).attr('y',18)
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size','10px');
+  /* pulsing */
+  function pulse(){
+    if(window.__famGen!==myG) return;
+    families.forEach(function(f,i){
+      var r=svg.append('circle').attr('cx',f.x).attr('cy',f.y).attr('r',30)
+        .attr('fill','none').attr('stroke',f.color).attr('stroke-width',1.5).attr('opacity',0.6);
+      r.transition().duration(1000).delay(i*150).attr('r',46).attr('opacity',0).remove();
+    });
+    setTimeout(pulse,2400);
+  }
+  setTimeout(pulse,1800);
+})();
+
+/* ── ANIM-RAGPERF: Pipeline E2E ── */
+(function(){
+  window.__rpGen=(window.__rpGen||0)+1; var myG=window.__rpGen;
+  var el=document.getElementById('anim-ragperf'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=180;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  var stages=[
+    {label:'Embedding',color:'var(--mira-purple)'},
+    {label:'Vector DB',color:'var(--mira-blue)'},
+    {label:'Retrieval',color:'var(--mira-teal)'},
+    {label:'Reranking',color:'var(--mira-warning)'},
+    {label:'LLM Gen',color:'var(--mira-success)'}
+  ];
+  var n=stages.length, sw=(W-60)/(n+1), cy=H/2, sh=50, bw=sw*0.85;
+  stages.forEach(function(s,i){
+    var sx=30+sw*(i+0.5);
+    if(i<n-1){
+      svg.append('line').attr('x1',sx+bw/2+2).attr('y1',cy).attr('x2',sx+sw-bw/2-2).attr('y2',cy)
+        .attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1.5)
+        .attr('marker-end','url(#arr2)');
+    }
+    svg.append('rect').attr('x',sx-bw/2).attr('y',cy-sh/2).attr('width',bw).attr('height',sh)
+      .attr('rx',8).attr('fill',s.color+'18').attr('stroke',s.color).attr('stroke-width',1.3)
+      .attr('opacity',0).transition().duration(400).delay(i*200+400).attr('opacity',1);
+    svg.append('text').text(s.label).attr('x',sx).attr('y',cy)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill',s.color).attr('font-size','10px').attr('font-weight','700')
+      .attr('opacity',0).transition().duration(400).delay(i*200+500).attr('opacity',1);
+  });
+  var defs=svg.append('defs');
+  defs.append('marker').attr('id','arr2').attr('markerWidth',7).attr('markerHeight',7)
+    .attr('refX',5).attr('refY',3).attr('orient','auto')
+    .append('path').attr('d','M0,0 L0,6 L7,3 z').attr('fill','rgba(255,255,255,0.2)');
+  /* metrics label */
+  svg.append('text').text('Métricas coletadas em cada estágio →').attr('x',W/2).attr('y',H-12)
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size','9px');
+  /* animated dot */
+  var dot=svg.append('circle').attr('r',5).attr('fill','var(--mira-primary)').attr('opacity',0);
+  function animDot(){
+    if(window.__rpGen!==myG) return;
+    var xs=stages.map(function(s,i){ return 30+sw*(i+0.5); });
+    dot.attr('cx',xs[0]).attr('cy',cy).attr('opacity',0.9);
+    stages.forEach(function(s,i){
+      if(i>0) dot.transition().duration(400).delay((i-1)*500+200).attr('cx',xs[i]);
+    });
+    setTimeout(animDot,3200);
+  }
+  setTimeout(animDot,1400);
+})();
+
+/* ── ANIM-FANNS: Selectivity vs Strategy ── */
+(function(){
+  window.__fannsGen=(window.__fannsGen||0)+1; var myG=window.__fannsGen;
+  var el=document.getElementById('anim-fanns'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=180;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  /* axis */
+  var px=50, py=20, pw=W-px-20, ph=H-py-40;
+  svg.append('line').attr('x1',px).attr('y1',py).attr('x2',px).attr('y2',py+ph)
+    .attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5);
+  svg.append('line').attr('x1',px).attr('y1',py+ph).attr('x2',px+pw).attr('y2',py+ph)
+    .attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5);
+  svg.append('text').text('Eficiência').attr('x',px-8).attr('y',py+ph/2)
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.5)').attr('font-size','10px')
+    .attr('transform','rotate(-90,'+(px-8)+','+(py+ph/2)+')');
+  svg.append('text').text('Seletividade do filtro →').attr('x',px+pw/2).attr('y',py+ph+18)
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size','10px');
+  svg.append('text').text('baixa').attr('x',px+5).attr('y',py+ph+18)
+    .attr('fill','rgba(255,255,255,0.35)').attr('font-size','9px');
+  svg.append('text').text('alta').attr('x',px+pw-20).attr('y',py+ph+18)
+    .attr('fill','rgba(255,255,255,0.35)').attr('font-size','9px');
+  /* zones */
+  var zones=[
+    {label:'Pré-Filtragem',x:px,w:pw*0.33,color:'var(--mira-blue)',peak:0.1},
+    {label:'Índice Híbrido',x:px+pw*0.33,w:pw*0.34,color:'var(--mira-warning)',peak:0.5},
+    {label:'Pós/In-Filtragem',x:px+pw*0.67,w:pw*0.33,color:'var(--mira-teal)',peak:0.9}
+  ];
+  zones.forEach(function(z,i){
+    var cx2=z.x+z.w/2, peakY=py+ph*(1-z.peak*0.7);
+    /* curve via quadratic bezier */
+    var path='M '+(z.x)+','+(py+ph)+' Q '+(cx2)+','+(peakY)+' '+(z.x+z.w)+','+(py+ph);
+    var p=svg.append('path').attr('d',path).attr('fill',z.color+'30').attr('stroke',z.color).attr('stroke-width',1.5)
+      .attr('opacity',0);
+    p.transition().duration(500).delay(i*300+600).attr('opacity',1);
+    svg.append('text').text(z.label).attr('x',cx2).attr('y',peakY-8)
+      .attr('text-anchor','middle').attr('fill',z.color).attr('font-size','9.5px').attr('font-weight','700')
+      .attr('opacity',0).transition().duration(400).delay(i*300+900).attr('opacity',1);
+  });
+})();
+
+/* ── ANIM-IVF: IVF-RaBitQ Pipeline ── */
+(function(){
+  window.__ivfGen=(window.__ivfGen||0)+1; var myG=window.__ivfGen;
+  var el=document.getElementById('anim-ivf'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=200;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  /* IVF clusters on left */
+  var clusterColors=['var(--mira-blue)','var(--mira-teal)','var(--mira-success)'];
+  var clusters=[{cx:80,cy:60},{cx:80,cy:130},{cx:130,cy:95}];
+  clusters.forEach(function(c,i){
+    svg.append('circle').attr('cx',c.cx).attr('cy',c.cy).attr('r',28)
+      .attr('fill',clusterColors[i]+'18').attr('stroke',clusterColors[i]).attr('stroke-width',1.3)
+      .attr('opacity',0).transition().duration(400).delay(i*200+400).attr('opacity',1);
+    svg.append('text').text('C'+(i+1)).attr('x',c.cx).attr('y',c.cy)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill',clusterColors[i]).attr('font-size','11px').attr('font-weight','800')
+      .attr('opacity',0).transition().duration(400).delay(i*200+500).attr('opacity',1);
+  });
+  svg.append('text').text('IVF Clusters').attr('x',100).attr('y',H-10)
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size','9px');
+  /* Arrow */
+  svg.append('line').attr('x1',170).attr('y1',H/2).attr('x2',215).attr('y2',H/2)
+    .attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5).attr('marker-end','url(#arr3)');
+  var defs=svg.append('defs');
+  defs.append('marker').attr('id','arr3').attr('markerWidth',7).attr('markerHeight',7)
+    .attr('refX',5).attr('refY',3).attr('orient','auto')
+    .append('path').attr('d','M0,0 L0,6 L7,3 z').attr('fill','rgba(255,255,255,0.25)');
+  /* RaBitQ phases */
+  var phases=[
+    {label:'1-bit\nRaBitQ',sub:'Filtro rápido',x:270,y:H/2,color:'var(--mira-warning)',w:80},
+    {label:'Ex-Code\nRefinement',sub:'Candidatos',x:380,y:H/2,color:'var(--mira-purple)',w:80},
+    {label:'Top-K\nResults',sub:'GPU kernel',x:490,y:H/2,color:'var(--mira-success)',w:80}
+  ];
+  phases.forEach(function(p,i){
+    if(i>0){
+      svg.append('line').attr('x1',phases[i-1].x+phases[i-1].w/2+2).attr('y1',H/2)
+        .attr('x2',p.x-p.w/2-2).attr('y2',H/2)
+        .attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1.2);
+    }
+    svg.append('rect').attr('x',p.x-p.w/2).attr('y',H/2-30).attr('width',p.w).attr('height',60)
+      .attr('rx',8).attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.3)
+      .attr('opacity',0).transition().duration(400).delay(i*250+900).attr('opacity',1);
+    var ls=p.label.split('\n');
+    ls.forEach(function(l,j){
+      svg.append('text').text(l).attr('x',p.x).attr('y',H/2-7+(j*14))
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill',p.color).attr('font-size','10px').attr('font-weight','700')
+        .attr('opacity',0).transition().duration(400).delay(i*250+1000).attr('opacity',1);
+    });
+    svg.append('text').text(p.sub).attr('x',p.x).attr('y',H/2+20)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.45)').attr('font-size','8px')
+      .attr('opacity',0).transition().duration(400).delay(i*250+1050).attr('opacity',1);
+  });
+  /* GPU label */
+  svg.append('text').text('⚡ GPU Warp-Level Parallelism').attr('x',380).attr('y',H-10)
+    .attr('text-anchor','middle').attr('fill','rgba(255,213,77,0.5)').attr('font-size','9px').attr('font-weight','600');
+  /* animated query dot */
+  var qdot=svg.append('circle').attr('r',5).attr('fill','var(--mira-primary)').attr('opacity',0);
+  function animQuery(){
+    if(window.__ivfGen!==myG) return;
+    qdot.attr('cx',170).attr('cy',H/2).attr('opacity',0.9);
+    qdot.transition().duration(400).delay(0).attr('cx',215)
+      .transition().duration(400).attr('cx',270)
+      .transition().duration(400).attr('cx',380)
+      .transition().duration(400).attr('cx',490)
+      .transition().duration(300).attr('opacity',0)
+      .on('end',function(){ setTimeout(animQuery,800); });
+  }
+  setTimeout(animQuery,1600);
+})();
+
+/* ── ANIM-ALLANPOE: Hybrid Graph Index ── */
+(function(){
+  window.__apGen=(window.__apGen||0)+1; var myG=window.__apGen;
+  var el=document.getElementById('anim-allanpoe'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=210;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  /* inputs */
+  var inputs=[
+    {label:'Dense\nVector',y:35,color:'var(--mira-blue)'},
+    {label:'Sparse\nVector',y:H/2,color:'var(--mira-teal)'},
+    {label:'Full-text\nSearch',y:H-35,color:'var(--mira-warning)'}
+  ];
+  var cx=W/2, cy=H/2;
+  inputs.forEach(function(inp,i){
+    svg.append('rect').attr('x',10).attr('y',inp.y-22).attr('width',80).attr('height',44)
+      .attr('rx',8).attr('fill',inp.color+'18').attr('stroke',inp.color).attr('stroke-width',1.3)
+      .attr('opacity',0).transition().duration(400).delay(i*180+400).attr('opacity',1);
+    inp.label.split('\n').forEach(function(l,j){
+      svg.append('text').text(l).attr('x',50).attr('y',inp.y+(j-0.3)*14)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill',inp.color).attr('font-size','9.5px').attr('font-weight','700')
+        .attr('opacity',0).transition().duration(400).delay(i*180+520).attr('opacity',1);
+    });
+    svg.append('line').attr('x1',90).attr('y1',inp.y).attr('x2',cx-45).attr('y2',cy)
+      .attr('stroke',inp.color).attr('stroke-width',1.2).attr('opacity',0.35).attr('stroke-dasharray','5,4');
+  });
+  /* Center graph index */
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',44)
+    .attr('fill','rgba(77,180,255,0.08)').attr('stroke','var(--mira-blue)').attr('stroke-width',2)
+    .attr('opacity',0).transition().duration(600).delay(900).attr('opacity',1);
+  svg.append('text').text('Allan-Poe').attr('x',cx).attr('y',cy-8)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','var(--mira-blue)').attr('font-size','11px').attr('font-weight','800')
+    .attr('opacity',0).transition().duration(400).delay(1000).attr('opacity',1);
+  svg.append('text').text('Graph Index').attr('x',cx).attr('y',cy+8)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','rgba(255,255,255,0.6)').attr('font-size','9px')
+    .attr('opacity',0).transition().duration(400).delay(1050).attr('opacity',1);
+  /* GPU label */
+  svg.append('text').text('⚡ GPU').attr('x',cx).attr('y',cy+22)
+    .attr('text-anchor','middle').attr('fill','rgba(255,213,77,0.5)').attr('font-size','8.5px').attr('font-weight','700')
+    .attr('opacity',0).transition().duration(400).delay(1100).attr('opacity',1);
+  /* output */
+  svg.append('rect').attr('x',W-100).attr('y',cy-22).attr('width',90).attr('height',44)
+    .attr('rx',8).attr('fill','rgba(77,255,180,0.12)').attr('stroke','var(--mira-success)').attr('stroke-width',1.5)
+    .attr('opacity',0).transition().duration(400).delay(1200).attr('opacity',1);
+  svg.append('text').text('Results').attr('x',W-55).attr('y',cy-5)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','var(--mira-success)').attr('font-size','10px').attr('font-weight','800')
+    .attr('opacity',0).transition().duration(400).delay(1280).attr('opacity',1);
+  svg.append('text').text('Top-K').attr('x',W-55).attr('y',cy+9)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','rgba(255,255,255,0.5)').attr('font-size','8.5px')
+    .attr('opacity',0).transition().duration(400).delay(1290).attr('opacity',1);
+  svg.append('line').attr('x1',cx+45).attr('y1',cy).attr('x2',W-102).attr('y2',cy)
+    .attr('stroke','var(--mira-success)').attr('stroke-width',1.5).attr('opacity',0.5).attr('stroke-dasharray','6,4');
+  /* pulse center */
+  function pulseCtr(){
+    if(window.__apGen!==myG) return;
+    var r=svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',44)
+      .attr('fill','none').attr('stroke','var(--mira-blue)').attr('stroke-width',2).attr('opacity',0.7);
+    r.transition().duration(1200).attr('r',62).attr('opacity',0).remove();
+    setTimeout(pulseCtr,2000);
+  }
+  setTimeout(pulseCtr,1500);
+})();
+
+/* ── ANIM-COMPARE10: 5 Papers Mapa ── */
+(function(){
+  window.__c10Gen=(window.__c10Gen||0)+1; var myG=window.__c10Gen;
+  var el=document.getElementById('anim-compare10'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=220;
+  var cx=W/2, cy=H/2;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',28)
+    .attr('fill','rgba(255,255,255,0.05)').attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5);
+  svg.append('text').text('Banco').attr('x',cx).attr('y',cy-6)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,0.6)').attr('font-size','8.5px').attr('font-weight','700');
+  svg.append('text').text('Vetorial').attr('x',cx).attr('y',cy+6)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,0.6)').attr('font-size','8.5px').attr('font-weight','700');
+  var papers=[
+    {label:'VIBE',role:'Benchmarkar',x:cx,y:22,color:'var(--mira-blue)'},
+    {label:'RAGPerf',role:'Medir E2E',x:cx*0.25,y:H*0.35,color:'var(--mira-teal)'},
+    {label:'FANNS',role:'Filtrar',x:cx*0.25,y:H*0.72,color:'var(--mira-success)'},
+    {label:'IVF-RaBitQ',role:'GPU Speed',x:W*0.78,y:H*0.3,color:'var(--mira-warning)'},
+    {label:'Allan-Poe',role:'Unificar',x:W*0.78,y:H*0.75,color:'var(--mira-purple)'}
+  ];
+  papers.forEach(function(p,i){
+    svg.append('line').attr('x1',p.x).attr('y1',p.y).attr('x2',cx).attr('y2',cy)
+      .attr('stroke',p.color).attr('stroke-width',1).attr('opacity',0.25).attr('stroke-dasharray','5,4');
+    svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',26)
+      .attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.5)
+      .attr('opacity',0).transition().duration(450).delay(i*180+600).attr('opacity',1);
+    svg.append('text').text(p.label).attr('x',p.x).attr('y',p.y-5)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill',p.color).attr('font-size','8.5px').attr('font-weight','800')
+      .attr('opacity',0).transition().duration(400).delay(i*180+720).attr('opacity',1);
+    svg.append('text').text(p.role).attr('x',p.x).attr('y',p.y+7)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.55)').attr('font-size','7.5px')
+      .attr('opacity',0).transition().duration(400).delay(i*180+780).attr('opacity',1);
+  });
+  function pulse(){
+    if(window.__c10Gen!==myG) return;
+    papers.forEach(function(p,i){
+      var r=svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',26)
+        .attr('fill','none').attr('stroke',p.color).attr('stroke-width',1.5).attr('opacity',0.7);
+      r.transition().duration(1000).delay(i*120).attr('r',40).attr('opacity',0).remove();
+    });
+    setTimeout(pulse,2600);
+  }
+  setTimeout(pulse,1600);
+})();
+</script>
+
+<script>
+  AOS.init({ duration: 700, once: true, offset: 55 });
+  lucide.createIcons();
+  window.addEventListener('scroll', function(){
+    var s=window.scrollY||document.documentElement.scrollTop;
+    var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+    document.getElementById('progress-bar').style.width=(h>0?Math.round(s/h*100):0)+'%';
+    var b=document.getElementById('back-btn');
+    if(s>320) b.classList.add('visible'); else b.classList.remove('visible');
+  });
+  var slides=document.querySelectorAll('.slide'), cur=0;
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='PageDown'){ cur=Math.min(cur+1,slides.length-1); slides[cur].scrollIntoView({behavior:'smooth'}); }
+    if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='PageUp'){ cur=Math.max(cur-1,0); slides[cur].scrollIntoView({behavior:'smooth'}); }
+  });
+</script>
+</body>
+</html>
