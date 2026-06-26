@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Módulo 11 · Reranking em RAG — RAG Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --mira-primary: #FF904D;
+      --mira-bg: #000000;
+      --mira-success: #4DFFB4;
+      --mira-warning: #FFD54D;
+      --mira-error: #FF6464;
+      --mira-blue: #4DB4FF;
+      --mira-purple: #B464FF;
+      --mira-teal: #26C6DA;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--mira-bg); color: #fff; overflow-x: hidden; }
+
+    #progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--mira-success); z-index: 9999; width: 0%; transition: width 0.2s ease; }
+    #back-btn { position: fixed; bottom: 2rem; right: 2rem; width: 3rem; height: 3rem; border-radius: 50%; background: var(--mira-success); border: none; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; z-index: 100; box-shadow: 0 4px 24px rgba(77,255,180,0.45); }
+    #back-btn.visible { opacity: 1; }
+
+    .slide { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 4rem 1.5rem; position: relative; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; backdrop-filter: blur(10px); max-width: 900px; width: 100%; padding: 2.75rem; }
+
+    .slide-hero { background: radial-gradient(ellipse 65% 55% at 15% 55%, rgba(77,255,180,0.10) 0%, transparent 60%), radial-gradient(ellipse 45% 40% at 85% 25%, rgba(77,180,255,0.06) 0%, transparent 50%), var(--mira-bg); }
+    .module-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(77,255,180,0.12); border: 1px solid rgba(77,255,180,0.3); color: var(--mira-success); border-radius: 2rem; padding: 0.4rem 1rem; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+    .hero-title { font-size: clamp(2.8rem, 7vw, 5rem); font-weight: 900; line-height: 1.0; letter-spacing: -0.03em; }
+    .hero-accent { color: var(--mira-success); }
+
+    .sec-label { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(77,255,180,0.1); border: 1px solid rgba(77,255,180,0.25); border-radius: 2rem; padding: 0.3rem 0.9rem; font-size: 0.7rem; color: var(--mira-success); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+    .metaphor-box { background: rgba(77,255,180,0.05); border: 1px solid rgba(77,255,180,0.18); border-radius: 1rem; padding: 1.5rem; }
+    .metaphor-icon { width: 3.5rem; height: 3.5rem; border-radius: 50%; background: rgba(77,255,180,0.14); border: 1px solid rgba(77,255,180,0.3); display: flex; align-items: center; justify-content: center; color: var(--mira-success); flex-shrink: 0; }
+
+    .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 1rem; padding: 1.5rem; text-align: center; }
+    .stat-num { font-size: 2.6rem; font-weight: 900; line-height: 1; }
+    .stat-lbl { font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; font-weight: 500; }
+
+    .gi { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.2rem; }
+
+    .tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.65rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
+    .t-b { background: rgba(77,180,255,0.15); color: var(--mira-blue); border: 1px solid rgba(77,180,255,0.3); }
+    .t-p { background: rgba(180,100,255,0.15); color: var(--mira-purple); border: 1px solid rgba(180,100,255,0.3); }
+    .t-g { background: rgba(77,255,180,0.15); color: var(--mira-success); border: 1px solid rgba(77,255,180,0.3); }
+    .t-y { background: rgba(255,213,77,0.15); color: var(--mira-warning); border: 1px solid rgba(255,213,77,0.3); }
+    .t-o { background: rgba(255,144,77,0.15); color: var(--mira-primary); border: 1px solid rgba(255,144,77,0.3); }
+    .t-t { background: rgba(38,198,218,0.15); color: var(--mira-teal); border: 1px solid rgba(38,198,218,0.3); }
+    .t-r { background: rgba(255,100,100,0.15); color: var(--mira-error); border: 1px solid rgba(255,100,100,0.3); }
+
+    .d3-wrap { width: 100%; border-radius: 1rem; overflow: hidden; background: rgba(255,255,255,0.02); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { background: rgba(77,255,180,0.1); color: var(--mira-success); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.7rem 1rem; text-align: left; }
+    td { padding: 0.65rem 1rem; font-size: 0.83rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .alert { border-radius: 0.875rem; padding: 1.1rem 1.4rem; border-left: 4px solid; }
+    .alert-g { background: rgba(77,255,180,0.07); border-color: var(--mira-success); }
+    .alert-r { background: rgba(255,100,100,0.07); border-color: var(--mira-error); }
+    .alert-b { background: rgba(77,180,255,0.07); border-color: var(--mira-blue); }
+    .alert-y { background: rgba(255,213,77,0.07); border-color: var(--mira-warning); }
+
+    .tl-num { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; }
+
+    hr.div { border: none; border-top: 1px solid rgba(255,255,255,0.07); }
+    .accent-bar { width: 2.5rem; height: 3px; background: var(--mira-success); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<button id="back-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<!-- ═══ SLIDE 1 · CAPA ═══ -->
+<div class="slide slide-hero" id="slide-1">
+  <div class="card" style="border-color:rgba(77,255,180,0.18); max-width:960px;">
+    <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="module-badge mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Módulo 11 · RAG Studio
+      </div>
+      <h1 class="hero-title mb-4">Reranking<br><span class="hero-accent">em RAG</span></h1>
+      <p style="color:rgba(255,255,255,0.5); font-size:1rem;" class="mb-8">Avaliação Comparativa · Confiança LLM · Cross-Encoder · Grafos E-Commerce</p>
+    </div>
+    <hr class="div mb-8" />
+    <div class="grid grid-cols-4 gap-4 mb-8" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">3</div>
+        <div class="stat-lbl">artigos científicos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">20</div>
+        <div class="stat-lbl">slides animados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">6</div>
+        <div class="stat-lbl">animações D3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">+20.6%</div>
+        <div class="stat-lbl">NDCG@5 (LCR)</div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-g">ARAGOG · 7 técnicas comparadas</span>
+      <span class="tag t-b">LCR · Training-Free LLM Reranker</span>
+      <span class="tag t-y">Neural Pipelines · E-Commerce SKB</span>
+      <span class="tag t-p">Cross-Encoder · Bi-Encoder</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 2 · METÁFORA 1 — O Concurso de Segundo Turno ═══ -->
+<div class="slide" id="slide-2">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · O que é Reranking</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-success);">O Concurso de Segundo Turno</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Em uma eleição com 100 candidatos, o <strong style="color:var(--mira-success);">primeiro turno</strong> elimina os menos votados rapidamente usando uma regra simples. O <strong style="color:var(--mira-blue);">segundo turno</strong> analisa os finalistas com muito mais profundidade — quem é mais capacitado para o cargo específico? O <strong>Reranking em RAG</strong> funciona exatamente assim: o retriever faz o "primeiro turno" (encontra os K documentos semanticamente próximos), e o reranker faz o "segundo turno" — analisa cada par (pergunta + documento) para identificar quais <em>realmente respondem bem</em> à intenção do usuário.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-bold mb-2" style="font-size:0.88rem; color:var(--mira-error);">Sem Reranking — Primeiro Turno apenas</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Documentos rankeados por similaridade de embedding. Rápido, mas frequentemente retorna textos similares que não respondem diretamente à pergunta — "Lost in the Middle" afeta o LLM.</p>
+      </div>
+      <div class="gi" style="border-color:rgba(77,255,180,0.25); background:rgba(77,255,180,0.04);">
+        <div class="font-bold mb-2" style="font-size:0.88rem; color:var(--mira-success);">Com Reranking — Segundo Turno fino</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Cada documento é avaliado em conjunto com a query — quão bem ele responde a esta pergunta específica? Mais lento, mas o LLM recebe os documentos mais relevantes primeiro.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 3 · ARAGOG — Por que avaliação comparativa? ═══ -->
+<div class="slide" id="slide-3">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">ARAGOG · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">Por que <span style="color:var(--mira-success);">Avaliação Comparativa</span> Importa</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Predli + UC Berkeley · arXiv Abr 2024 — a literatura RAG crescia, mas comparações experimentais amplas eram escassas</p>
+    </div>
+    <div class="alert alert-r mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.88rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-error);">O Gap:</strong> A literatura RAG em 2024 era dominada por reviews sistemáticas e comparações de SoTA contra predecessores. Faltava um experimento controlado comparando múltiplas técnicas avançadas nas mesmas condições e métricas.</p>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-5">
+      <div class="gi" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-success);">Métricas</div>
+        <ul style="font-size:0.8rem; color:rgba(255,255,255,0.7); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li><strong style="color:var(--mira-blue);">Retrieval Precision</strong> — quão relevante é o contexto recuperado?</li>
+          <li><strong style="color:var(--mira-warning);">Answer Similarity</strong> — resposta gerada vs. referência (0-5)</li>
+        </ul>
+      </div>
+      <div class="gi" data-aos="fade-up" data-aos-delay="220" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-success);">Baseline</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Naive RAG: FAISS vector retrieval + GPT geração. Todas as 7 técnicas testadas contra esse baseline para isolar o ganho de cada abordagem.</p>
+      </div>
+    </div>
+    <div class="alert alert-g" data-aos="fade-up" data-aos-delay="280" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);">Dataset <strong style="color:var(--mira-success);">arXiv</strong> como base de conhecimento — corpus científico denso e desafiador para precisão de recuperação. Perguntas geradas sobre os papers.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 4 · ARAGOG — 7 Técnicas em 3 Categorias ═══ -->
+<div class="slide" id="slide-4">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">ARAGOG · Técnicas</div>
+      <h2 class="text-3xl font-black mb-1">Sete Técnicas, <span style="color:var(--mira-success);">Três Categorias</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Cada categoria ataca um problema diferente no pipeline RAG</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-5">
+      <div class="gi" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-3" style="font-size:0.85rem; color:var(--mira-blue);">Desacoplamento Retrieval/Gen</div>
+        <div class="space-y-2">
+          <div class="gi" style="padding:0.7rem;">
+            <div class="font-semibold mb-0.5" style="font-size:0.78rem; color:var(--mira-blue);">Sentence Window Retrieval</div>
+            <p style="font-size:0.7rem; color:rgba(255,255,255,0.55);">Indexa frases, expande contexto para o LLM</p>
+          </div>
+          <div class="gi" style="padding:0.7rem;">
+            <div class="font-semibold mb-0.5" style="font-size:0.78rem; color:var(--mira-blue);">Document Summary Index</div>
+            <p style="font-size:0.7rem; color:rgba(255,255,255,0.55);">Indexa resumos, gera a partir do texto completo</p>
+          </div>
+        </div>
+      </div>
+      <div class="gi" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-3" style="font-size:0.85rem; color:var(--mira-warning);">Expansão de Query</div>
+        <div class="space-y-2">
+          <div class="gi" style="padding:0.7rem; border-color:rgba(255,213,77,0.2); background:rgba(255,213,77,0.04);">
+            <div class="font-semibold mb-0.5" style="font-size:0.78rem; color:var(--mira-warning);">HyDE ✓ Ganhou</div>
+            <p style="font-size:0.7rem; color:rgba(255,255,255,0.55);">LLM gera hipótese → embed → retrieve</p>
+          </div>
+          <div class="gi" style="padding:0.7rem;">
+            <div class="font-semibold mb-0.5" style="font-size:0.78rem; color:rgba(255,255,255,0.5);">Multi-query ✗ Perdeu</div>
+            <p style="font-size:0.7rem; color:rgba(255,255,255,0.55);">N queries alternativas → retrieve cada uma</p>
+          </div>
+        </div>
+      </div>
+      <div class="gi" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-3" style="font-size:0.85rem; color:var(--mira-success);">Re-rankers</div>
+        <div class="space-y-2">
+          <div class="gi" style="padding:0.7rem;">
+            <div class="font-semibold mb-0.5" style="font-size:0.78rem; color:rgba(255,255,255,0.5);">MMR ✗ Não ganhou</div>
+            <p style="font-size:0.7rem; color:rgba(255,255,255,0.55);">Relevância + diversidade</p>
+          </div>
+          <div class="gi" style="padding:0.7rem;">
+            <div class="font-semibold mb-0.5" style="font-size:0.78rem; color:rgba(255,255,255,0.5);">Cohere Rerank ✗ Não ganhou</div>
+            <p style="font-size:0.7rem; color:rgba(255,255,255,0.55);">Cross-encoder proprietário</p>
+          </div>
+          <div class="gi" style="padding:0.7rem; border-color:rgba(77,255,180,0.25); background:rgba(77,255,180,0.04);">
+            <div class="font-semibold mb-0.5" style="font-size:0.78rem; color:var(--mira-success);">LLM Reranker ✓ Ganhou</div>
+            <p style="font-size:0.7rem; color:rgba(255,255,255,0.55);">LLM avalia diretamente a relevância</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 5 · ARAGOG — D3 Visualização 7 Técnicas ═══ -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">ARAGOG · Mapa de Técnicas</div>
+      <h2 class="text-3xl font-black mb-1">Quem <span style="color:var(--mira-success);">Vence</span> e Quem <span style="color:var(--mira-error);">Perde</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Resultados de retrieval precision em corpus arXiv vs. Naive RAG baseline</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-techniques" style="height:240px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="alert alert-g">
+        <p style="font-size:0.82rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-success);">Sentence Window Retrieval</strong> — mais eficaz para retrieval precision, apesar de variabilidade em answer similarity</p>
+      </div>
+      <div class="alert alert-r">
+        <p style="font-size:0.82rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-error);">MMR + Cohere Rerank</strong> — sem vantagem notável sobre o baseline Naive RAG para retrieval precision</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 6 · ARAGOG — Resultados Detalhados ═══ -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">ARAGOG · Resultados</div>
+      <h2 class="text-3xl font-black mb-1">Dois Vencedores, <span style="color:var(--mira-error);">Três Surpresas</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Os achados do ARAGOG desafiam intuições comuns sobre técnicas avançadas</p>
+    </div>
+    <div class="overflow-x-auto mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <table>
+        <thead>
+          <tr><th>Técnica</th><th>Retrieval Precision</th><th>Answer Similarity</th><th>Recomendação</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Sentence Window Retrieval</strong></td><td style="color:var(--mira-success);">↑↑ Melhor</td><td style="color:var(--mira-warning);">Variável</td><td><span class="tag t-g" style="font-size:0.65rem;">Retrieval</span></td></tr>
+          <tr><td><strong>HyDE</strong></td><td style="color:var(--mira-success);">↑ Melhora</td><td style="color:var(--mira-success);">↑ Melhora</td><td><span class="tag t-g" style="font-size:0.65rem;">Ambas</span></td></tr>
+          <tr><td><strong>LLM Reranker</strong></td><td style="color:var(--mira-success);">↑ Melhora</td><td style="color:var(--mira-blue);">Estável</td><td><span class="tag t-b" style="font-size:0.65rem;">Precision</span></td></tr>
+          <tr><td><strong>Document Summary Index</strong></td><td style="color:var(--mira-blue);">≈ Baseline</td><td style="color:var(--mira-blue);">Competente</td><td><span class="tag t-y" style="font-size:0.65rem;">Situacional</span></td></tr>
+          <tr><td><strong>MMR</strong></td><td style="color:var(--mira-error);">≈ Sem ganho</td><td style="color:var(--mira-error);">≈ Sem ganho</td><td><span class="tag t-r" style="font-size:0.65rem;">Questionar</span></td></tr>
+          <tr><td><strong>Multi-query</strong></td><td style="color:var(--mira-error);">↓ Pior</td><td style="color:var(--mira-blue);">Variável</td><td><span class="tag t-r" style="font-size:0.65rem;">Evitar</span></td></tr>
+          <tr><td><strong>Cohere Rerank</strong></td><td style="color:var(--mira-error);">≈ Sem vantagem</td><td style="color:var(--mira-blue);">Estável</td><td><span class="tag t-r" style="font-size:0.65rem;">Questionar</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 7 · ARAGOG — Por que HyDE funciona e MMR falha? ═══ -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">ARAGOG · Mecanismo</div>
+      <h2 class="text-3xl font-black mb-1">Por que <span style="color:var(--mira-warning);">HyDE Ganha</span> e <span style="color:var(--mira-error);">MMR Falha</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">A intuição por trás dos resultados surpreendentes do ARAGOG</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-hyde" style="height:180px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-warning);">HyDE — Por que ganha</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7); line-height:1.65;">Uma query de usuário é curta e ambígua. A resposta hipotética do LLM é longa e contextualizada — ocupa um espaço de embedding <em>muito mais próximo</em> dos documentos relevantes. É preencher o gap de vocabulário entre perguntas e respostas.</p>
+      </div>
+      <div class="gi">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-error);">MMR — Por que falha</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7); line-height:1.65;">MMR diversifica os documentos para evitar redundância. Mas em RAG, o LLM precisa de múltiplos fragmentos do <em>mesmo tópico</em> para confirmar evidências. Diversidade em excesso dilui o sinal relevante.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 8 · LCR — O Problema dos Rerankers Atuais ═══ -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">LCR · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">Rerankers Existentes: <span style="color:var(--mira-error);">Três Limitações</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Dalian University of Technology + Tencent · arXiv Fev 2026</p>
+    </div>
+    <div class="space-y-4 mb-6">
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num" style="background:rgba(255,100,100,0.2); color:var(--mira-error); border:1px solid rgba(255,100,100,0.3);">①</div>
+        <div>
+          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-error);">Treinamento Específico Obrigatório</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Rerankers supervisionados (cross-encoders fine-tuned) dependem de dados de treinamento específicos do domínio. Generalização ruim para novos domínios. Alto custo computacional de treinamento.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num" style="background:rgba(255,100,100,0.2); color:var(--mira-error); border:1px solid rgba(255,100,100,0.3);">②</div>
+        <div>
+          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-error);">Rerankers LLM Ignoram Confiança</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Rerankers baseados em LLM usam relevância ou similaridade como sinal. Mas subutilizam a <strong>confiança intrínseca do LLM</strong> — um sinal poderoso derivado do processo generativo que se correlaciona fortemente com relevância do documento.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num" style="background:rgba(255,100,100,0.2); color:var(--mira-error); border:1px solid rgba(255,100,100,0.3);">③</div>
+        <div>
+          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-error);">NDCG@5 &lt; 0.8 em BEIR</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Mesmo state-of-the-art rerankers em benchmarks como BEIR frequentemente ficam abaixo de 0.8 de NDCG — indicando espaço significativo para melhorias sem retreinamento.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 9 · METÁFORA 2 — O Perito de Black-Box ═══ -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · LCR</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-success);">O Perito de Black-Box</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Imagine um perito especialista que avalia documentos para responder perguntas. Você não tem acesso ao interior da mente dele — apenas observa quão <strong style="color:var(--mira-success);">confiante</strong> ele soa nas respostas que dá. Quando ele responde várias vezes de forma muito consistente, você sabe que está certo. Quando ele hesita e muda de resposta, o documento provavelmente não tem a informação. O <strong>LCR (LLM-Confidence Reranker)</strong> usa exatamente isso: mede a confiança do LLM ao gerar respostas baseadas em cada documento candidato. Alta confiança = documento relevante.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-success);">Black-Box</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Sem acesso a parâmetros internos ou probabilidades brutas — apenas saídas do LLM</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-blue);">Amostragem</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Gera N respostas para cada par (query, documento) via multinomial sampling</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-warning);">MSCP</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Maximum Semantic Cluster Proportion — o cluster semântico dominante indica confiança</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 10 · LCR — MSCP: Confiança via Amostragem [D3] ═══ -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">LCR · MSCP</div>
+      <h2 class="text-3xl font-black mb-1">Confiança Medida por <span style="color:var(--mira-success);">Agrupamento Semântico</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Maximum Semantic Cluster Proportion — quanto maior o cluster dominante, maior a confiança</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-mscp" style="height:200px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-3 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-success);">Alto MSCP (0.8+)</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">LLM sempre diz o mesmo → documento altamente relevante</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-warning);">MSCP Médio (0.5–0.8)</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Alguma variação → relevância moderada, ordena conforme threshold</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-error);">Baixo MSCP (&lt;0.5)</div>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">LLM hesita muito → documento provavelmente irrelevante</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 11 · LCR — 2 Fases do Algoritmo + Robustez ═══ -->
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">LCR · Algoritmo</div>
+      <h2 class="text-3xl font-black mb-1">Duas Fases: <span style="color:var(--mira-success);">Avaliar</span> + <span style="color:var(--mira-blue);">Ordenar</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">LLMs com 7-9B parâmetros — sem treinamento, sem acesso a pesos internos</p>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-5">
+      <div class="gi" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-success);">Fase 1 — Confidence Assessment</div>
+        <ol style="font-size:0.78rem; color:rgba(255,255,255,0.7); list-style:decimal; padding-left:1rem; line-height:1.7;">
+          <li>Para cada doc candidato: (query + doc) → prompt ao LLM</li>
+          <li>Gera N amostras via multinomial sampling</li>
+          <li>Agrupa semanticamente as N respostas</li>
+          <li>MSCP = tamanho do maior cluster / N</li>
+        </ol>
+      </div>
+      <div class="gi" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-blue);">Fase 2 — Binning + Multi-Level Sort</div>
+        <ol style="font-size:0.78rem; color:rgba(255,255,255,0.7); list-style:decimal; padding-left:1rem; line-height:1.7;">
+          <li>Query confidence threshold: query muito específica? Preserve ranking original</li>
+          <li>Document confidence threshold: divide em bins alto/médio/baixo</li>
+          <li>Ordena por bin de confiança de forma descendente</li>
+          <li>Alta confiança de query → mantém original (robustez)</li>
+        </ol>
+      </div>
+    </div>
+    <div class="alert alert-g" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-success);">Robustez:</strong> Para queries de alta confiança, o LCR preserva o ranking original — evita degradação quando o retriever já recuperou os documentos certos.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 12 · LCR — Resultados ═══ -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">LCR · Resultados</div>
+      <h2 class="text-3xl font-black mb-1"><span style="color:var(--mira-success);">+20.6% NDCG@5</span> Sem Treinamento</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Avaliado em BEIR e TREC com BM25 e Contriever retrievers</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">+20.6%</div>
+        <div class="stat-lbl">NDCG@5 vs.<br>transformers fine-tuned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">7–9B</div>
+        <div class="stat-lbl">parâmetros LLM<br>(sem treinamento)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">2</div>
+        <div class="stat-lbl">benchmarks<br>(BEIR + TREC)</div>
+      </div>
+    </div>
+    <div class="space-y-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi flex gap-3 items-center">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,255,180,0.2); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">✓</div>
+        <p style="font-size:0.82rem; color:rgba(255,255,255,0.75);">Supera rerankers pré-treinados E fine-tuned em NDCG@5 — usando apenas LLMs 7-9B como Llama</p>
+      </div>
+      <div class="gi flex gap-3 items-center">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,255,180,0.2); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">✓</div>
+        <p style="font-size:0.82rem; color:rgba(255,255,255,0.75);">Compatível como plug-in após qualquer reranker existente para refinar ainda mais os resultados</p>
+      </div>
+      <div class="gi flex gap-3 items-center">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,255,180,0.2); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">✓</div>
+        <p style="font-size:0.82rem; color:rgba(255,255,255,0.75);">Validação: confiança do LLM correlaciona positivamente com relevância do documento — fundação teórica sólida</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 13 · Neural Pipelines — E-Commerce e Knowledge Graphs ═══ -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Neural Pipelines · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">RAG em <span style="color:var(--mira-success);">Grafos de Conhecimento</span> E-Commerce</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Abertay University, UK · arXiv Dez 2025 — Amazon STaRK SKB (Semi-structured Knowledge Base)</p>
+    </div>
+    <div class="gi mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.9rem; color:rgba(255,255,255,0.8); line-height:1.65;">
+        E-commerce é um domínio especialmente desafiador para RAG: catálogos com milhões de produtos, atributos constantemente atualizados (preço, estoque, avaliações), queries que vão de precisas ("código do produto X") a vagas ("produto de limpeza para tecido fine"). A escala e natureza semi-estruturada dos <strong style="color:var(--mira-success);">grafos de conhecimento (Knowledge Graphs)</strong> exige estratégias especializadas de retrieval + reranking.
+      </p>
+    </div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-warning);">Amazon STaRK SKB</div>
+        <ul style="font-size:0.8rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li>Semi-structured Knowledge Base proprietária</li>
+          <li>Dados detalhados de atributos de produtos</li>
+          <li>Inter-product relationships (edges do grafo)</li>
+          <li>Benchmark ground truth de respostas de nodes</li>
+        </ul>
+      </div>
+      <div class="gi">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-blue);">O Problema Específico</div>
+        <ul style="font-size:0.8rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li>Multi-hop reasoning entre entidades do grafo</li>
+          <li>Retrieval semântico insuficiente para relações explícitas</li>
+          <li>Cross-encoder refina precisão mas não via grafo</li>
+          <li>Retrieval esparso (BM25) capta lexical mas perde semântica</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 14 · METÁFORA 3 — O Catálogo com Júri ═══ -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · Neural Pipelines</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-success);">O Catálogo de Produtos com Júri</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Uma loja online com 1 bilhão de produtos recebe a pergunta: <em>"Qual produto de limpeza remove manchas de café de tecido fine sem danificar fibras naturais?"</em>. Um motor de busca comum retorna 50 produtos com termos parecidos. Mas um <strong style="color:var(--mira-success);">júri de especialistas</strong> (cross-encoder) avalia cada par (pergunta + produto) individualmente e determina qual realmente atende. Os pipelines FRWSR, FRMR e BARMR são três formatos diferentes desse júri — alguns usam especialistas densos (FAISS), outros usam especialistas lexicais (BM25 com arestas do grafo).
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-blue);">FRWSR</div>
+        <div class="tag t-b mb-1" style="font-size:0.6rem; display:table; margin:0 auto;">Dense + Webis</div>
+        <p style="font-size:0.7rem; color:rgba(255,255,255,0.5);">FAISS-HNSW + Webis Set-Encoder reranking</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-warning);">FRMR</div>
+        <div class="tag t-y mb-1" style="font-size:0.6rem; display:table; margin:0 auto;">Dense + MS MARCO</div>
+        <p style="font-size:0.7rem; color:rgba(255,255,255,0.5);">FAISS-HNSW + MS MARCO MiniLM cross-encoder</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-success);">BARMR</div>
+        <div class="tag t-g mb-1" style="font-size:0.6rem; display:table; margin:0 auto;">Sparse + Grafo</div>
+        <p style="font-size:0.7rem; color:rgba(255,255,255,0.5);">BM25 + edge augmentation SKB + MS MARCO</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 15 · Neural Pipelines — 3 Configurações [D3] ═══ -->
+<div class="slide" id="slide-15">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Neural Pipelines · Arquitetura</div>
+      <h2 class="text-3xl font-black mb-1">Três Pipelines, <span style="color:var(--mira-success);">Uma Comparação</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Retriever + Reranker como 2 estágios — cada pipeline difere em ambos os componentes</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-pipelines" style="height:200px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="alert alert-g" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);">Todos os três pipelines usam <strong style="color:var(--mira-success);">E5-Large embeddings</strong> para FAISS (nos dois pipelines densos). O BARMR usa <strong style="color:var(--mira-warning);">arestas do grafo SKB</strong> para enriquecer o retrieval BM25 com relacionamentos entre produtos.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 16 · Bi-Encoder vs. Cross-Encoder [D3] ═══ -->
+<div class="slide" id="slide-16">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Neural Pipelines · Arquitetura</div>
+      <h2 class="text-3xl font-black mb-1">Bi-Encoder vs. <span style="color:var(--mira-success);">Cross-Encoder</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">O trade-off fundamental entre velocidade e precisão em reranking</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-encoders" style="height:190px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-blue);">Bi-Encoder — Retrieval Eficiente</div>
+        <ul style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li>Query e documento codificados <em>separadamente</em></li>
+          <li>Vetores pré-computados para documentos</li>
+          <li>Busca via similaridade de cosseno</li>
+          <li>O(1) por par — ideal para escala</li>
+        </ul>
+      </div>
+      <div class="gi" style="border-color:rgba(77,255,180,0.25); background:rgba(77,255,180,0.04);">
+        <div class="font-bold mb-2" style="font-size:0.85rem; color:var(--mira-success);">Cross-Encoder — Reranking Preciso</div>
+        <ul style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
+          <li>Query + documento codificados <em>em conjunto</em></li>
+          <li>Attention full entre tokens dos dois textos</li>
+          <li>Score de relevância direta, não apenas cosseno</li>
+          <li>O(n) por consulta — só viável pós-retrieval</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 17 · Neural Pipelines — Resultados ═══ -->
+<div class="slide" id="slide-17">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Neural Pipelines · Resultados</div>
+      <h2 class="text-3xl font-black mb-1">+20.4% Hit@1, <span style="color:var(--mira-success);">+14.5% MRR</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Avaliado no Amazon STaRK benchmark com comparação a baselines publicados</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">+20.4%</div>
+        <div class="stat-lbl">Hit@1 vs. baseline</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">+14.5%</div>
+        <div class="stat-lbl">Mean Reciprocal Rank</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">3</div>
+        <div class="stat-lbl">pipelines comparados<br>(FRWSR, FRMR, BARMR)</div>
+      </div>
+    </div>
+    <div class="gi mb-5" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="font-semibold mb-2" style="font-size:0.85rem; color:var(--mira-success);">Insights por pipeline</div>
+      <div class="grid grid-cols-3 gap-3">
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.7); padding:0.6rem; background:rgba(77,180,255,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-blue);">
+          <strong style="color:var(--mira-blue);">FRWSR:</strong> Webis Set-Encoder captura relações multi-atributo do grafo
+        </div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.7); padding:0.6rem; background:rgba(255,213,77,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-warning);">
+          <strong style="color:var(--mira-warning);">FRMR:</strong> MS MARCO MiniLM oferece alta generalização em linguagem natural
+        </div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.7); padding:0.6rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">
+          <strong style="color:var(--mira-success);">BARMR:</strong> Edge augmentation do SKB enriquece queries lexicais com relações explícitas
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 18 · MAPA COMPARATIVO [D3] ═══ -->
+<div class="slide" id="slide-18">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 11 · Síntese</div>
+      <h2 class="text-3xl font-black mb-1">Três <span style="color:var(--mira-success);">Perspectivas Complementares</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Cada paper aborda um ângulo diferente do reranking em RAG</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-compare11" style="height:220px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-blue);">ARAGOG</div>
+        <div class="tag t-b" style="font-size:0.62rem; display:table; margin:0 auto;">Comparar</div>
+        <div class="mt-1" style="font-size:0.7rem; color:rgba(255,255,255,0.45);">Apr 2024</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-success);">LCR</div>
+        <div class="tag t-g" style="font-size:0.62rem; display:table; margin:0 auto;">LLM Confiança</div>
+        <div class="mt-1" style="font-size:0.7rem; color:rgba(255,255,255,0.45);">Feb 2026</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-warning);">Neural Pipelines</div>
+        <div class="tag t-y" style="font-size:0.62rem; display:table; margin:0 auto;">E-Commerce KG</div>
+        <div class="mt-1" style="font-size:0.7rem; color:rgba(255,255,255,0.45);">Dec 2025</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 19 · SÍNTESE — 4 Lições ═══ -->
+<div class="slide" id="slide-19">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 11 · Aprendizados</div>
+      <h2 class="text-3xl font-black mb-6">Quatro <span style="color:var(--mira-success);">Lições de Reranking</span></h2>
+    </div>
+    <div class="space-y-4">
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(77,255,180,0.15); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">①</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-success);">HyDE > MMR para retrieval precision — a hipótese preenche o gap de vocabulário</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">ARAGOG prova: gerar uma resposta hipotética antes de buscar alinha melhor o espaço de embedding. MMR diversifica quando o LLM precisa de convergência.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(77,180,255,0.15); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">②</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-blue);">Confiança do LLM é um sinal de relevância — use-a sem treinamento</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">LCR demonstra +20.6% NDCG@5 usando apenas amostragem e agrupamento semântico de respostas LLM. A confiança correlaciona com relevância — hipótese validada experimentalmente.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(255,213,77,0.15); color:var(--mira-warning); border:1px solid rgba(255,213,77,0.3);">③</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-warning);">Cross-encoder é essencial para domínios estruturados como e-commerce</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">Neural Pipelines: a análise conjunta (query + documento) captura relações semânticas finas que similaridade de cosseno isolada perde. +20.4% Hit@1 valida a arquitetura 2-stage em KG.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="320" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(180,100,255,0.15); color:var(--mira-purple); border:1px solid rgba(180,100,255,0.3);">④</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-purple);">Nenhum reranker é universal — avalie no seu domínio com suas métricas</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">ARAGOG, LCR e Neural Pipelines juntos mostram: cada técnica tem contexto ótimo. Cohere falha no arXiv mas pode funcionar em outros domínios. Meça retrieval precision E answer similarity sempre.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 20 · PRÓXIMO MÓDULO ═══ -->
+<div class="slide" id="slide-20" style="background:radial-gradient(ellipse 60% 50% at 80% 50%, rgba(180,100,255,0.10) 0%, transparent 55%), var(--mira-bg);">
+  <div class="card" style="border-color:rgba(180,100,255,0.18);">
+    <div data-aos="fade-up" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="inline-flex items-center gap-2 mb-6" style="background:rgba(180,100,255,0.1); border:1px solid rgba(180,100,255,0.25); border-radius:2rem; padding:0.35rem 0.9rem; font-size:0.7rem; color:var(--mira-purple); font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">
+        A Seguir · Módulo 12
+      </div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem); font-weight:900; line-height:1.05; letter-spacing:-0.02em; margin-bottom:1rem;">
+        Graph<span style="color:var(--mira-purple);">RAG</span>
+      </h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.95rem; margin-bottom:2rem;">Como representar o conhecimento como grafo para RAG — comunidades, entidades e raciocínio multi-hop que superam a busca vetorial em perguntas globais.</p>
+    </div>
+    <hr class="div mb-6" />
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">4</div>
+        <div class="stat-lbl">artigos científicos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">KG</div>
+        <div class="stat-lbl">Knowledge Graphs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">Multi</div>
+        <div class="stat-lbl">hop reasoning</div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mb-6" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-p">GraphRAG Microsoft</span>
+      <span class="tag t-p">Comunidades hierárquicas</span>
+      <span class="tag t-p">HippoRAG</span>
+    </div>
+    <div data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <a href="../index.html" style="display:inline-flex; align-items:center; gap:0.5rem; color:var(--mira-purple); font-weight:600; font-size:0.9rem; text-decoration:none; border:1px solid rgba(180,100,255,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; background:rgba(180,100,255,0.08);">
+        ← Voltar ao Portal
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     D3 ANIMATIONS
+════════════════════════════════════ -->
+<script>
+/* ── ANIM-TECHNIQUES: 7 Técnicas ARAGOG ── */
+(function(){
+  window.__techGen=(window.__techGen||0)+1; var myG=window.__techGen;
+  var el=document.getElementById('anim-techniques'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=240;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  /* baseline */
+  var bx=60, by=H/2;
+  svg.append('circle').attr('cx',bx).attr('cy',by).attr('r',22)
+    .attr('fill','rgba(255,255,255,0.08)').attr('stroke','rgba(255,255,255,0.3)').attr('stroke-width',1.5);
+  svg.append('text').text('Baseline').attr('x',bx).attr('y',by-4)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','rgba(255,255,255,0.6)').attr('font-size','8px').attr('font-weight','700');
+  svg.append('text').text('Naive').attr('x',bx).attr('y',by+7)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','rgba(255,255,255,0.5)').attr('font-size','7px');
+  /* techniques */
+  var techs=[
+    {label:'SWR',full:'Sentence\nWindow',y:25,x:220,color:'var(--mira-blue)',win:true},
+    {label:'DSI',full:'Document\nSummary',y:75,x:210,color:'var(--mira-blue)',win:false},
+    {label:'HyDE',full:'Hypothetical\nDoc',y:130,x:230,color:'var(--mira-warning)',win:true},
+    {label:'Multi-Q',full:'Multi\nQuery',y:185,x:200,color:'rgba(255,255,255,0.4)',win:false},
+    {label:'MMR',full:'Max Marginal\nRelevance',y:215,x:310,color:'var(--mira-error)',win:false},
+    {label:'Cohere',full:'Cohere\nRerank',y:160,x:340,color:'var(--mira-error)',win:false},
+    {label:'LLM-R',full:'LLM\nReranker',y:45,x:380,color:'var(--mira-success)',win:true}
+  ];
+  techs.forEach(function(t,i){
+    svg.append('line').attr('x1',bx+22).attr('y1',by).attr('x2',t.x-18).attr('y2',t.y)
+      .attr('stroke',t.color).attr('stroke-width',1).attr('opacity',0.25).attr('stroke-dasharray','4,3');
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',t.x).attr('cy',t.y).attr('r',18)
+      .attr('fill',t.color+'20').attr('stroke',t.color).attr('stroke-width',t.win?2:1.2);
+    g.append('text').text(t.label).attr('x',t.x).attr('y',t.y)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill',t.color).attr('font-size','8.5px').attr('font-weight','800');
+    if(t.win){
+      g.append('text').text('✓').attr('x',t.x+14).attr('y',t.y-14)
+        .attr('text-anchor','middle').attr('fill','var(--mira-success)').attr('font-size','10px');
+    }
+    g.transition().duration(400).delay(i*150+500).attr('opacity',1);
+  });
+  /* legend */
+  svg.append('text').text('✓ = melhora retrieval precision').attr('x',W-10).attr('y',H-10)
+    .attr('text-anchor','end').attr('fill','rgba(255,255,255,0.3)').attr('font-size','9px');
+  function pulse(){
+    if(window.__techGen!==myG) return;
+    techs.filter(function(t){return t.win;}).forEach(function(t,i){
+      var r=svg.append('circle').attr('cx',t.x).attr('cy',t.y).attr('r',18)
+        .attr('fill','none').attr('stroke',t.color).attr('stroke-width',2).attr('opacity',0.7);
+      r.transition().duration(900).delay(i*200).attr('r',32).attr('opacity',0).remove();
+    });
+    setTimeout(pulse,2400);
+  }
+  setTimeout(pulse,1800);
+})();
+
+/* ── ANIM-HYDE: HyDE vs. Query Direta ── */
+(function(){
+  window.__hydeGen=(window.__hydeGen||0)+1; var myG=window.__hydeGen;
+  var el=document.getElementById('anim-hyde'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=180;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  var mid=W/2;
+  /* DIRECT path (top) */
+  var cy1=55, cy2=125;
+  svg.append('text').text('Query Direta').attr('x',30).attr('y',cy1-20)
+    .attr('fill','rgba(255,100,100,0.7)').attr('font-size','10px').attr('font-weight','700');
+  var direct=[{x:50,label:'Query\ncurta',color:'var(--mira-error)'},{x:mid-30,label:'Embedding\ndiverge',color:'rgba(255,100,100,0.5)'},{x:W-50,label:'Resultado\nfraco',color:'rgba(255,255,255,0.4)'}];
+  direct.forEach(function(d,i){
+    if(i>0) svg.append('line').attr('x1',direct[i-1].x+30).attr('y1',cy1).attr('x2',d.x-30).attr('y2',cy1)
+      .attr('stroke','rgba(255,100,100,0.3)').attr('stroke-width',1.5).attr('stroke-dasharray','5,4');
+    svg.append('rect').attr('x',d.x-28).attr('y',cy1-18).attr('width',56).attr('height',36).attr('rx',7)
+      .attr('fill',d.color+'20').attr('stroke',d.color).attr('stroke-width',1.2)
+      .attr('opacity',0).transition().duration(350).delay(i*250+400).attr('opacity',1);
+    d.label.split('\n').forEach(function(l,j){
+      svg.append('text').text(l).attr('x',d.x).attr('y',cy1+(j-0.3)*13)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill',d.color).attr('font-size','8px').attr('font-weight','700')
+        .attr('opacity',0).transition().duration(350).delay(i*250+500).attr('opacity',1);
+    });
+  });
+  /* HyDE path (bottom) */
+  svg.append('text').text('HyDE').attr('x',30).attr('y',cy2-20)
+    .attr('fill','rgba(255,213,77,0.9)').attr('font-size','10px').attr('font-weight','700');
+  var hydePath=[
+    {x:50,label:'Query\ncurta',color:'var(--mira-warning)'},
+    {x:mid-30,label:'LLM gera\nhipótese',color:'var(--mira-warning)'},
+    {x:mid+40,label:'Embed\nhipótese',color:'var(--mira-blue)'},
+    {x:W-50,label:'Resultado\n✓ Preciso',color:'var(--mira-success)'}
+  ];
+  hydePath.forEach(function(d,i){
+    if(i>0) svg.append('line').attr('x1',hydePath[i-1].x+30).attr('y1',cy2).attr('x2',d.x-30).attr('y2',cy2)
+      .attr('stroke',d.color).attr('stroke-width',1.5).attr('opacity',0.4);
+    svg.append('rect').attr('x',d.x-28).attr('y',cy2-18).attr('width',56).attr('height',36).attr('rx',7)
+      .attr('fill',d.color+'20').attr('stroke',d.color).attr('stroke-width',1.5)
+      .attr('opacity',0).transition().duration(350).delay(i*250+900).attr('opacity',1);
+    d.label.split('\n').forEach(function(l,j){
+      svg.append('text').text(l).attr('x',d.x).attr('y',cy2+(j-0.3)*13)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill',d.color).attr('font-size','8px').attr('font-weight','700')
+        .attr('opacity',0).transition().duration(350).delay(i*250+1000).attr('opacity',1);
+    });
+  });
+  /* divider */
+  svg.append('line').attr('x1',10).attr('y1',H/2).attr('x2',W-10).attr('y2',H/2)
+    .attr('stroke','rgba(255,255,255,0.07)').attr('stroke-width',1).attr('stroke-dasharray','4,4');
+  /* pulsing result */
+  function pulse(){
+    if(window.__hydeGen!==myG) return;
+    var r=svg.append('circle').attr('cx',W-50).attr('cy',cy2).attr('r',25)
+      .attr('fill','none').attr('stroke','var(--mira-success)').attr('stroke-width',1.5).attr('opacity',0.8);
+    r.transition().duration(900).attr('r',40).attr('opacity',0).remove();
+    setTimeout(pulse,2200);
+  }
+  setTimeout(pulse,2000);
+})();
+
+/* ── ANIM-MSCP: LCR Confidence Process ── */
+(function(){
+  window.__mscpGen=(window.__mscpGen||0)+1; var myG=window.__mscpGen;
+  var el=document.getElementById('anim-mscp'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=200;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  /* Steps */
+  var steps=[
+    {label:'Query +\nDocumento',sub:'input',x:W*0.12,color:'var(--mira-blue)'},
+    {label:'LLM gera\nN respostas',sub:'sampling',x:W*0.33,color:'var(--mira-warning)'},
+    {label:'Agrupamento\nSemântico',sub:'clustering',x:W*0.56,color:'var(--mira-purple)'},
+    {label:'MSCP\n= Maior Cluster',sub:'confidence',x:W*0.78,color:'var(--mira-success)'}
+  ];
+  var cy=H/2;
+  steps.forEach(function(s,i){
+    if(i>0){
+      svg.append('line').attr('x1',steps[i-1].x+45).attr('y1',cy).attr('x2',s.x-45).attr('y2',cy)
+        .attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1.5).attr('marker-end','url(#arr4)');
+    }
+    var g=svg.append('g').attr('opacity',0);
+    g.append('rect').attr('x',s.x-42).attr('y',cy-30).attr('width',84).attr('height',60).attr('rx',10)
+      .attr('fill',s.color+'18').attr('stroke',s.color).attr('stroke-width',1.5);
+    s.label.split('\n').forEach(function(l,j){
+      g.append('text').text(l).attr('x',s.x).attr('y',cy+(j-0.4)*14)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill',s.color).attr('font-size','9.5px').attr('font-weight','700');
+    });
+    g.append('text').text(s.sub).attr('x',s.x).attr('y',cy+25)
+      .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size','8px');
+    g.transition().duration(400).delay(i*300+500).attr('opacity',1);
+  });
+  var defs=svg.append('defs');
+  defs.append('marker').attr('id','arr4').attr('markerWidth',7).attr('markerHeight',7)
+    .attr('refX',5).attr('refY',3).attr('orient','auto')
+    .append('path').attr('d','M0,0 L0,6 L7,3 z').attr('fill','rgba(255,255,255,0.2)');
+  /* MSCP bars at right */
+  var bxs=[{y:25,w:0.82,label:'Doc A: 0.82',color:'var(--mira-success)'},
+            {y:55,w:0.48,label:'Doc B: 0.48',color:'var(--mira-warning)'},
+            {y:85,w:0.15,label:'Doc C: 0.15',color:'var(--mira-error)'}];
+  var barX=W*0.82+60;
+  bxs.forEach(function(b,i){
+    svg.append('text').text(b.label).attr('x',barX).attr('y',b.y+7)
+      .attr('fill',b.color).attr('font-size','8px').attr('font-weight','700')
+      .attr('opacity',0).transition().duration(400).delay(i*200+1600).attr('opacity',1);
+    var bar=svg.append('rect').attr('x',barX).attr('y',b.y-3).attr('width',0).attr('height',12).attr('rx',4)
+      .attr('fill',b.color+'40').attr('stroke',b.color).attr('stroke-width',1);
+    bar.transition().duration(600).delay(i*200+1700).attr('width',(W-barX-10)*b.w);
+  });
+  /* animated dot */
+  var dot=svg.append('circle').attr('r',5).attr('fill','var(--mira-primary)').attr('opacity',0);
+  function animDot(){
+    if(window.__mscpGen!==myG) return;
+    dot.attr('cx',steps[0].x).attr('cy',cy).attr('opacity',0.9);
+    steps.forEach(function(s,i){
+      if(i>0) dot.transition().duration(350).delay((i-1)*400+200).attr('cx',s.x);
+    });
+    setTimeout(animDot,2800);
+  }
+  setTimeout(animDot,1500);
+})();
+
+/* ── ANIM-PIPELINES: 3 Retriever-Reranker Pipelines ── */
+(function(){
+  window.__pipeGen=(window.__pipeGen||0)+1; var myG=window.__pipeGen;
+  var el=document.getElementById('anim-pipelines'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=200;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  var pipes=[
+    {name:'FRWSR',retriever:'FAISS-HNSW\nE5-Large',reranker:'Webis\nSet-Encoder',color:'var(--mira-blue)',y:40},
+    {name:'FRMR', retriever:'FAISS-HNSW\nE5-Large',reranker:'MS MARCO\nMiniLM',color:'var(--mira-warning)',y:105},
+    {name:'BARMR',retriever:'BM25 +\nSKB Edges',reranker:'MS MARCO\nMiniLM',color:'var(--mira-success)',y:170}
+  ];
+  pipes.forEach(function(p,i){
+    /* name */
+    svg.append('text').text(p.name).attr('x',5).attr('y',p.y)
+      .attr('dominant-baseline','middle').attr('fill',p.color)
+      .attr('font-size','10px').attr('font-weight','900')
+      .attr('opacity',0).transition().duration(350).delay(i*200+400).attr('opacity',1);
+    /* retriever */
+    var rx=W*0.28;
+    svg.append('rect').attr('x',rx-50).attr('y',p.y-22).attr('width',100).attr('height',44).attr('rx',8)
+      .attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.3)
+      .attr('opacity',0).transition().duration(350).delay(i*200+500).attr('opacity',1);
+    p.retriever.split('\n').forEach(function(l,j){
+      svg.append('text').text(l).attr('x',rx).attr('y',p.y+(j-0.3)*13)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill',p.color).attr('font-size','8.5px').attr('font-weight','700')
+        .attr('opacity',0).transition().duration(350).delay(i*200+600).attr('opacity',1);
+    });
+    /* arrow */
+    svg.append('line').attr('x1',rx+52).attr('y1',p.y).attr('x2',W*0.62-52).attr('y2',p.y)
+      .attr('stroke',p.color).attr('stroke-width',1.2).attr('opacity',0.3).attr('stroke-dasharray','5,4');
+    /* reranker */
+    var rrx=W*0.72;
+    svg.append('rect').attr('x',rrx-55).attr('y',p.y-22).attr('width',110).attr('height',44).attr('rx',8)
+      .attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.5)
+      .attr('opacity',0).transition().duration(350).delay(i*200+700).attr('opacity',1);
+    p.reranker.split('\n').forEach(function(l,j){
+      svg.append('text').text(l).attr('x',rrx).attr('y',p.y+(j-0.3)*13)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill',p.color).attr('font-size','8.5px').attr('font-weight','700')
+        .attr('opacity',0).transition().duration(350).delay(i*200+800).attr('opacity',1);
+    });
+    /* labels */
+    if(i===0){
+      svg.append('text').text('Retriever').attr('x',W*0.28).attr('y',12)
+        .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size','9px');
+      svg.append('text').text('Reranker').attr('x',W*0.72).attr('y',12)
+        .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size','9px');
+    }
+  });
+})();
+
+/* ── ANIM-ENCODERS: Bi vs. Cross Encoder ── */
+(function(){
+  window.__encGen=(window.__encGen||0)+1; var myG=window.__encGen;
+  var el=document.getElementById('anim-encoders'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=190;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  /* Bi-Encoder (left) */
+  var cx1=W*0.27;
+  svg.append('text').text('Bi-Encoder').attr('x',cx1).attr('y',18)
+    .attr('text-anchor','middle').attr('fill','var(--mira-blue)').attr('font-size','11px').attr('font-weight','800')
+    .attr('opacity',0).transition().duration(400).delay(400).attr('opacity',1);
+  /* query box */
+  svg.append('rect').attr('x',cx1-75).attr('y',35).attr('width',65).attr('height',35).attr('rx',7)
+    .attr('fill','rgba(77,180,255,0.15)').attr('stroke','var(--mira-blue)').attr('stroke-width',1.5)
+    .attr('opacity',0).transition().duration(350).delay(500).attr('opacity',1);
+  svg.append('text').text('Query').attr('x',cx1-42).attr('y',52)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','var(--mira-blue)').attr('font-size','9px').attr('font-weight','700')
+    .attr('opacity',0).transition().duration(350).delay(550).attr('opacity',1);
+  /* doc box */
+  svg.append('rect').attr('x',cx1+10).attr('y',35).attr('width',65).attr('height',35).attr('rx',7)
+    .attr('fill','rgba(77,180,255,0.1)').attr('stroke','rgba(77,180,255,0.5)').attr('stroke-width',1.2)
+    .attr('opacity',0).transition().duration(350).delay(600).attr('opacity',1);
+  svg.append('text').text('Doc').attr('x',cx1+42).attr('y',52)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','rgba(77,180,255,0.7)').attr('font-size','9px').attr('font-weight','700')
+    .attr('opacity',0).transition().duration(350).delay(650).attr('opacity',1);
+  /* encoders separate */
+  [cx1-42, cx1+42].forEach(function(x,i){
+    svg.append('rect').attr('x',x-24).attr('y',85).attr('width',48).attr('height',30).attr('rx',6)
+      .attr('fill','rgba(77,180,255,0.08)').attr('stroke','rgba(77,180,255,0.4)').attr('stroke-width',1)
+      .attr('opacity',0).transition().duration(350).delay(700+i*100).attr('opacity',1);
+    svg.append('text').text('Enc').attr('x',x).attr('y',100)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(77,180,255,0.6)').attr('font-size','8.5px')
+      .attr('opacity',0).transition().duration(350).delay(720+i*100).attr('opacity',1);
+    svg.append('line').attr('x1',x).attr('y1',70).attr('x2',x).attr('y2',85)
+      .attr('stroke','rgba(77,180,255,0.3)').attr('stroke-width',1);
+    svg.append('line').attr('x1',x).attr('y1',115).attr('x2',cx1).attr('y2',135)
+      .attr('stroke','rgba(77,180,255,0.3)').attr('stroke-width',1);
+  });
+  svg.append('text').text('cos(v_q, v_d)').attr('x',cx1).attr('y',150)
+    .attr('text-anchor','middle').attr('fill','rgba(77,180,255,0.6)').attr('font-size','9px')
+    .attr('opacity',0).transition().duration(350).delay(900).attr('opacity',1);
+  svg.append('text').text('Rápido · Escala').attr('x',cx1).attr('y',H-8)
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size','9px');
+  /* Cross-Encoder (right) */
+  var cx2=W*0.72;
+  svg.append('text').text('Cross-Encoder').attr('x',cx2).attr('y',18)
+    .attr('text-anchor','middle').attr('fill','var(--mira-success)').attr('font-size','11px').attr('font-weight','800')
+    .attr('opacity',0).transition().duration(400).delay(1000).attr('opacity',1);
+  /* combined box */
+  svg.append('rect').attr('x',cx2-80).attr('y',35).attr('width',160).attr('height',35).attr('rx',7)
+    .attr('fill','rgba(77,255,180,0.12)').attr('stroke','var(--mira-success)').attr('stroke-width',1.5)
+    .attr('opacity',0).transition().duration(350).delay(1100).attr('opacity',1);
+  svg.append('text').text('[Query] + [Documento]').attr('x',cx2).attr('y',52)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','var(--mira-success)').attr('font-size','9px').attr('font-weight','700')
+    .attr('opacity',0).transition().duration(350).delay(1150).attr('opacity',1);
+  svg.append('line').attr('x1',cx2).attr('y1',70).attr('x2',cx2).attr('y2',85)
+    .attr('stroke','rgba(77,255,180,0.3)').attr('stroke-width',1);
+  svg.append('rect').attr('x',cx2-45).attr('y',85).attr('width',90).attr('height',30).attr('rx',6)
+    .attr('fill','rgba(77,255,180,0.1)').attr('stroke','rgba(77,255,180,0.4)').attr('stroke-width',1)
+    .attr('opacity',0).transition().duration(350).delay(1200).attr('opacity',1);
+  svg.append('text').text('Full Attention').attr('x',cx2).attr('y',100)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','rgba(77,255,180,0.7)').attr('font-size','8.5px')
+    .attr('opacity',0).transition().duration(350).delay(1220).attr('opacity',1);
+  svg.append('line').attr('x1',cx2).attr('y1',115).attr('x2',cx2).attr('y2',135)
+    .attr('stroke','rgba(77,255,180,0.3)').attr('stroke-width',1);
+  svg.append('text').text('Score relevância direta').attr('x',cx2).attr('y',150)
+    .attr('text-anchor','middle').attr('fill','rgba(77,255,180,0.6)').attr('font-size','9px')
+    .attr('opacity',0).transition().duration(350).delay(1300).attr('opacity',1);
+  svg.append('text').text('Mais preciso · Mais lento').attr('x',cx2).attr('y',H-8)
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size','9px');
+  /* divider */
+  svg.append('line').attr('x1',W/2).attr('y1',5).attr('x2',W/2).attr('y2',H-5)
+    .attr('stroke','rgba(255,255,255,0.07)').attr('stroke-width',1).attr('stroke-dasharray','4,4');
+  /* pulsing */
+  function pulse(){
+    if(window.__encGen!==myG) return;
+    var r=svg.append('rect').attr('x',cx2-80).attr('y',35).attr('width',160).attr('height',35).attr('rx',7)
+      .attr('fill','none').attr('stroke','var(--mira-success)').attr('stroke-width',1.5).attr('opacity',0.8);
+    r.transition().duration(900).attr('x',cx2-95).attr('y',27).attr('width',190).attr('height',51).attr('opacity',0).remove();
+    setTimeout(pulse,2200);
+  }
+  setTimeout(pulse,1800);
+})();
+
+/* ── ANIM-COMPARE11: 3 Papers ── */
+(function(){
+  window.__c11Gen=(window.__c11Gen||0)+1; var myG=window.__c11Gen;
+  var el=document.getElementById('anim-compare11'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=220;
+  var cx=W/2, cy=H/2;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',30)
+    .attr('fill','rgba(255,255,255,0.04)').attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5);
+  svg.append('text').text('Reranking').attr('x',cx).attr('y',cy-6)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,0.6)').attr('font-size','8.5px').attr('font-weight','700');
+  svg.append('text').text('em RAG').attr('x',cx).attr('y',cy+6)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,0.6)').attr('font-size','8.5px').attr('font-weight','700');
+  var papers=[
+    {label:'ARAGOG',role:'Comparar\n7 Técnicas',x:cx*0.25,y:H*0.3,color:'var(--mira-blue)'},
+    {label:'LCR',role:'LLM\nConfiança',x:W*0.85,y:H*0.25,color:'var(--mira-success)'},
+    {label:'Neural\nPipelines',role:'E-Commerce\nKG',x:W*0.55,y:H*0.85,color:'var(--mira-warning)'}
+  ];
+  papers.forEach(function(p,i){
+    svg.append('line').attr('x1',p.x).attr('y1',p.y).attr('x2',cx).attr('y2',cy)
+      .attr('stroke',p.color).attr('stroke-width',1).attr('opacity',0.25).attr('stroke-dasharray','5,4');
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',30)
+      .attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.5);
+    p.label.split('\n').forEach(function(l,j){
+      g.append('text').text(l).attr('x',p.x).attr('y',p.y+(j-0.3)*12)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill',p.color).attr('font-size','8.5px').attr('font-weight','800');
+    });
+    p.role.split('\n').forEach(function(l,j){
+      g.append('text').text(l).attr('x',p.x).attr('y',p.y+16+(j*10))
+        .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.55)').attr('font-size','7.5px');
+    });
+    g.transition().duration(450).delay(i*200+600).attr('opacity',1);
+  });
+  function pulse(){
+    if(window.__c11Gen!==myG) return;
+    papers.forEach(function(p,i){
+      var r=svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',30)
+        .attr('fill','none').attr('stroke',p.color).attr('stroke-width',1.5).attr('opacity',0.7);
+      r.transition().duration(1000).delay(i*150).attr('r',45).attr('opacity',0).remove();
+    });
+    setTimeout(pulse,2500);
+  }
+  setTimeout(pulse,1500);
+})();
+</script>
+
+<script>
+  AOS.init({ duration: 700, once: true, offset: 55 });
+  lucide.createIcons();
+  window.addEventListener('scroll', function(){
+    var s=window.scrollY||document.documentElement.scrollTop;
+    var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+    document.getElementById('progress-bar').style.width=(h>0?Math.round(s/h*100):0)+'%';
+    var b=document.getElementById('back-btn');
+    if(s>320) b.classList.add('visible'); else b.classList.remove('visible');
+  });
+  var slides=document.querySelectorAll('.slide'), cur=0;
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='PageDown'){ cur=Math.min(cur+1,slides.length-1); slides[cur].scrollIntoView({behavior:'smooth'}); }
+    if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='PageUp'){ cur=Math.max(cur-1,0); slides[cur].scrollIntoView({behavior:'smooth'}); }
+  });
+</script>
+</body>
+</html>
