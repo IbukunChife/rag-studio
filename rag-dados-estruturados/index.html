@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Dados Estruturados — Módulo 16 | RAG Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+:root {
+  --mira-bg: #000000;
+  --mira-primary: #FF904D;
+  --mira-success: #4DFFB4;
+  --mira-warning: #FFD54D;
+  --mira-error: #FF6464;
+  --mira-blue: #4DB4FF;
+  --mira-purple: #B464FF;
+  --mira-teal: #26C6DA;
+  --mira-text: #E8E8E8;
+  --mira-muted: #888888;
+  --mira-card: rgba(255,255,255,0.04);
+  --mira-border: rgba(255,255,255,0.08);
+  --accent: var(--mira-primary);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--mira-bg);color:var(--mira-text);font-family:'Inter',sans-serif;overflow-x:hidden}
+.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 24px;position:relative}
+.inner{width:100%;max-width:860px}
+.tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,144,77,0.12);border:1px solid rgba(255,144,77,0.3);color:var(--mira-primary);padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px}
+h1.hero{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;line-height:1.1;letter-spacing:-.02em;margin-bottom:20px}
+h2.title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;line-height:1.2;margin-bottom:16px}
+.accent{color:var(--mira-primary)}
+.lead{font-size:1.08rem;color:var(--mira-muted);line-height:1.7;margin-bottom:26px}
+.card{background:var(--mira-card);border:1px solid var(--mira-border);border-radius:16px;padding:24px 28px;margin-bottom:18px;backdrop-filter:blur(10px)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.g2,.g3{grid-template-columns:1fr}}
+.cell{background:rgba(255,255,255,0.03);border:1px solid var(--mira-border);border-radius:12px;padding:18px 20px}
+.num{font-size:1.9rem;font-weight:900;color:var(--accent);line-height:1;margin-bottom:6px}
+.cell h3{font-size:.92rem;font-weight:700;margin-bottom:6px}
+.cell p{font-size:.82rem;color:var(--mira-muted);line-height:1.5}
+.metaphor{background:rgba(255,144,77,0.07);border:1px solid rgba(255,144,77,0.2);border-left:4px solid var(--mira-primary);border-radius:12px;padding:22px 26px;margin-bottom:22px}
+.mlabel{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-primary);margin-bottom:10px}
+.metaphor p{font-size:.97rem;line-height:1.7;color:#f0ddc0}
+.anim-box{width:100%;border:1px solid var(--mira-border);border-radius:12px;overflow:hidden;background:rgba(0,0,0,0.4);margin-bottom:14px}
+ul.li{list-style:none;padding:0}
+ul.li li{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.92rem;line-height:1.5}
+ul.li li:last-child{border-bottom:none}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0}
+.pills{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.pill{background:rgba(255,144,77,0.1);border:1px solid rgba(255,144,77,0.25);border-radius:10px;padding:10px 18px;text-align:center}
+.pill .pv{font-size:1.5rem;font-weight:900;color:var(--accent)}
+.pill .pl{font-size:.68rem;color:var(--mira-muted);text-transform:uppercase;letter-spacing:.05em}
+.pbadge{display:inline-flex;align-items:center;background:rgba(255,144,77,0.08);border:1px solid rgba(255,144,77,0.2);border-radius:6px;padding:3px 10px;font-size:.7rem;color:var(--mira-primary);font-weight:600;margin-bottom:10px}
+.formula{background:rgba(0,0,0,0.6);border:1px solid rgba(255,144,77,0.2);border-radius:8px;padding:14px 20px;font-family:'Courier New',monospace;font-size:.95rem;color:var(--mira-primary);text-align:center;margin:14px 0}
+/* capa */
+.capa-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 70% 60% at 50% 40%,rgba(255,144,77,0.14) 0%,transparent 70%);pointer-events:none}
+.capa-c{position:relative;z-index:1;text-align:center}
+.mbadge{display:inline-block;padding:5px 16px;background:rgba(255,144,77,0.15);border:1px solid rgba(255,144,77,0.4);border-radius:30px;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-primary);margin-bottom:26px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:26px}
+.chip{padding:4px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;font-size:.69rem;color:var(--mira-muted)}
+/* nav */
+.progress-bar{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.06);z-index:1000}
+.progress-fill{height:100%;background:var(--mira-primary);width:0%;transition:width .2s}
+.nav-btn{position:fixed;bottom:30px;right:30px;z-index:1000;width:46px;height:46px;border-radius:50%;background:var(--mira-primary);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(255,144,77,0.4);transition:transform .2s,opacity .3s;opacity:0}
+.nav-btn.show{opacity:1}
+.nav-btn:hover{transform:scale(1.1)}
+.nav-btn svg{width:18px;height:18px;stroke:#000}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+<button class="nav-btn" id="nav-btn" onclick="goNext()">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+</button>
+
+<!-- ═══ SLIDE 01 — CAPA ═══ -->
+<section class="slide" id="s01">
+  <div class="capa-bg"></div>
+  <div class="inner capa-c">
+    <div class="mbadge">Módulo 16 · RAG Studio</div>
+    <h1 class="hero" data-aos="fade-up">RAG para Dados<br><span class="accent">Estruturados</span></h1>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Tabelas, bancos de dados e documentos heterogêneos:<br>
+      quando chunks de texto não bastam para raciocinar sobre estrutura.
+    </p>
+    <div class="pills" data-aos="fade-up" data-aos-delay="200" style="justify-content:center">
+      <div class="pill"><div class="pv">5</div><div class="pl">artigos</div></div>
+      <div class="pill"><div class="pv">6</div><div class="pl">animações D3</div></div>
+      <div class="pill"><div class="pv">2025–26</div><div class="pl">KDD · arXiv</div></div>
+    </div>
+    <div class="chips" data-aos="fade-up" data-aos-delay="300">
+      <span class="chip">T-RAG (Illinois/Meta/IBM)</span>
+      <span class="chip">FT-RAG (KDD 2026)</span>
+      <span class="chip">TableRAG (Huawei)</span>
+      <span class="chip">NeuSym-RAG (SJTU)</span>
+      <span class="chip">SA-RAG (UCLA/NEC)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 02 — O PROBLEMA ═══ -->
+<section class="slide" id="s02">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">O Problema</div>
+    <h2 class="title" data-aos="fade-up">Tabelas Não São<br><span class="accent">Parágrafos</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      O RAG clássico lineariza tabelas em texto — e perde a estrutura relacional que dá significado aos dados. Raciocínio sobre múltiplas colunas, cálculos de agregação e consultas multi-tabela exigem uma abordagem fundamentalmente diferente.
+    </p>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">❌</div>
+        <h3>Perda de Estrutura</h3>
+        <p>Linearizar tabelas em Markdown destrói relações entre linhas e colunas, tornando raciocínio multi-hop inviável.</p>
+      </div>
+      <div class="cell">
+        <div class="num">❌</div>
+        <h3>Sem Visão Global</h3>
+        <p>Chunking fragmenta a tabela — a pergunta "quantos no total?" exige a tabela inteira, não um trecho.</p>
+      </div>
+      <div class="cell">
+        <div class="num">❌</div>
+        <h3>Ruído Conversacional</h3>
+        <p>Em dados de chatbot, o conhecimento útil está enterrado em dezenas de turnos irrelevantes e redundantes.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <p style="font-size:.92rem;line-height:1.7;color:var(--mira-muted)">
+        <strong style="color:var(--mira-text)">A solução unificadora:</strong> tratar a tabela como uma unidade indivisível de raciocínio, seja via SQL simbólico, seja via grafos semânticos, seja via índices hierárquicos que preservam contexto de linha ↔ coluna.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 03 — METÁFORA T-RAG ═══ -->
+<section class="slide" id="s03">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · T-RAG</div>
+    <h2 class="title" data-aos="fade-up">Biblioteca com<br><span class="accent">Índice em Três Dimensões</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Imagine uma biblioteca gigante com 57 mil livros. Uma abordagem ingênua lista todos os títulos em ordem alfabética. O T-RAG é como um bibliotecário que organiza os livros de três formas simultâneas: pelo <strong style="color:var(--mira-primary)">assunto</strong> (semântica), pelo <strong style="color:var(--mira-primary)">tamanho e formato</strong> (estrutura) e pela <strong style="color:var(--mira-primary)">frequência de consulta</strong> (heurística). Quando você faz uma pergunta, ele vai direto ao cluster certo nas três dimensões — e então afina a busca com um subgrafo local. Nenhum livro irrelevante é sequer tocado.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Hipergrafos Heterogêneos</h3>
+        <p>Tabelas são nós do grafo; hiperarestas agrupam tabelas similares em três tipos: semântica (x<sup>sem</sup>), estrutura (x<sup>struct</sup>), heurística (x<sup>heur</sup>).</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Busca Grossa → Fina</h3>
+        <p>Fase 1: seleciona o cluster correto para cada dimensão. Fase 2: executa busca de subgrafo local. Fase 3: prompting ciente do grafo para LLM.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 04 — T-RAG + D3 ═══ -->
+<section class="slide" id="s04">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">T-RAG · Benchmark</div>
+    <h2 class="title" data-aos="fade-up">T-RAG: <span class="accent">Multi-Stage</span> sobre 57 mil Tabelas</h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:280px">
+      <div id="anim-trag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">57.193</div>
+        <h3>Tabelas</h3>
+        <p>MultiTableQA benchmark — maior benchmark multi-tabela cross-real-world.</p>
+      </div>
+      <div class="cell">
+        <div class="num">23.758</div>
+        <h3>Perguntas</h3>
+        <p>3 tipos de tarefa: lookup, inferência e aggregation, todas de cenários reais.</p>
+      </div>
+      <div class="cell">
+        <div class="num">3×</div>
+        <h3>Features por Tabela</h3>
+        <p>Semântica (Sentence Transformer), estrutural (spaCy POS), heurística (TF-IDF).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 05 — MultiTableQA ═══ -->
+<section class="slide" id="s05">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">T-RAG · Arquitetura</div>
+    <h2 class="title" data-aos="fade-up">Hipergrafo como<br><span class="accent">Memória Hierárquica</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">A linearização de tabelas para sequências de texto aumenta complexidade e perde estrutura. T-RAG abandona esse caminho e constrói um hipergrafo heterogêneo onde cada tabela tem representação composta em três espaços distintos.</p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>Linearização canônica:</strong> s = [Table] ⊕ [Caption, A] ⊕ Σ[Header, h_k] — preserva título e headers sem perder contexto estrutural.</div></li>
+        <li><span class="dot"></span><div><strong>KMeans tridimensional:</strong> cada tipo de feature gera um conjunto de hiperarestas, formando hiperedges heterogêneos ε ∈ {sem, struct, heur}.</div></li>
+        <li><span class="dot"></span><div><strong>Seleção de nós típicos:</strong> para cada cluster C_j, extrai top-k nós representativos — reduz comparações de queries às tabelas protótipo.</div></li>
+        <li><span class="dot"></span><div><strong>Graph-aware prompting:</strong> injeta priors relacionais estruturados na entrada do LLM, melhorando raciocínio cross-table.</div></li>
+        <li><span class="dot"></span><div><strong>Avaliação comparativa:</strong> supera table retrieval methods, RAG methods e table-to-graph learning em acurácia, recall e eficiência de tempo.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 06 — METÁFORA FT-RAG ═══ -->
+<section class="slide" id="s06">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · FT-RAG</div>
+    <h2 class="title" data-aos="fade-up">A Lupa que Lê<br><span class="accent">Cada Célula</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Imagine um analista financeiro que precisa encontrar a receita doméstica do Segmento X no terceiro trimestre de 2024 num relatório de 200 páginas. O RAG convencional escaneia o texto em blocos — como folhar rápido. O FT-RAG é como uma lupa especial: ela não lê "a tabela", ela lê <strong style="color:var(--mira-primary)">cada célula individualmente</strong>, sabendo exatamente que "12.11" está na linha Domestic, coluna October, Segment X, Table 2, Company A — com toda a cadeia de contexto preservada em coordenadas precisas. Quando você perguntar "qual foi a receita?", ela vai direto à célula certa sem ambiguidade.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Cell Groups (Unidades Semânticas)</h3>
+        <p>Cada célula vira uma Cell Group com: valor bruto + índices (coordenadas) + tipo (row/col header) + hierarquia (nível de nesting). Contexto completo embutido.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">SAT-Graph (Grafo Temporal)</h3>
+        <p>Subject Sub-tree (Ts) + Temporal Sub-tree (Tt) + Attribute Node Set (Va) + Value Leaf Node Set (Vl). DAG composto e direcionado.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 07 — FT-RAG + D3 ═══ -->
+<section class="slide" id="s07">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">FT-RAG · Resultados KDD 2026</div>
+    <h2 class="title" data-aos="fade-up">Ganhos em<br><span class="accent">Recuperação Fina</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:260px">
+      <div id="anim-ftrag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">+23,5%</div>
+        <h3>Hit Rate Tabela</h3>
+        <p>Recuperação no nível de tabela supera top baselines no benchmark Multi-Table-RAG-Lib.</p>
+      </div>
+      <div class="cell">
+        <div class="num">+59,2%</div>
+        <h3>Hit Rate Célula</h3>
+        <p>Recuperação celular — o ganho mais expressivo, pois baselines não operam neste nível.</p>
+      </div>
+      <div class="cell">
+        <div class="num">+62,2%</div>
+        <h3>Exact Value Accuracy</h3>
+        <p>Acurácia no valor exato: a métrica mais exigente, onde a estrutura fina faz toda a diferença.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 08 — SAT-Graph ═══ -->
+<section class="slide" id="s08">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">FT-RAG · SAT-Graph</div>
+    <h2 class="title" data-aos="fade-up">O Grafo que Captura<br><span class="accent">Sujeito, Atributo e Tempo</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">O SAT-Graph resolve a perda de contexto orthogonal das tabelas 2D: uma linha tem sujeito, uma coluna tem atributo, e os dados têm validade temporal. Esses três eixos são transformados em sub-árvores explícitas.</p>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="pbadge">Subject Sub-tree (Ts)</div>
+        <p style="font-size:.85rem;line-height:1.6;color:var(--mira-muted)">Inferido via LLM sobre o contexto global da Cell Group. Reconstrói hierarquia de sujeitos — "Laptop" aninhado sob "Hardware". Identidade + linhagem estrutural.</p>
+      </div>
+      <div class="cell">
+        <div class="pbadge">Temporal Sub-tree (Tt)</div>
+        <p style="font-size:.85rem;line-height:1.6;color:var(--mira-muted)">Derivado via parsing de padrões. Organiza intervalos de tempo cronologicamente — October, November, December como scopes de validade do dado.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <p style="font-size:.88rem;line-height:1.65;color:var(--mira-muted)">
+        <strong style="color:var(--mira-text)">Benchmark Multi-Table-RAG-Lib:</strong> 9.870 pares QA de alta complexidade — 5.000 tabelas, 308 tabelas grandes, 81 documentos. Contextual flag f=1 exige fusão texto+tabela para 4.935 questões. A outra metade (f=0) exige tabela pura, isolando a capacidade de raciocínio tabular do LLM.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 09 — METÁFORA TABLERAG ═══ -->
+<section class="slide" id="s09">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · TableRAG</div>
+    <h2 class="title" data-aos="fade-up">O Detetive que<br><span class="accent">Interroga o Banco de Dados</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Um detetive ruim faz perguntas vagas e espera que as testemunhas entreguem a resposta. Um detetive expert sabe exatamente qual pergunta fazer: "Me dê os nomes dos suspeitos que estavam na cena entre 21h e 23h, ordenados pela hora de saída." O TableRAG usa <strong style="color:var(--mira-primary)">SQL como linguagem de interrogação precisa</strong>. Em vez de recuperar chunks de tabela que podem estar incompletos, ele gera e executa consultas SQL exatas — tratando a tabela como uma unidade indivisível de raciocínio, não como parágrafos fatiados.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">SQL como Linguagem Formal</h3>
+        <p>f_SQL(S^t, q_t) = e_t — execução simbólica precisa sobre dados relacionais. Python introduz overhead; SQL é indivisível e determinístico.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Dois Corpora Paralelos</h3>
+        <p>Fase offline: knowledge base textual (chunks do texto T) + schema database tabular (D). Fase online: raciocínio iterativo híbrido sobre ambos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 10 — TABLERAG + D3 ═══ -->
+<section class="slide" id="s10">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">TableRAG · Pipeline</div>
+    <h2 class="title" data-aos="fade-up">4 Passos de<br><span class="accent">Raciocínio Iterativo</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:240px">
+      <div id="anim-tablerag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="pbadge">Fase Offline</div>
+        <p style="font-size:.85rem;line-height:1.6;color:var(--mira-muted)">Construção de banco de dados: parsing de tabelas → schema extraction → MySQL + knowledge base vetorial. Mapeamento f: D̂_{i,j} → S(D_i) preserva vínculo chunk-schema.</p>
+      </div>
+      <div class="cell">
+        <div class="pbadge">Fase Online</div>
+        <p style="font-size:.85rem;line-height:1.6;color:var(--mira-muted)">Iteração até convergência: decomposição → retrieval → SQL (quando chunk vem de tabela) → resposta intermediária. Fusão compositiva de ambas as fontes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 11 — HeteQA ═══ -->
+<section class="slide" id="s11">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">TableRAG · HeteQA</div>
+    <h2 class="title" data-aos="fade-up">HeteQA: Benchmark para<br><span class="accent">Documentos Heterogêneos</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">Benchmarks existentes testam apenas retrieval superficial (resposta direta em célula). O HeteQA exige raciocínio multi-hop que cruza texto e tabelas — 5 operações tabulares compostas por questão.</p>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">304</div>
+        <h3>Exemplos HeteQA</h3>
+        <p>9 domínios distintos. Cada exemplo combina 5 operações tabulares: filtro condicional, aggregation, nested logic, aritmética e cross-reference.</p>
+      </div>
+      <div class="cell">
+        <div class="num">+17,3%</div>
+        <h3>vs. RAG Genérico</h3>
+        <p>Sobre baselines genéricos de RAG no HeteQA — TableRAG estabelece novo SOTA para QA em documentos heterogêneos texto+tabela.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>Context-Sensitive Query Decomposition:</strong> identifica quando a subquery precisa de tabela (→ SQL) ou texto (→ retrieval vetorial). Não é apenas parsing sintático — requer consciência da fonte de dados.</div></li>
+        <li><span class="dot"></span><div><strong>Weighting adaptativo:</strong> resultado SQL e resultado de retrieval têm confiabilidade distinta. Fusão final a_t = F(e_t, T̂_rerank) pondera as fontes por evidential utility.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 12 — METÁFORA NEUSYM-RAG ═══ -->
+<section class="slide" id="s12">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · NeuSym-RAG</div>
+    <h2 class="title" data-aos="fade-up">O Arquivista que<br><span class="accent">Fala Duas Línguas</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Num arquivo de pesquisa, há dois sistemas: o <strong style="color:var(--mira-primary)">índice fuzzy</strong> — onde você busca por aproximação ("algo sobre redes neurais em 2023") — e o <strong style="color:var(--mira-primary)">banco de dados SQL</strong> — onde você pergunta exatamente ("papers com mais de 50 citações publicados entre janeiro e março de 2023"). Um arquivista que fala só uma das línguas sempre falha em alguma pergunta. O NeuSym-RAG é o arquivista bilíngue que <em>decide qual língua usar</em> dependendo da pergunta — e às vezes usa as duas em sequência, refinando o resultado.</p>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">4</div>
+        <h3>Granularidades</h3>
+        <p>Chunks, parágrafos, seções, páginas — 4 visões do mesmo PDF alimentando DB e vectorstore.</p>
+      </div>
+      <div class="cell">
+        <div class="num">5</div>
+        <h3>Ações do Agente</h3>
+        <p>RetrieveVS, RetrieveDB, ViewImage, CalculateExpr, GenerateAnswer — agente iterativo ReAct.</p>
+      </div>
+      <div class="cell">
+        <div class="num">+17,3%</div>
+        <h3>vs. RAG Neural</h3>
+        <p>Supera RAG puramente vetorial em 17,3 pontos no AirQA-Real (553 samples, 18 métricas).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 13 — NEUSYM-RAG + D3 ═══ -->
+<section class="slide" id="s13">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">NeuSym-RAG · Multiview</div>
+    <h2 class="title" data-aos="fade-up">Multi-View Parsing:<br><span class="accent">Quatro Lentes no Mesmo PDF</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:260px">
+      <div id="anim-neusym" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Parsing Semi-estruturado</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">PyMuPDF para texto multi-granular. MinerU (OCR avançado) para elementos não-textuais: tabelas, figuras, fórmulas. Metadados via API do ArXiv. Tudo → DuckDB relacional.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Encoding Multimodal</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">BM25 + bge-large-en-v1.5 para texto. clip-vit-base-patch32 para imagens. Colunas "encodable" no DB schema → vectorstore com 4 coleções distintas por modalidade.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 14 — AÇÕES DO AGENTE ═══ -->
+<section class="slide" id="s14">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">NeuSym-RAG · Agente</div>
+    <h2 class="title" data-aos="fade-up">5 Ações para<br><span class="accent">Recuperação Iterativa</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">O agente NeuSym-RAG segue o framework ReAct — Thought → Action → Observation — iterando até ter contexto suficiente. A chave é a combinação simbólica+neural em cada passo.</p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>RetrieveFromVectorstore:</strong> busca fuzzy semântica com reescrita de query via LLM (Ma et al. 2023). Suporta filtro por table_name, column_name, page_number.</div></li>
+        <li><span class="dot"></span><div><strong>RetrieveFromDatabase:</strong> executa SQL contra DuckDB. Ideal para queries com filtros exatos, ordenação, contagem e aggregation — o que o vectorstore não sabe fazer.</div></li>
+        <li><span class="dot"></span><div><strong>ViewImage:</strong> extrai região (bounding_box) de uma página do PDF em base64. Resolve erros de OCR e tabelas com layout visual complexo — o agente "vê" o que não consegue parsear.</div></li>
+        <li><span class="dot"></span><div><strong>CalculateExpr:</strong> avalia expressão Python aritmética (e.g., 2 + 3 × 4). Reduz alucinação em problemas matemáticos — resultado computado, não gerado.</div></li>
+        <li><span class="dot"></span><div><strong>GenerateAnswer:</strong> ação terminal. Ativada quando o agente julga que o contexto recuperado é suficiente para responder com fidelidade.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 15 — METÁFORA SA-RAG ═══ -->
+<section class="slide" id="s15">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · SA-RAG</div>
+    <h2 class="title" data-aos="fade-up">A Triagem do<br><span class="accent">Pronto-Socorro</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Um pronto-socorro recebe pacientes em estado caótico: gritos, dores de todo tipo, informações contraditórias, muita gente falando ao mesmo tempo. A triagem não tenta processar tudo — ela <strong style="color:var(--mira-primary)">converte o caos em uma ficha estruturada</strong>: nome, sintoma principal, urgência, histórico relevante. O SA-RAG faz o mesmo com dados conversacionais: cada conversa barulhenta de chatbot é convertida em uma tabela limpa, com metadados de qualidade, eliminando turnos irrelevantes e normalizando o conhecimento útil antes de qualquer busca.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Quality-Aware Metadata</h3>
+        <p>L(M) = Σ R(m_ij, C) + S(M) — função de qualidade que avalia relevância e consistência de cada entrada de metadado gerada pelo LLM.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">DPO para Tabelas</h3>
+        <p>L_DPO(θ) minimiza distância entre resposta preferida e rejeitada, guiando a geração de tabelas para consistência semântica e estrutural.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 16 — SA-RAG + D3 ═══ -->
+<section class="slide" id="s16">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">SA-RAG · Pipeline</div>
+    <h2 class="title" data-aos="fade-up">Tabela como<br><span class="accent">Filtro de Ruído</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:260px">
+      <div id="anim-sarag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Training-Free</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Semantic consistency: p_ij = 1_sem(φ_ij, D_i) · 1_struc(φ_ij, M_j). Validação sem fine-tuning — funciona com qualquer LLM como gerador de tabela.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Training-Based (DPO)</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Preferência direta otimiza para high-quality tables. Um único processo de treinamento satisfaz simultaneamente os constraints de qualidade, semântica e consistência estrutural.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 17 — SA-RAG DETALHES ═══ -->
+<section class="slide" id="s17">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">SA-RAG · Resultados</div>
+    <h2 class="title" data-aos="fade-up">RAG Estrutural para<br><span class="accent">Agentes Conversacionais</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">Em dados conversacionais limpos (Wikipedia), todos os métodos competem bem. A vantagem do SA-RAG aparece em dados ruidosos reais — onde texto-RAG e graph-RAG falham por sensibilidade ao ruído ou dependência de extração de entidades precisa.</p>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:10px">Por que Tabelas Vencem Grafos no Ruído?</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Graph-RAG exige extração precisa de entidades e relações — em dados ruidosos, erros de extração propagam. Tabelas são mais tolerantes: campos parcialmente preenchidos e atributos ausentes não quebram o retrieval.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:10px">Normalização como Chave</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Dados conversacionais têm nomes inconsistentes ("app A", "aplicativo A", "AppA"). SA-RAG normaliza esses atributos no schema gerado, garantindo que queries diferentes encontrem o mesmo fato.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <p style="font-size:.88rem;line-height:1.65;color:var(--mira-muted)">
+        <strong style="color:var(--mira-text)">Avaliação em dois datasets ruidosos reais:</strong> conversações de suporte técnico e chats de e-commerce — contextos onde as informações úteis estão misturadas a saudações, clarificações e repetições. SA-RAG supera text-RAG, graph-RAG e simple TableRAG em ambos.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 18 — COMPARATIVO ═══ -->
+<section class="slide" id="s18">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Resultados Comparativos</div>
+    <h2 class="title" data-aos="fade-up">Cinco Abordagens,<br><span class="accent">Cinco Filosofias</span></h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="100">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.83rem">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,144,77,0.3)">
+              <th style="text-align:left;padding:9px 12px;color:var(--mira-primary);font-weight:700">Método</th>
+              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Foco</th>
+              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Retrieval</th>
+              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Ganho Principal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">T-RAG</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Corpora de tabelas</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Hipergrafo 3-features</td>
+              <td style="padding:9px 8px;text-align:center;color:#4DB4FF">SOTA MultiTableQA</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">FT-RAG</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Tabelas complexas</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">SAT-Graph celular</td>
+              <td style="padding:9px 8px;text-align:center;color:#4DFFB4">+62,2% exact value</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">TableRAG</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Docs heterogêneos</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">SQL + vetorial</td>
+              <td style="padding:9px 8px;text-align:center;color:#FFD54D">SOTA HeteQA</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">NeuSym-RAG</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">PDFs acadêmicos</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Neural+Simbólico</td>
+              <td style="padding:9px 8px;text-align:center;color:#FF904D">+17,3% AirQA-Real</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 12px;font-weight:600">SA-RAG</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Conversas ruidosas</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Tabela como filtro</td>
+              <td style="padding:9px 8px;text-align:center;color:#B464FF">SOTA dados ruidosos</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 19 — PRINCÍPIOS ═══ -->
+<section class="slide" id="s19">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Síntese</div>
+    <h2 class="title" data-aos="fade-up">Princípios do RAG<br><span class="accent">Estruturalmente Consciente</span></h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="100">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>Princípio 1 — Preserve a Estrutura:</strong> não linearize tabelas em texto. Seja via SAT-Graph (FT-RAG), schema SQL (TableRAG) ou hipergrafos (T-RAG), a estrutura relacional é informação, não metadado.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 2 — Granularidade Múltipla:</strong> a mesma tabela pode ser indexada em nível de célula, linha, tabela ou documento. Perguntas diferentes precisam de granularidades diferentes. Multi-view não é redundância — é cobertura.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 3 — Simbólico + Neural:</strong> SQL não substitui embeddings, e embeddings não substituem SQL. A dualidade permite que cada paradigma cubra os pontos cegos do outro — precisão simbólica + generalização semântica.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 4 — Qualidade na Entrada:</strong> lixo estruturado ainda é lixo. SA-RAG mostra que metadados de qualidade, normalização e validação antes do indexamento determinam o teto do retrieval.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 5 — Raciocínio como Unidade:</strong> uma subquery tabular é indivisível. Não recupere pedaços de tabela — recupere a tabela inteira e execute a operação como um bloco atômico.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 20 — PANORAMA + D3 ═══ -->
+<section class="slide" id="s20">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Panorama</div>
+    <h2 class="title" data-aos="fade-up">Paisagem do RAG<br><span class="accent">para Dados Estruturados</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:310px">
+      <div id="anim-compare16" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Tendência Dominante</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Todos os 5 métodos rejeitam o paradigma "linearizar tabela em texto". A pergunta não é mais "como fazer RAG em tabelas" — é "qual representação estrutural serve melhor ao tipo de dado e tipo de consulta."</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-primary);margin-bottom:8px">Próximos Passos</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Fusão de SQL simbólico com grafos semânticos + agentes multimodais. O FT-RAG aponta para tabelas com validade temporal — RAG que "sabe quando" o dado era verdade.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+AOS.init({duration:700, once:true, offset:55});
+lucide.createIcons();
+
+// ── Navegação ──────────────────────────────────────────
+var slides = document.querySelectorAll('.slide');
+var total  = slides.length;
+function getActive(){
+  var cy = window.scrollY + window.innerHeight/2;
+  var best=0, bd=Infinity;
+  slides.forEach(function(s,i){
+    var d=Math.abs(s.getBoundingClientRect().top+window.scrollY+s.offsetHeight/2 - cy);
+    if(d<bd){bd=d;best=i;}
+  });
+  return best;
+}
+function goNext(){
+  var i=getActive();
+  if(i<total-1) slides[i+1].scrollIntoView({behavior:'smooth'});
+}
+document.addEventListener('keydown',function(e){
+  var i=getActive();
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key==='PageDown'){if(i<total-1)slides[i+1].scrollIntoView({behavior:'smooth'});}
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){if(i>0)slides[i-1].scrollIntoView({behavior:'smooth'});}
+});
+window.addEventListener('scroll',function(){
+  var p=window.scrollY/(document.body.scrollHeight-window.innerHeight);
+  document.getElementById('prog').style.width=(p*100)+'%';
+  document.getElementById('nav-btn').classList.toggle('show',window.scrollY>300);
+});
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-trag: T-RAG MultiTableQA comparison
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__tragGen=(window.__tragGen||0)+1; var myG=window.__tragGen;
+  var el=document.getElementById('anim-trag'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=280;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var data=[
+    {label:'BM25 Retrieval',      val:52, clr:'#444444'},
+    {label:'Text-RAG',            val:61, clr:'#666666'},
+    {label:'Table-to-Graph',      val:68, clr:'#888888'},
+    {label:'TableRAG (baseline)', val:74, clr:'#4DB4FF'},
+    {label:'T-RAG (nosso)',        val:89, clr:'#FF904D'}
+  ];
+
+  var ml=170, mr=60, mt=30, mb=28;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var yScale=d3.scaleBand().domain(data.map(function(d){return d.label;})).range([0,ph]).padding(0.28);
+  var xScale=d3.scaleLinear().domain([0,100]).range([0,pw]);
+
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',16)
+    .attr('text-anchor','middle').style('fill','#666').style('font-size','10px')
+    .text('Acurácia no MultiTableQA (%) — representativo');
+
+  [25,50,75,100].forEach(function(v){
+    g.append('line').attr('x1',xScale(v)).attr('x2',xScale(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('text').attr('x',xScale(v)).attr('y',ph+16).attr('text-anchor','middle')
+      .style('fill','#444').style('font-size','9px').text(v+'%');
+  });
+
+  var bars=[];
+  data.forEach(function(d,i){
+    var y=yScale(d.label);
+    g.append('text').attr('x',-8).attr('y',y+yScale.bandwidth()/2+4)
+      .attr('text-anchor','end').style('fill','rgba(255,255,255,0.7)').style('font-size','10.5px')
+      .text(d.label);
+    g.append('rect').attr('x',0).attr('y',y).attr('width',pw).attr('height',yScale.bandwidth())
+      .attr('rx',4).style('fill','rgba(255,255,255,0.02)');
+    var bar=g.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',yScale.bandwidth())
+      .attr('rx',4).style('fill',d.clr).style('opacity',i===data.length-1?1:0.65);
+    bar.transition().delay(300+i*180).duration(900).attr('width',xScale(d.val));
+    var txt=g.append('text').attr('x',xScale(d.val)+6).attr('y',y+yScale.bandwidth()/2+4)
+      .style('fill',d.clr).style('font-size','11px').style('font-weight','700').style('opacity',0)
+      .text(d.val+'%');
+    txt.transition().delay(1250+i*180).duration(300).style('opacity',1);
+    bars.push({bar:bar,txt:txt,val:d.val,clr:d.clr,y:y,bw:yScale.bandwidth()});
+  });
+
+  function pulse(){
+    if(window.__tragGen!==myG) return;
+    var last=bars[bars.length-1];
+    last.bar.transition().duration(600).style('opacity',0.5)
+      .transition().duration(600).style('opacity',1)
+      .on('end',function(){setTimeout(pulse,1600);});
+  }
+  setTimeout(pulse,2800);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-ftrag: FT-RAG improvement bars
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__ftragGen=(window.__ftragGen||0)+1; var myG=window.__ftragGen;
+  var el=document.getElementById('anim-ftrag'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=260;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var metrics=[
+    {label:'Hit Rate (Tabela)',   base:58, gain:23.5, clr:'#FF904D'},
+    {label:'Hit Rate (Célula)',   base:31, gain:59.2, clr:'#4DFFB4'},
+    {label:'Exact Value Accuracy',base:22, gain:62.2, clr:'#4DB4FF'}
+  ];
+
+  var ml=170, mr=60, mt=28, mb=28;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var yBand=d3.scaleBand().domain(metrics.map(function(d){return d.label;})).range([0,ph]).padding(0.32);
+  var xScale=d3.scaleLinear().domain([0,100]).range([0,pw]);
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',16)
+    .attr('text-anchor','middle').style('fill','#666').style('font-size','10px')
+    .text('FT-RAG vs. top baselines no Multi-Table-RAG-Lib (%)');
+
+  [25,50,75,100].forEach(function(v){
+    g.append('line').attr('x1',xScale(v)).attr('x2',xScale(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('text').attr('x',xScale(v)).attr('y',ph+15).attr('text-anchor','middle')
+      .style('fill','#444').style('font-size','9px').text(v+'%');
+  });
+
+  var barPairs=[];
+  metrics.forEach(function(d,i){
+    var y=yBand(d.label);
+    var bw=yBand.bandwidth();
+    var half=bw*0.44;
+
+    g.append('text').attr('x',-8).attr('y',y+bw/2+4).attr('text-anchor','end')
+      .style('fill','rgba(255,255,255,0.7)').style('font-size','10.5px').text(d.label);
+
+    // baseline bar (grey)
+    g.append('rect').attr('x',0).attr('y',y).attr('width',pw).attr('height',half)
+      .attr('rx',3).style('fill','rgba(255,255,255,0.02)');
+    var bBase=g.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',half)
+      .attr('rx',3).style('fill','rgba(255,255,255,0.18)');
+    bBase.transition().delay(300+i*200).duration(800).attr('width',xScale(d.base));
+
+    // gain bar (colored)
+    g.append('rect').attr('x',0).attr('y',y+half+2).attr('width',pw).attr('height',half)
+      .attr('rx',3).style('fill','rgba(255,255,255,0.02)');
+    var bGain=g.append('rect').attr('x',0).attr('y',y+half+2).attr('width',0).attr('height',half)
+      .attr('rx',3).style('fill',d.clr).style('opacity',0.88);
+    bGain.transition().delay(500+i*200).duration(900).attr('width',xScale(d.base+d.gain));
+
+    var label=g.append('text').attr('x',xScale(d.base+d.gain)+6).attr('y',y+bw/2+4)
+      .style('fill',d.clr).style('font-size','12px').style('font-weight','800').style('opacity',0)
+      .text('+'+d.gain+'%');
+    label.transition().delay(1400+i*200).duration(300).style('opacity',1);
+    barPairs.push({bBase:bBase,bGain:bGain,label:label,base:d.base,total:d.base+d.gain,clr:d.clr,y:y,bw:bw,half:half});
+  });
+
+  function refill(){
+    if(window.__ftragGen!==myG) return;
+    barPairs.forEach(function(b,i){
+      b.bBase.transition().delay(i*150).duration(600).attr('width',0)
+        .transition().duration(800).attr('width',xScale(b.base));
+      b.bGain.transition().delay(i*150+200).duration(800).attr('width',0)
+        .transition().duration(900).attr('width',xScale(b.total))
+        .on('end',function(){ if(i===barPairs.length-1) setTimeout(refill,2000); });
+    });
+  }
+  setTimeout(refill,3500);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-tablerag: 4-step iterative pipeline
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__tableragGen=(window.__tableragGen||0)+1; var myG=window.__tableragGen;
+  var el=document.getElementById('anim-tablerag'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=240;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var steps=[
+    {id:0, label:'Query\nDecomp',    sub:'Identifica texto vs tabela', clr:'#FF904D'},
+    {id:1, label:'Text\nRetrieval',  sub:'Busca vetorial + rerank',    clr:'#4DB4FF'},
+    {id:2, label:'SQL\nExecute',     sub:'f_SQL(S^t, q_t) = e_t',     clr:'#4DFFB4'},
+    {id:3, label:'Answer\nGen',      sub:'Fusão compositiva',           clr:'#B464FF'}
+  ];
+
+  var cx=W/2, cy=H/2;
+  var boxW=Math.min((W-60)/4.4, 110), boxH=62, gap=(W-60-boxW*4)/3;
+  var startX=30;
+
+  // arrows
+  steps.forEach(function(s,i){
+    if(i<steps.length-1){
+      var x1=startX+i*(boxW+gap)+boxW;
+      var x2=startX+(i+1)*(boxW+gap);
+      svg.append('line').attr('x1',x1+2).attr('y1',cy).attr('x2',x2-6).attr('y2',cy)
+        .style('stroke','rgba(255,255,255,0.15)').style('stroke-width',1.5).style('stroke-dasharray','4,3');
+      svg.append('polygon')
+        .attr('points',(x2-4)+','+(cy-4)+' '+(x2+4)+','+cy+' '+(x2-4)+','+(cy+4))
+        .style('fill','rgba(255,255,255,0.15)');
+    }
+  });
+
+  // back arrow (loop)
+  svg.append('path').attr('d','M'+(startX+3*boxW+3*gap+boxW-10)+','+(cy+boxH/2+8)+
+    ' L'+cx+','+(cy+boxH/2+26)+
+    ' L'+(startX+10)+','+(cy+boxH/2+26)+
+    ' L'+(startX+10)+','+(cy+boxH/2+8))
+    .style('fill','none').style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1.5)
+    .style('stroke-dasharray','5,4');
+
+  var boxes=[];
+  steps.forEach(function(s,i){
+    var x=startX+i*(boxW+gap);
+    var y=cy-boxH/2;
+    var bg=svg.append('rect').attr('x',x).attr('y',y).attr('width',boxW).attr('height',boxH)
+      .attr('rx',8).style('fill','rgba(255,255,255,0.03)').style('stroke','rgba(255,255,255,0.1)')
+      .style('stroke-width',1);
+    var lines=s.label.split('\n');
+    lines.forEach(function(ln,li){
+      svg.append('text').attr('x',x+boxW/2).attr('y',y+20+li*16)
+        .attr('text-anchor','middle').style('fill','rgba(255,255,255,0.85)').style('font-size','12px').style('font-weight','700')
+        .text(ln);
+    });
+    svg.append('text').attr('x',x+boxW/2).attr('y',y+boxH-9)
+      .attr('text-anchor','middle').style('fill','rgba(255,255,255,0.35)').style('font-size','8.5px')
+      .text(s.sub);
+    boxes.push({bg:bg, clr:s.clr, x:x, y:y, w:boxW, h:boxH});
+  });
+
+  // step label
+  var stepLabel=svg.append('text').attr('x',W/2).attr('y',H-8).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9px')
+    .text('Iteração até convergência — subquery resolvida a cada ciclo');
+
+  var cur=0;
+  function highlight(){
+    if(window.__tableragGen!==myG) return;
+    boxes.forEach(function(b,i){
+      b.bg.transition().duration(300)
+        .style('fill', i===cur ? 'rgba(255,144,77,0.14)' : 'rgba(255,255,255,0.03)')
+        .style('stroke', i===cur ? boxes[i].clr : 'rgba(255,255,255,0.1)');
+    });
+    cur=(cur+1)%steps.length;
+    setTimeout(highlight,900);
+  }
+  setTimeout(highlight,1200);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-neusym: multi-view parsing 4 granularities
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__neusymGen=(window.__neusymGen||0)+1; var myG=window.__neusymGen;
+  var el=document.getElementById('anim-neusym'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=260;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var views=[
+    {label:'Chunks',      sub:'tokens fixos',    clr:'#FF904D', y:0.18},
+    {label:'Parágrafos',  sub:'fronteira semântica', clr:'#4DB4FF', y:0.38},
+    {label:'Seções',      sub:'estrutura lógica', clr:'#4DFFB4', y:0.58},
+    {label:'Páginas',     sub:'layout visual',   clr:'#B464FF', y:0.78}
+  ];
+
+  var srcX=90, dstDB=W-130, dstVS=W-50;
+  var defs=svg.append('defs');
+
+  // Source PDF box
+  svg.append('rect').attr('x',10).attr('y',H/2-40).attr('width',70).attr('height',80)
+    .attr('rx',8).style('fill','rgba(255,255,255,0.04)').style('stroke','rgba(255,255,255,0.12)').style('stroke-width',1);
+  svg.append('text').attr('x',45).attr('y',H/2-10).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.8)').style('font-size','11px').style('font-weight','700').text('PDF');
+  svg.append('text').attr('x',45).attr('y',H/2+8).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.35)').style('font-size','9px').text('fonte');
+
+  // DB box
+  svg.append('rect').attr('x',W-120).attr('y',H/2-55).attr('width',55).attr('height',42)
+    .attr('rx',6).style('fill','rgba(255,144,77,0.08)').style('stroke','rgba(255,144,77,0.25)').style('stroke-width',1);
+  svg.append('text').attr('x',W-92).attr('y',H/2-32).attr('text-anchor','middle')
+    .style('fill','#FF904D').style('font-size','9.5px').style('font-weight','700').text('DuckDB');
+  svg.append('text').attr('x',W-92).attr('y',H/2-16).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','8px').text('simbólico');
+
+  // VS box
+  svg.append('rect').attr('x',W-120).attr('y',H/2+14).attr('width',55).attr('height',42)
+    .attr('rx',6).style('fill','rgba(77,180,255,0.08)').style('stroke','rgba(77,180,255,0.25)').style('stroke-width',1);
+  svg.append('text').attr('x',W-92).attr('y',H/2+37).attr('text-anchor','middle')
+    .style('fill','#4DB4FF').style('font-size','9.5px').style('font-weight','700').text('VectorDB');
+  svg.append('text').attr('x',W-92).attr('y',H/2+52).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','8px').text('neural');
+
+  var packets=[];
+  views.forEach(function(v,i){
+    var vy=H*v.y;
+    // view label
+    svg.append('rect').attr('x',srcX+4).attr('y',vy-14).attr('width',90).attr('height',28)
+      .attr('rx',6).style('fill','rgba(255,255,255,0.03)').style('stroke',v.clr).style('stroke-width',0.7).style('stroke-opacity',0.5);
+    svg.append('text').attr('x',srcX+49).attr('y',vy+1).attr('text-anchor','middle')
+      .style('fill',v.clr).style('font-size','10px').style('font-weight','700').text(v.label);
+    svg.append('text').attr('x',srcX+49).attr('y',vy+13).attr('text-anchor','middle')
+      .style('fill','rgba(255,255,255,0.3)').style('font-size','7.5px').text(v.sub);
+
+    // line from PDF
+    svg.append('line').attr('x1',80).attr('y1',H/2).attr('x2',srcX+4).attr('y2',vy)
+      .style('stroke',v.clr).style('stroke-width',0.7).style('stroke-opacity',0.25);
+
+    // line to DB
+    svg.append('line').attr('x1',srcX+94).attr('y1',vy).attr('x2',W-120).attr('y2',H/2-35)
+      .style('stroke',v.clr).style('stroke-width',0.7).style('stroke-opacity',0.2);
+    // line to VS
+    svg.append('line').attr('x1',srcX+94).attr('y1',vy).attr('x2',W-120).attr('y2',H/2+35)
+      .style('stroke',v.clr).style('stroke-width',0.7).style('stroke-opacity',0.2);
+
+    var pkt=svg.append('circle').attr('cx',srcX+94).attr('cy',vy).attr('r',4)
+      .style('fill',v.clr).style('opacity',0);
+    packets.push({pkt:pkt, clr:v.clr, startX:srcX+94, startY:vy, i:i});
+  });
+
+  function animPacket(p){
+    if(window.__neusymGen!==myG) return;
+    var targetX=W-120, targetY=H/2+(p.i%2===0?-35:35);
+    p.pkt.attr('cx',p.startX).attr('cy',p.startY).style('opacity',1);
+    p.pkt.transition().delay(p.i*280).duration(700)
+      .attr('cx',targetX).attr('cy',targetY)
+      .transition().duration(200).style('opacity',0);
+  }
+
+  function loopPackets(){
+    if(window.__neusymGen!==myG) return;
+    packets.forEach(function(p){ animPacket(p); });
+    setTimeout(loopPackets,2200);
+  }
+  setTimeout(loopPackets,1200);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-sarag: quality-aware table generation cycle
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__saragGen=(window.__saragGen||0)+1; var myG=window.__saragGen;
+  var el=document.getElementById('anim-sarag'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=260;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var cx=W/2, cy=H/2;
+  var radius=Math.min(W,H)*0.32;
+  var nodes=[
+    {label:'Conversa\nBruta',      sub:'dados ruidosos', clr:'#FF6464', angle:-90},
+    {label:'Metadata\nGen',        sub:'LLM extrai schema', clr:'#FF904D', angle:-18},
+    {label:'Quality\nEval',        sub:'L(M) ≥ threshold', clr:'#FFD54D', angle:54},
+    {label:'Table\nGeneration',    sub:'training-free / DPO', clr:'#4DFFB4', angle:126},
+    {label:'Retrieval\n& Gen',     sub:'resposta grounded', clr:'#4DB4FF', angle:198}
+  ];
+
+  var boxW=72, boxH=46;
+
+  // arrows between nodes
+  nodes.forEach(function(n,i){
+    var next=nodes[(i+1)%nodes.length];
+    var a1=n.angle*Math.PI/180, a2=next.angle*Math.PI/180;
+    var x1=cx+radius*Math.cos(a1), y1=cy+radius*Math.sin(a1);
+    var x2=cx+radius*Math.cos(a2), y2=cy+radius*Math.sin(a2);
+    var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+    var ux=dx/len, uy=dy/len;
+    // shorten by box half-size
+    var off=26;
+    svg.append('line')
+      .attr('x1',x1+ux*off).attr('y1',y1+uy*off)
+      .attr('x2',x2-ux*off).attr('y2',y2-uy*off)
+      .style('stroke','rgba(255,255,255,0.15)').style('stroke-width',1.5).style('stroke-dasharray','4,3');
+    // arrowhead
+    var ex=x2-ux*off, ey=y2-uy*off;
+    var nx=-uy, ny=ux;
+    svg.append('polygon')
+      .attr('points',(ex-ux*5+nx*3)+','+(ey-uy*5+ny*3)+' '+(ex)+','+(ey)+' '+(ex-ux*5-nx*3)+','+(ey-uy*5-ny*3))
+      .style('fill','rgba(255,255,255,0.2)');
+  });
+
+  var boxes=[];
+  nodes.forEach(function(n,i){
+    var a=n.angle*Math.PI/180;
+    var nx=cx+radius*Math.cos(a), ny=cy+radius*Math.sin(a);
+    var bg=svg.append('rect').attr('x',nx-boxW/2).attr('y',ny-boxH/2).attr('width',boxW).attr('height',boxH)
+      .attr('rx',7).style('fill','rgba(255,255,255,0.03)').style('stroke',n.clr).style('stroke-width',0.8).style('stroke-opacity',0.4);
+    var lines=n.label.split('\n');
+    lines.forEach(function(ln,li){
+      svg.append('text').attr('x',nx).attr('y',ny-8+li*13).attr('text-anchor','middle')
+        .style('fill','rgba(255,255,255,0.85)').style('font-size','9.5px').style('font-weight','700').text(ln);
+    });
+    svg.append('text').attr('x',nx).attr('y',ny+boxH/2-7).attr('text-anchor','middle')
+      .style('fill','rgba(255,255,255,0.3)').style('font-size','7.5px').text(n.sub);
+    boxes.push({bg:bg, clr:n.clr});
+  });
+
+  svg.append('text').attr('x',cx).attr('y',cy+5).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.2)').style('font-size','9px').text('SA-RAG');
+  svg.append('text').attr('x',cx).attr('y',cy+18).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.12)').style('font-size','7.5px').text('pipeline cíclico');
+
+  var cur=0;
+  function step(){
+    if(window.__saragGen!==myG) return;
+    boxes.forEach(function(b,i){
+      b.bg.transition().duration(250)
+        .style('fill', i===cur ? 'rgba(255,144,77,0.15)' : 'rgba(255,255,255,0.03)')
+        .style('stroke-opacity', i===cur ? 1 : 0.4)
+        .style('stroke-width', i===cur ? 1.8 : 0.8);
+    });
+    cur=(cur+1)%nodes.length;
+    setTimeout(step,700);
+  }
+  setTimeout(step,1200);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-compare16: scatter 5 abordagens
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__cmp16Gen=(window.__cmp16Gen||0)+1; var myG=window.__cmp16Gen;
+  var el=document.getElementById('anim-compare16'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=310;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var ml=52, mr=32, mt=28, mb=44;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  var xSc=d3.scaleLinear().domain([0,10]).range([0,pw]);
+  var ySc=d3.scaleLinear().domain([0,10]).range([ph,0]);
+
+  // axes
+  g.append('line').attr('x1',0).attr('y1',ph).attr('x2',pw).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
+  g.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
+
+  g.append('text').attr('x',pw/2).attr('y',ph+32).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Precisão Estrutural →');
+  g.append('text').attr('x',-36).attr('y',ph/2).attr('text-anchor','middle')
+    .attr('transform','translate(-28,'+ph/2+') rotate(-90)')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Robustez ao Ruído →');
+
+  // grid
+  [2,4,6,8].forEach(function(v){
+    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v))
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+  });
+
+  var papers=[
+    {label:'T-RAG',       x:8.5, y:5.8, clr:'#FF904D', r:16, sub:'Hipergrafo\nmulti-feature'},
+    {label:'FT-RAG',      x:9.0, y:5.2, clr:'#4DFFB4', r:16, sub:'SAT-Graph\ncelular'},
+    {label:'TableRAG',    x:8.0, y:5.5, clr:'#4DB4FF', r:16, sub:'SQL+Vector\nhíbrido'},
+    {label:'NeuSym-RAG',  x:8.2, y:7.0, clr:'#FFD54D', r:16, sub:'Neural+\nSimbólico'},
+    {label:'SA-RAG',      x:6.5, y:9.0, clr:'#B464FF', r:16, sub:'Tabela como\nfiltro de ruído'}
+  ];
+
+  var circleRefs=[];
+  papers.forEach(function(p,i){
+    var c=g.append('circle').attr('cx',xSc(p.x)).attr('cy',ySc(p.y)).attr('r',0)
+      .style('fill',p.clr).style('fill-opacity',0.18).style('stroke',p.clr).style('stroke-width',1.5);
+    c.transition().delay(400+i*200).duration(600).attr('r',p.r);
+
+    g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)+4).attr('text-anchor','middle')
+      .style('fill',p.clr).style('font-size','8px').style('font-weight','700')
+      .style('opacity',0).transition().delay(1000+i*200).duration(300).style('opacity',1)
+      .text(p.label);
+
+    var lines=p.sub.split('\n');
+    lines.forEach(function(ln,li){
+      g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)-p.r-6+li*11).attr('text-anchor','middle')
+        .style('fill','rgba(255,255,255,0.4)').style('font-size','7.5px')
+        .style('opacity',0).transition().delay(1200+i*200).duration(300).style('opacity',1)
+        .text(ln);
+    });
+    circleRefs.push({c:c, clr:p.clr});
+  });
+
+  function glow(){
+    if(window.__cmp16Gen!==myG) return;
+    var idx=Math.floor(Math.random()*circleRefs.length);
+    var ref=circleRefs[idx];
+    ref.c.transition().duration(500).attr('r',circleRefs[idx].r||16+6)
+      .style('fill-opacity',0.38).style('stroke-width',2.5)
+      .transition().duration(500).attr('r',circleRefs[idx].r||16)
+      .style('fill-opacity',0.18).style('stroke-width',1.5)
+      .on('end',function(){ setTimeout(glow,800); });
+  }
+  setTimeout(glow,2400);
+})();
+</script>
+</body>
+</html>
