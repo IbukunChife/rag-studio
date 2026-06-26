@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Multilíngue — Módulo 18 | RAG Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root {
+  --mira-bg: #000000;
+  --mira-primary: #FF904D;
+  --mira-success: #4DFFB4;
+  --mira-warning: #FFD54D;
+  --mira-error: #FF6464;
+  --mira-blue: #4DB4FF;
+  --mira-purple: #B464FF;
+  --mira-teal: #26C6DA;
+  --mira-text: #E8E8E8;
+  --mira-muted: #888888;
+  --mira-card: rgba(255,255,255,0.04);
+  --mira-border: rgba(255,255,255,0.08);
+  --accent: var(--mira-blue);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--mira-bg);color:var(--mira-text);font-family:'Inter',sans-serif;overflow-x:hidden}
+.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 24px;position:relative}
+.inner{width:100%;max-width:860px}
+.tag{display:inline-flex;align-items:center;gap:6px;background:rgba(77,180,255,0.12);border:1px solid rgba(77,180,255,0.3);color:var(--mira-blue);padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px}
+h1.hero{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;line-height:1.1;letter-spacing:-.02em;margin-bottom:20px}
+h2.title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;line-height:1.2;margin-bottom:16px}
+.accent{color:var(--mira-blue)}
+.lead{font-size:1.08rem;color:var(--mira-muted);line-height:1.7;margin-bottom:26px}
+.card{background:var(--mira-card);border:1px solid var(--mira-border);border-radius:16px;padding:24px 28px;margin-bottom:18px;backdrop-filter:blur(10px)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.g2,.g3{grid-template-columns:1fr}}
+.cell{background:rgba(255,255,255,0.03);border:1px solid var(--mira-border);border-radius:12px;padding:18px 20px}
+.num{font-size:1.9rem;font-weight:900;color:var(--accent);line-height:1;margin-bottom:6px}
+.cell h3{font-size:.92rem;font-weight:700;margin-bottom:6px}
+.cell p{font-size:.82rem;color:var(--mira-muted);line-height:1.5}
+.metaphor{background:rgba(77,180,255,0.07);border:1px solid rgba(77,180,255,0.2);border-left:4px solid var(--mira-blue);border-radius:12px;padding:22px 26px;margin-bottom:22px}
+.mlabel{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-blue);margin-bottom:10px}
+.metaphor p{font-size:.97rem;line-height:1.7;color:#b8d8f8}
+.anim-box{width:100%;border:1px solid var(--mira-border);border-radius:12px;overflow:hidden;background:rgba(0,0,0,0.4);margin-bottom:14px}
+ul.li{list-style:none;padding:0}
+ul.li li{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.92rem;line-height:1.5}
+ul.li li:last-child{border-bottom:none}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0}
+.pills{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.pill{background:rgba(77,180,255,0.1);border:1px solid rgba(77,180,255,0.25);border-radius:10px;padding:10px 18px;text-align:center}
+.pill .pv{font-size:1.5rem;font-weight:900;color:var(--accent)}
+.pill .pl{font-size:.68rem;color:var(--mira-muted);text-transform:uppercase;letter-spacing:.05em}
+.pbadge{display:inline-flex;align-items:center;background:rgba(77,180,255,0.08);border:1px solid rgba(77,180,255,0.2);border-radius:6px;padding:3px 10px;font-size:.7rem;color:var(--mira-blue);font-weight:600;margin-bottom:10px}
+.formula{background:rgba(0,0,0,0.6);border:1px solid rgba(77,180,255,0.2);border-radius:8px;padding:14px 20px;font-family:'Courier New',monospace;font-size:.9rem;color:var(--mira-blue);text-align:center;margin:14px 0}
+.capa-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 70% 60% at 50% 40%,rgba(77,180,255,0.14) 0%,transparent 70%);pointer-events:none}
+.capa-c{position:relative;z-index:1;text-align:center}
+.mbadge{display:inline-block;padding:5px 16px;background:rgba(77,180,255,0.15);border:1px solid rgba(77,180,255,0.4);border-radius:30px;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-blue);margin-bottom:26px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:26px}
+.chip{padding:4px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;font-size:.69rem;color:var(--mira-muted)}
+.progress-bar{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.06);z-index:1000}
+.progress-fill{height:100%;background:var(--mira-blue);width:0%;transition:width .2s}
+.nav-btn{position:fixed;bottom:30px;right:30px;z-index:1000;width:46px;height:46px;border-radius:50%;background:var(--mira-blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(77,180,255,0.4);transition:transform .2s,opacity .3s;opacity:0}
+.nav-btn.show{opacity:1}
+.nav-btn:hover{transform:scale(1.1)}
+.nav-btn svg{width:18px;height:18px;stroke:#000}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+<button class="nav-btn" id="nav-btn" onclick="goNext()">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+</button>
+
+<!-- ═══ SLIDE 01 — CAPA ═══ -->
+<section class="slide" id="s01">
+  <div class="capa-bg"></div>
+  <div class="inner capa-c">
+    <div class="mbadge">Módulo 18 · RAG Studio</div>
+    <h1 class="hero" data-aos="fade-up">RAG<br><span class="accent">Multilíngue</span></h1>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Deriva de linguagem, vieses de retrieval cross-lingual e<br>
+      consistência de contexto multilíngue em 48 idiomas.
+    </p>
+    <div class="pills" data-aos="fade-up" data-aos-delay="200" style="justify-content:center">
+      <div class="pill"><div class="pv">4</div><div class="pl">artigos</div></div>
+      <div class="pill"><div class="pv">48</div><div class="pl">idiomas</div></div>
+      <div class="pill"><div class="pv">2025</div><div class="pl">EMNLP · AAAI · arXiv</div></div>
+    </div>
+    <div class="chips" data-aos="fade-up" data-aos-delay="300">
+      <span class="chip">XRAG (Amazon/Heidelberg, EMNLP 2025)</span>
+      <span class="chip">Language Drift + SCD (Peking Univ 2025)</span>
+      <span class="chip">mRAG Consistency (Groningen/Amsterdam 2025)</span>
+      <span class="chip">Cross-Lingual Cost Arabic-English (TII 2025)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 02 — O PROBLEMA ═══ -->
+<section class="slide" id="s02">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">O Problema</div>
+    <h2 class="title" data-aos="fade-up">RAG foi Construído<br>para o <span class="accent">Inglês</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      A maioria dos benchmarks RAG assume query e corpus no mesmo idioma — inglês. No mundo real, 7,8 bilhões de pessoas falam mais de 7.000 idiomas, e a informação relevante raramente está disponível apenas em inglês.
+    </p>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">88%</div>
+        <h3>Idiomas com Pouco Dado</h3>
+        <p>Em MKQA, 88% das queries em Khmer têm ouro disponível apenas em outro idioma — RAG monolingue falha completamente.</p>
+      </div>
+      <div class="cell">
+        <div class="num">6,3%</div>
+        <h3>GPT-4o sem Retrieval</h3>
+        <p>No XRAG benchmark, GPT-4o acerta apenas 6,3% das perguntas sem retrieval — as questões genuinamente requerem contexto externo.</p>
+      </div>
+      <div class="cell">
+        <div class="num">−42%</div>
+        <h3>Queda Cross-Lingual</h3>
+        <p>Quando query e documento estão em idiomas diferentes, o retrieval cai até 42% em benchmarks corporativos árabe-inglês.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <p style="font-size:.92rem;line-height:1.7;color:var(--mira-muted)">
+        <strong style="color:var(--mira-text)">O ponto cego da área:</strong> a maioria dos estudos mede acurácia da tarefa sem separar entendimento do input da capacidade de geração no idioma correto. LLMs podem entender uma passagem em japonês e responder em inglês — isso é uma falha que muitos benchmarks não detectam.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 03 — METÁFORA XRAG ═══ -->
+<section class="slide" id="s03">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · XRAG (EMNLP 2025)</div>
+    <h2 class="title" data-aos="fade-up">A Biblioteca que<br><span class="accent">Só Tem Livros em Inglês</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Imagine um turista alemão que chega a uma biblioteca pública. Ele faz sua pergunta em alemão, mas todos os livros da biblioteca estão em inglês. O bibliotecário (LLM) tem duas opções: (a) <strong style="color:var(--mira-blue)">Retrieval monolingue</strong> — pegar apenas livros em inglês e responder em alemão (cruzar idiomas na geração); (b) <strong style="color:var(--mira-blue)">Retrieval multilíngue</strong> — pegar livros em inglês e em alemão, e tentar combinar as informações dos dois. O XRAG mede qual dos dois cenários é mais difícil para os modelos — e a resposta surpreende: no cenário (a), o problema não é a geração em alemão, mas sim o raciocínio cross-documental; no cenário (b), o desafio é raciocinar com fontes em dois idiomas diferentes simultaneamente.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Cenário A: Retrieval Monolingue</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Query em alemão → corpus só em inglês → LLM recebe documentos ingleses e deve responder em alemão. O problema principal: Response Language Correctness — modelos frequentemente respondem em inglês mesmo quando instruídos a responder em alemão.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Cenário B: Retrieval Multilíngue</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Query em alemão → corpus em inglês + alemão → LLM recebe documentos em ambos os idiomas. O problema principal: raciocinar sobre informações parciais em idiomas diferentes para construir uma resposta coerente.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 04 — XRAG + D3 ═══ -->
+<section class="slide" id="s04">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">XRAG · Benchmark Cross-Lingual</div>
+    <h2 class="title" data-aos="fade-up">Dois Cenários,<br><span class="accent">Dois Desafios Distintos</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:260px">
+      <div id="anim-xrag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">62,4%</div>
+        <h3>GPT-4o com Retrieval</h3>
+        <p>Vs. 6,3% sem contexto — o benchmark genuinamente requer conhecimento externo para ser resolvido.</p>
+      </div>
+      <div class="cell">
+        <div class="num">4</div>
+        <h3>Idiomas Alvo</h3>
+        <p>Alemão (de), Espanhol (es), Chinês (zh), Árabe (ar) — cobrindo famílias linguísticas diversas.</p>
+      </div>
+      <div class="cell">
+        <div class="num">&lt;8%</div>
+        <h3>Taxa de Ruído</h3>
+        <p>Questões ambíguas eliminadas via Quality Assurance humano. Benchmark limpo e confiável.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 05 — XRAG CONSTRUÇÃO ═══ -->
+<section class="slide" id="s05">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">XRAG · Construção do Dataset</div>
+    <h2 class="title" data-aos="fade-up">Questões que <span class="accent">Realmente</span><br>Requerem Retrieval</h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">O XRAG usa artigos do News Crawl de Jun–Nov 2024 — após o knowledge cutoff dos LLMs — garantindo que o modelo não pode responder a partir de memória parametrizada.</p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>Pipeline em 5 etapas:</strong> 1) Identificar pares de artigos relacionados via grafo bipartido de entidades; 2) Gerar Q&A em inglês via LLM; 3) Quality Control humano; 4) Tradução humana para DE/ES/ZH/AR; 5) Coletar artigos distraidores.</div></li>
+        <li><span class="dot"></span><div><strong>Cada instância (q, a, D+, D-):</strong> 1 pergunta, 1 resposta gold, 2 artigos de suporte que respondem parcialmente (cross-document reasoning obrigatório), 6 artigos distrativos topicamente relacionados mas sem a resposta.</div></li>
+        <li><span class="dot"></span><div><strong>Cross-document reasoning:</strong> nenhum dos dois artigos de suporte, sozinho, responde a pergunta completamente — só a combinação dos dois fornece a resposta. GPT-4o alcança apenas 62,4% mesmo com os documentos corretos.</div></li>
+        <li><span class="dot"></span><div><strong>Dois desafios revelados:</strong> (1) Monolingual: todos os LLMs falham em Response Language Correctness; (2) Multilingual: o desafio principal é raciocinar entre idiomas, não gerar texto não-inglês.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 06 — METÁFORA LANGUAGE DRIFT ═══ -->
+<section class="slide" id="s06">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · Language Drift</div>
+    <h2 class="title" data-aos="fade-up">A Bússola que<br><span class="accent">Aponta Sempre para Roma</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Imagine um viajante medieval que precisa chegar a Pequim partindo de Moscou. Ele usa uma bússola, mas essa bússola tem um defeito: independente da direção desejada, ela gradualmente <strong style="color:var(--mira-blue)">deriva para o sul-oeste</strong> — em direção a Roma, a capital mais proeminente do seu mapa mental. O language drift em RAG é análogo: o LLM começa respondendo em chinês (o destino correto), mas à medida que a geração avança — especialmente em raciocínio Chain-of-Thought — os tokens de inglês começam a dominar, "puxando" a resposta para a língua mais frequente no pré-treinamento. O inglês é o equivalente de Roma: o atrator semântico padrão. O SCD é uma bússola corrigida que gentilmente penaliza tokens fora do idioma alvo sem bloquear completamente o raciocínio.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Inglês como Atrator Semântico</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Quando há ambiguidade cross-lingual, LLMs defaultam para inglês — independente do idioma do contexto. Mesmo ZH-context + ZH-target: consistência cai de 92% para 68,4% quando o contexto recuperado vira inglês.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Falha de Decoding, Não de Compreensão</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Ao traduzir outputs drifted de volta ao idioma alvo, o ROUGE sobe de 0,182 para 0,263 (ZH). O modelo entendeu corretamente — a falha está no processo de decodificação, não no entendimento.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 07 — LANGUAGE DRIFT + D3 ═══ -->
+<section class="slide" id="s07">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Language Drift · Tipos e Impacto</div>
+    <h2 class="title" data-aos="fade-up">4 Tipos de Deriva<br><span class="accent">de Linguagem</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:270px">
+      <div id="anim-drift" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">ICL: Faca de Dois Gumes</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">In-Context Learning melhora consistentemente BLEU e ROUGE, mas aumenta o drift. Com RU como alvo: ROUGE sobe de 0,193 para 0,373 com ICL, enquanto Language Consistency cai de 0,895 para 0,895. Raciocínio melhor, idioma pior.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">CoT Amplifica o Drift</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Chain-of-Thought é o principal amplificador de drift: os passos intermediários de raciocínio "escapam" para inglês, e a resposta final herda esse desvio. O drift tipicamente emerge no meio da geração.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 08 — SCD ═══ -->
+<section class="slide" id="s08">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Language Drift · Soft Constrained Decoding</div>
+    <h2 class="title" data-aos="fade-up">SCD: Penalizar Soft,<br><span class="accent">Preservar o Raciocínio</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">O SCD particiona o vocabulário em três conjuntos e ajusta os logits no tempo de decodificação — sem treino, sem mudança de arquitetura, compatível com qualquer LLM.</p>
+    <div class="formula" data-aos="fade-up" data-aos-delay="150">
+      ẑᵢ(t) = α·z(t) se i∈𝒱target | z(t) se i∈𝒱neutral | β·z(t) se i∈𝒱distractor
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>𝒱target</strong> — tokens do idioma alvo: recebem boost (α &gt; 1.0). O modelo é encorajado a selecionar tokens nativos do idioma desejado.</div></li>
+        <li><span class="dot"></span><div><strong>𝒱neutral</strong> — tokens neutros (pontuação, dígitos, símbolos compartilhados): mantidos intactos (multiplicador = 1.0). Fluência preservada.</div></li>
+        <li><span class="dot"></span><div><strong>𝒱distractor</strong> — tokens de outros idiomas: recebem penalidade (β &lt; 1.0). Não são bloqueados — apenas desfavorecidos, o que mantém a capacidade de raciocínio aberto.</div></li>
+        <li><span class="dot"></span><div><strong>Cold Start Smoothing:</strong> ativação atrasada até passo T_start. Evita fragmentação nos primeiros tokens onde o modelo ainda está calibrando o contexto linguístico.</div></li>
+        <li><span class="dot" style="background:var(--mira-success)"></span><div><strong>Resultado:</strong> melhora simultânea de Language Consistency e acurácia da tarefa em HotpotQA, MuSiQue e DuReader — em EN, ZH, AR, RU — sem nenhum retreinamento.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 09 — METÁFORA mRAG CONSISTENCY ═══ -->
+<section class="slide" id="s09">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · mRAG Consistency (Groningen)</div>
+    <h2 class="title" data-aos="fade-up">O Médico que Lê<br><span class="accent">Exames em Outro Idioma</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Um médico brasileiro recebe laudos de exames escritos em japonês. Ele consegue, com esforço, extrair o diagnóstico correto do documento (entendimento do input — surpreendentemente robusto nos LLMs). Porém, ao redigir o laudo para o paciente, às vezes escorrega e escreve em japonês em vez de português (falha de geração no idioma correto). A pesquisa de Qi et al. faz exatamente essa separação: <strong style="color:var(--mira-blue)">mede input understanding e decoding capability independentemente</strong>. A conclusão é inequívoca: LLMs modernos são notavelmente bons em extrair informação de passagens em outros idiomas, mas muito mais frágeis em garantir que a resposta final saia no idioma da query. É um problema de output, não de input.</p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">3 Datasets, 48 Idiomas</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">XQUAD (12 langs, 1190 queries) · MKQA (24 langs, 6758 queries) · GMMLU (42 langs, 14042 queries). 4 LLMs: Aya-Expanse-8B, Llama-3.2-3B, Gemma-2-9B, Qwen2.5-7B.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">In-lang vs Out-lang</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Passagens in-language (mesmo idioma da query) consistentemente superam out-language, mesmo quando o conteúdo é idêntico. A diferença surge puramente da língua do documento, não do conteúdo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 10 — mRAG CONSISTENCY + D3 ═══ -->
+<section class="slide" id="s10">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">mRAG Consistency · 4 LLMs</div>
+    <h2 class="title" data-aos="fade-up">Entender vs. <span class="accent">Gerar:</span><br>Uma Assimetria Profunda</h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:280px">
+      <div id="anim-consistency" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Distraidores: Idioma Importa</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Distraidores no idioma da query prejudicam ligeiramente mais que distraidores em outros idiomas — sugerindo que relevância lexical superficial confunde mais que relevância semântica cross-lingual.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Interpretabilidade via MIRAGE</h3>
+        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Usando RAG answer attribution baseada em internals do modelo, os pesquisadores confirmam que LLMs incorporam consistentemente o conteúdo de passagens out-language — a falha é na decodificação, não na incorporação do conhecimento.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 11 — DETALHES mRAG ═══ -->
+<section class="slide" id="s11">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">mRAG Consistency · Achados</div>
+    <h2 class="title" data-aos="fade-up">O Gap entre<br><span class="accent">Entender e Responder</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">Os experimentos em XQUAD revelam a assimetria mais claramente: a mesma informação em idiomas diferentes produz acurácias radicalmente diferentes — não pelo conteúdo, mas pela língua.</p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>In-language &gt;&gt; out-language:</strong> passagens com o mesmo conteúdo em idiomas diferentes produzem gap significativo. A língua da passagem impacta mais que a qualidade da passagem.</div></li>
+        <li><span class="dot"></span><div><strong>Erros comuns em out-language:</strong> uso de sinônimos, pequenas paráfrases e variações de transliteração — o modelo entende, mas exprime de forma ligeiramente diferente. Em strict matching, isso é contado como erro.</div></li>
+        <li><span class="dot"></span><div><strong>GMMLU-Choice vs. GMMLU-Open:</strong> em formato múltipla escolha (GMMLU-Choice), o idioma da passagem importa menos — a geração é trivial (A/B/C/D). Em QA aberto, o gap reaparece com força total.</div></li>
+        <li><span class="dot"></span><div><strong>Idiomas de baixo recurso:</strong> em Khmer (MKQA), 88% das queries só têm ouro disponível em out-language. Sem capacidade robusta de geração cross-lingual, RAG falha quase completamente para esses idiomas.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 12 — METÁFORA CROSS-LINGUAL COST ═══ -->
+<section class="slide" id="s12">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · Cross-Lingual Cost (TII UAE)</div>
+    <h2 class="title" data-aos="fade-up">A Alfândega que<br><span class="accent">Inspeciona Só Uma Fila</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>Imagine um aeroporto bilíngue com duas filas de imigração — inglesa e árabe. Um inspetor treinado principalmente com passaportes ingleses vai ser muito mais rápido em identificar documentos válidos dessa fila. Quando aparece alguém com passaporte árabe, ele demora mais, comete mais erros e às vezes simplesmente dá preferência ao próximo da fila inglesa mesmo que o árabe tenha chegado antes. <strong style="color:var(--mira-blue)">O retriever bilíngue sofre do mesmo viés:</strong> treinado majoritariamente em dados em inglês, tende a ranquear documentos ingleses acima dos árabes mesmo quando o documento árabe tem a resposta correta. Em benchmarks corporativos reais (leis dos EAU, informações de viagem), esse viés causa quedas de 33–42% na recuperação quando a linguagem da query e do documento diferem.</p>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">27%</div>
+        <h3>No-RAG (Legal)</h3>
+        <p>Acurácia sem retrieval no benchmark jurídico UAE — altamente especializado, LLM não tem esse conhecimento parametrizado.</p>
+      </div>
+      <div class="cell">
+        <div class="num">58%</div>
+        <h3>BGE-M3 E2E (Legal)</h3>
+        <p>Com RAG usando BGE-M3: 58% final. Retrieval é o principal bottleneck — reranking e geração mantêm qualidade estável.</p>
+      </div>
+      <div class="cell">
+        <div class="num">−37%</div>
+        <h3>Queda Cross-Lingual</h3>
+        <p>Quando query é inglesa e doc é árabe no benchmark Legal: queda de 37% no end-to-end comparado ao setup same-language.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 13 — CROSS-LINGUAL COST + D3 ═══ -->
+<section class="slide" id="s13">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Cross-Lingual Cost · Legal &amp; Travel UAE</div>
+    <h2 class="title" data-aos="fade-up">Retrieval: o Gargalo<br><span class="accent">Crítico do RAG Bilíngue</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:270px">
+      <div id="anim-bilingual" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="pbadge">BGE-M3 vs M-E5</div>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">BGE-M3 supera M-E5 consistentemente no setting bilíngue. No Travel benchmark, BGE-M3 atinge 79% end-to-end vs 67% do M-E5. Mas em cross-lingual, M-E5 cai 42% de retrieval vs 33% do BGE-M3.</p>
+      </div>
+      <div class="cell">
+        <div class="pbadge">Reranking salva a geração</div>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Condicionado em retrieval bem-sucedido, o reranker (BGE-v2-M3) e a geração (Qwen-2.5-14B) mantêm qualidade estável. O gargalo não é a geração multilíngue — é a recuperação cross-lingual dos documentos corretos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 14 — SCD D3 ═══ -->
+<section class="slide" id="s14">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Cross-Lingual Cost · Estratégias de Mitigação</div>
+    <h2 class="title" data-aos="fade-up">Duas Correções Simples,<br><span class="accent">Grandes Ganhos</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">A pesquisa do TII propõe duas estratégias de mitigação diretas que melhoram substancialmente o retrieval cross-lingual em corpora bilíngues reais.</p>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:220px">
+      <div id="anim-scd" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Estratégia 1: Amostragem Igualitária</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Selecionar um número igual de passagens de cada subconjunto linguístico (inglês e árabe). Simples, sem overhead computacional. Corrige o viés de distribuição do retriever sem retreinamento.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Estratégia 2: Busca com Tradução</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Pesquisar o corpus duas vezes: com a query original e com a query traduzida. O union dos resultados recupera documentos relevantes em ambos os idiomas. Melhora substancial especialmente em inglês→árabe.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 15 — PANORAMA DE IDIOMAS ═══ -->
+<section class="slide" id="s15">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Panorama</div>
+    <h2 class="title" data-aos="fade-up">48 Idiomas,<br><span class="accent">3 Desafios Centrais</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">Os 4 papers convergem em torno de três desafios fundamentais que afetam o RAG em qualquer contexto multilíngue, independente do idioma específico.</p>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num" style="color:#4DB4FF">C1</div>
+        <h3>Viés de Retrieval</h3>
+        <p>Retrievers favorecem o idioma majoritário do corpus de treinamento (inglês). Em settings cross-lingual, isso cria um bottleneck estrutural antes da geração.</p>
+      </div>
+      <div class="cell">
+        <div class="num" style="color:#FFD54D">C2</div>
+        <h3>Deriva de Linguagem</h3>
+        <p>Mesmo com retrieval perfeito, LLMs tendem a migrar para inglês durante geração complexa. ICL e CoT amplificam o problema.</p>
+      </div>
+      <div class="cell">
+        <div class="num" style="color:#4DFFB4">C3</div>
+        <h3>Gap Input vs. Geração</h3>
+        <p>LLMs entendem passagens cross-lingual surpreendentemente bem, mas falham em garantir que a resposta saia no idioma correto da query.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <p style="font-size:.92rem;line-height:1.7;color:var(--mira-muted)">
+        <strong style="color:var(--mira-text)">Insight transversal:</strong> nenhum dos três desafios é resolvido apenas com modelos maiores. O viés de retrieval requer correção da distribuição. A deriva de linguagem requer controle no tempo de decodificação (SCD). O gap input/geração requer benchmarks que separem os dois — e os pesquisadores só começaram a fazer isso em 2025.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 16 — COMPARATIVO ═══ -->
+<section class="slide" id="s16">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Comparativo</div>
+    <h2 class="title" data-aos="fade-up">Quatro Perspectivas sobre<br><span class="accent">RAG Multilíngue</span></h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="100">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(77,180,255,0.3)">
+              <th style="text-align:left;padding:9px 12px;color:var(--mira-blue);font-weight:700">Paper</th>
+              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Foco</th>
+              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Contribuição Central</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">XRAG (EMNLP 2025)</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Benchmark</td>
+              <td style="padding:9px 8px;text-align:center;color:#4DFFB4">5 idiomas, news pós-cutoff, mono+multilingual retrieval</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">Language Drift + SCD</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Análise + Mitigação</td>
+              <td style="padding:9px 8px;text-align:center;color:#4DB4FF">Drift=decoder bias; SCD corrige sem retreino</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:9px 12px;font-weight:600">mRAG Consistency</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Avaliação</td>
+              <td style="padding:9px 8px;text-align:center;color:#FFD54D">48 idiomas: input OK, decoding gap; MIRAGE attribution</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 12px;font-weight:600">Cross-Lingual Cost</td>
+              <td style="padding:9px 8px;text-align:center;color:var(--mira-muted)">Retrieval</td>
+              <td style="padding:9px 8px;text-align:center;color:#B464FF">Retrieval = bottleneck; 2 fixes simples funcionam</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 17 — PRINCÍPIOS ═══ -->
+<section class="slide" id="s17">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Princípios</div>
+    <h2 class="title" data-aos="fade-up">Construindo RAG<br><span class="accent">Verdadeiramente Multilíngue</span></h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="100">
+      <ul class="li">
+        <li><span class="dot"></span><div><strong>Princípio 1 — Separe Retrieval de Geração:</strong> avaliar end-to-end esconde onde o sistema falha. Meça Hits@20 (retrieval), Hits@5 (reranking) e acurácia condicional (geração) separadamente para diagnóstico correto.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 2 — Retriever é o Gargalo:</strong> em settings cross-lingual, o retriever varia mais que gerador ou reranker. Investir em embeddings multilíngues (BGE-M3, M-E5) e estratégias de amostragem igualitária tem mais ROI que melhorar o LLM gerador.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 3 — Inglês como Atrator é Inevitável Agora:</strong> todos os LLMs atuais defaultam para inglês sob ambiguidade. Use SCD (sem custo de treino) ou instrução explícita de idioma em prompts para mitigar — mas monitore o trade-off com qualidade de raciocínio.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 4 — Benchmark com Pós-Cutoff:</strong> questões respondíveis por memória parametrizada medem o LLM, não o RAG. Use dados pós-cutoff (XRAG usa News Crawl pós-2024) para medir genuinamente a contribuição do retrieval.</div></li>
+        <li><span class="dot"></span><div><strong>Princípio 5 — Diversidade Linguística Exige Diversidade no Benchmark:</strong> 48 idiomas (GMMLU) revelam padrões invisíveis em 5 idiomas. Idiomas de baixo recurso são mais afetados pelo gap decoding e pelo viés de retrieval — e são onde os usuários mais precisam de RAG.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 18 — PANORAMA + D3 ═══ -->
+<section class="slide" id="s18">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Panorama</div>
+    <h2 class="title" data-aos="fade-up">Mapa da Pesquisa<br><span class="accent">RAG Multilíngue 2025</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:320px">
+      <div id="anim-compare18" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Convergência dos Papers</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Todos os 4 estudos chegam à mesma conclusão por rotas diferentes: o problema não é a capacidade de entendimento multilíngue dos LLMs — é o viés sistemático no retrieval e na decodificação que favorece inglês.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-blue);margin-bottom:8px">Direções em Aberto</h3>
+        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Retrieval cross-lingual para idiomas de baixo recurso, SCD adaptativo por idioma, benchmarks corporativos multilíngues além de árabe-inglês, e avaliação de RAG para idiomas sem representação no Wikipedia.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+AOS.init({duration:700, once:true, offset:55});
+
+var slides = document.querySelectorAll('.slide');
+var total  = slides.length;
+function getActive(){
+  var cy = window.scrollY + window.innerHeight/2;
+  var best=0, bd=Infinity;
+  slides.forEach(function(s,i){
+    var d=Math.abs(s.getBoundingClientRect().top+window.scrollY+s.offsetHeight/2 - cy);
+    if(d<bd){bd=d;best=i;}
+  });
+  return best;
+}
+function goNext(){
+  var i=getActive();
+  if(i<total-1) slides[i+1].scrollIntoView({behavior:'smooth'});
+}
+document.addEventListener('keydown',function(e){
+  var i=getActive();
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key==='PageDown'){if(i<total-1)slides[i+1].scrollIntoView({behavior:'smooth'});}
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){if(i>0)slides[i-1].scrollIntoView({behavior:'smooth'});}
+});
+window.addEventListener('scroll',function(){
+  var p=window.scrollY/(document.body.scrollHeight-window.innerHeight);
+  document.getElementById('prog').style.width=(p*100)+'%';
+  document.getElementById('nav-btn').classList.toggle('show',window.scrollY>300);
+});
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-xrag: Two cross-lingual RAG scenarios
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__xragGen=(window.__xragGen||0)+1; var myG=window.__xragGen;
+  var el=document.getElementById('anim-xrag'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=260;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var topY=40, botY=150, bw=68, bh=40;
+  var colors={q:'#4DB4FF', en:'#4DFFB4', de:'#FFD54D', llm:'#B464FF', ans:'#FF904D'};
+
+  // Title labels
+  svg.append('text').attr('x',W/4).attr('y',18).attr('text-anchor','middle')
+    .style('fill','rgba(77,180,255,0.6)').style('font-size','9.5px').style('font-weight','700').text('(A) Retrieval Monolingue');
+  svg.append('text').attr('x',3*W/4).attr('y',18).attr('text-anchor','middle')
+    .style('fill','rgba(77,180,255,0.6)').style('font-size','9.5px').style('font-weight','700').text('(B) Retrieval Multilíngue');
+  svg.append('line').attr('x1',W/2).attr('x2',W/2).attr('y1',24).attr('y2',H-20)
+    .style('stroke','rgba(255,255,255,0.08)').style('stroke-width',1).style('stroke-dasharray','4,4');
+
+  // Scenario A nodes
+  var nodesA=[
+    {label:'Query\nDE',x:W/4-130,y:topY,clr:colors.q},
+    {label:'Docs\nEN',x:W/4-20,y:topY,clr:colors.en},
+    {label:'LLM',x:W/4+80,y:topY,clr:colors.llm},
+    {label:'Resposta\nDE',x:W/4+170,y:topY,clr:colors.ans}
+  ];
+  var nodesB=[
+    {label:'Query\nDE',x:3*W/4-140,y:botY,clr:colors.q},
+    {label:'Docs EN\n+DE',x:3*W/4-30,y:botY,clr:colors.en},
+    {label:'LLM',x:3*W/4+70,y:botY,clr:colors.llm},
+    {label:'Resposta\nDE',x:3*W/4+160,y:botY,clr:colors.ans}
+  ];
+
+  var boxesA=[], boxesB=[];
+  [nodesA, nodesB].forEach(function(nodes, gi){
+    var boxes = gi===0 ? boxesA : boxesB;
+    nodes.forEach(function(n,i){
+      var bg=svg.append('rect').attr('x',n.x-bw/2).attr('y',n.y-bh/2).attr('width',bw).attr('height',bh)
+        .attr('rx',6).style('fill','rgba(255,255,255,0.03)').style('stroke',n.clr).style('stroke-width',1).style('stroke-opacity',0.4);
+      n.label.split('\n').forEach(function(ln,li){
+        svg.append('text').attr('x',n.x).attr('y',n.y-3+li*13).attr('text-anchor','middle')
+          .style('fill','rgba(255,255,255,0.8)').style('font-size','9px').style('font-weight','700').text(ln);
+      });
+      if(i<nodes.length-1){
+        var nx=nodes[i+1];
+        svg.append('line').attr('x1',n.x+bw/2).attr('y1',n.y).attr('x2',nx.x-bw/2-6).attr('y2',nx.y)
+          .style('stroke','rgba(255,255,255,0.15)').style('stroke-width',1.5);
+        svg.append('polygon')
+          .attr('points',(nx.x-bw/2-2)+','+(nx.y)+' '+(nx.x-bw/2-8)+','+(nx.y-4)+' '+(nx.x-bw/2-8)+','+(nx.y+4))
+          .style('fill','rgba(255,255,255,0.25)');
+      }
+      boxes.push({bg:bg, clr:n.clr});
+    });
+  });
+
+  // Issue labels
+  svg.append('text').attr('x',W/4).attr('y',topY+bh/2+20).attr('text-anchor','middle')
+    .style('fill','rgba(255,100,100,0.6)').style('font-size','8.5px').text('Problema: Language Correctness');
+  svg.append('text').attr('x',3*W/4).attr('y',botY+bh/2+20).attr('text-anchor','middle')
+    .style('fill','rgba(255,100,100,0.6)').style('font-size','8.5px').text('Problema: Reasoning Cross-Lingual');
+
+  var cur=0, flip=0;
+  function animate(){
+    if(window.__xragGen!==myG) return;
+    var boxes = flip===0 ? boxesA : boxesB;
+    boxes.forEach(function(b,i){
+      b.bg.transition().duration(280)
+        .style('fill', i===cur ? 'rgba(77,180,255,0.18)' : 'rgba(255,255,255,0.03)')
+        .style('stroke-opacity', i===cur ? 1 : 0.4)
+        .style('stroke-width', i===cur ? 2 : 1);
+    });
+    cur++;
+    if(cur>=boxes.length){ cur=0; flip=(flip+1)%2; }
+    setTimeout(animate, 700);
+  }
+  setTimeout(animate, 1200);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-drift: 4 drift types percentage bars
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__driftGen=(window.__driftGen||0)+1; var myG=window.__driftGen;
+  var el=document.getElementById('anim-drift'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=270;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var types=[
+    {label:'Tipo A: Named Entity\nDivergência de Representação', val:65, clr:'#FF6464', note:'55–74% dos casos de drift'},
+    {label:'Tipo B: Answer Target\nShift de Granularidade',      val:24, clr:'#FFD54D', note:'17–31% dos casos de drift'},
+    {label:'Tipo C: Reasoning Chain\nMisalinhamento CoT',        val:14, clr:'#4DB4FF', note:'9–18% dos casos de drift'},
+    {label:'Tipo D: Conceptual\nReference Shift',                val:4,  clr:'#B464FF', note:'<5% dos casos de drift'}
+  ];
+
+  var ml=220, mr=70, mt=24, mb=22;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var yBand=d3.scaleBand().domain(types.map(function(d){return d.label;})).range([0,ph]).padding(0.28);
+  var xSc=d3.scaleLinear().domain([0,80]).range([0,pw]);
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',14).attr('text-anchor','middle')
+    .style('fill','#555').style('font-size','9.5px').text('Distribuição de Tipos de Language Drift — HotpotQA (LLaMA3-8B + Qwen2.5-7B)');
+
+  [20,40,60,80].forEach(function(v){
+    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('text').attr('x',xSc(v)).attr('y',ph+16).attr('text-anchor','middle')
+      .style('fill','#444').style('font-size','9px').text(v+'%');
+  });
+
+  var bars=[];
+  types.forEach(function(d,i){
+    var y=yBand(d.label);
+    var bw=yBand.bandwidth();
+    d.label.split('\n').forEach(function(ln,li){
+      g.append('text').attr('x',-8).attr('y',y+bw/2-5+li*13).attr('text-anchor','end')
+        .style('fill',d.clr).style('font-size','9px').style('font-weight','700').text(ln);
+    });
+    g.append('text').attr('x',-8).attr('y',y+bw-4).attr('text-anchor','end')
+      .style('fill','rgba(255,255,255,0.25)').style('font-size','7.5px').text(d.note);
+    g.append('rect').attr('x',0).attr('y',y).attr('width',pw).attr('height',bw)
+      .attr('rx',4).style('fill','rgba(255,255,255,0.02)');
+    var bar=g.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',bw)
+      .attr('rx',4).style('fill',d.clr).style('opacity',0.82);
+    bar.transition().delay(300+i*220).duration(900).attr('width',xSc(d.val));
+    var vt=g.append('text').attr('x',xSc(d.val)+6).attr('y',y+bw/2+4)
+      .style('fill',d.clr).style('font-size','12px').style('font-weight','800').style('opacity',0).text(d.val+'%');
+    vt.transition().delay(1200+i*220).duration(300).style('opacity',1);
+    bars.push({bar:bar,vt:vt,val:d.val});
+  });
+
+  function refill(){
+    if(window.__driftGen!==myG) return;
+    bars.forEach(function(b,i){
+      b.bar.transition().delay(i*140).duration(500).attr('width',0)
+        .transition().duration(850).attr('width',xSc(b.val))
+        .on('end',function(){ if(i===bars.length-1) setTimeout(refill,2400); });
+    });
+  }
+  setTimeout(refill,3500);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-scd: Token vocabulary partition + logit animation
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__scdGen=(window.__scdGen||0)+1; var myG=window.__scdGen;
+  var el=document.getElementById('anim-scd'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=220;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var groups=[
+    {label:'𝒱 target',sub:'Tokens do idioma alvo',mult:'α > 1.0',clr:'#4DFFB4',x:W*0.18,effect:'BOOST'},
+    {label:'𝒱 neutral',sub:'Pontuação, dígitos, símbolos',mult:'× 1.0',clr:'#888888',x:W*0.5,effect:'NEUTRO'},
+    {label:'𝒱 distractor',sub:'Tokens de outros idiomas',mult:'β < 1.0',clr:'#FF6464',x:W*0.82,effect:'PENALIZAR'}
+  ];
+
+  var bw=110, bh=100;
+  var gboxes=[];
+  groups.forEach(function(gp){
+    var bg=svg.append('rect').attr('x',gp.x-bw/2).attr('y',30).attr('width',bw).attr('height',bh)
+      .attr('rx',8).style('fill','rgba(255,255,255,0.03)').style('stroke',gp.clr).style('stroke-width',1).style('stroke-opacity',0.4);
+    svg.append('text').attr('x',gp.x).attr('y',54).attr('text-anchor','middle')
+      .style('fill',gp.clr).style('font-size','11px').style('font-weight','800').text(gp.label);
+    svg.append('text').attr('x',gp.x).attr('y',70).attr('text-anchor','middle')
+      .style('fill','rgba(255,255,255,0.4)').style('font-size','8px').text(gp.sub);
+    svg.append('text').attr('x',gp.x).attr('y',98).attr('text-anchor','middle')
+      .style('fill',gp.clr).style('font-size','13px').style('font-weight','900').text(gp.mult);
+    svg.append('text').attr('x',gp.x).attr('y',116).attr('text-anchor','middle')
+      .style('fill','rgba(255,255,255,0.35)').style('font-size','8.5px').text(gp.effect);
+    gboxes.push({bg:bg,clr:gp.clr});
+  });
+
+  svg.append('text').attr('x',W/2).attr('y',18).attr('text-anchor','middle')
+    .style('fill','rgba(77,180,255,0.5)').style('font-size','9px').text('SCD — Partição do Vocabulário em Tempo de Decodificação');
+
+  // Floating tokens
+  var tokenData=[
+    {lang:'ZH',y:165,idx:0,clr:'#4DFFB4',tx:W*0.18},
+    {lang:'EN',y:175,idx:1,clr:'#FF6464',tx:W*0.82},
+    {lang:'AR',y:155,idx:2,clr:'#4DFFB4',tx:W*0.18},
+    {lang:'.',y:165,idx:3,clr:'#888888',tx:W*0.5}
+  ];
+  var tokEls=[];
+  tokenData.forEach(function(t){
+    var startX=W/2;
+    var tok=svg.append('text').attr('x',startX).attr('y',t.y).attr('text-anchor','middle')
+      .style('fill',t.clr).style('font-size','11px').style('font-weight','700')
+      .style('opacity',0).text('"'+t.lang+'"');
+    tokEls.push({el:tok,tx:t.tx,t:t});
+  });
+
+  function animateTokens(){
+    if(window.__scdGen!==myG) return;
+    tokEls.forEach(function(obj,i){
+      obj.el.style('opacity',0).attr('x',W/2);
+      obj.el.transition().delay(i*300).duration(300).style('opacity',1)
+        .transition().duration(600).attr('x',obj.tx)
+        .transition().duration(300).style('opacity',0)
+        .on('end',function(){ if(i===tokEls.length-1) setTimeout(animateTokens,800); });
+    });
+    // Pulse the active boxes
+    gboxes.forEach(function(b,gi){
+      b.bg.transition().delay(gi*400+200).duration(250).style('stroke-opacity',1).style('stroke-width',2)
+        .transition().duration(400).style('stroke-opacity',0.4).style('stroke-width',1);
+    });
+  }
+  setTimeout(animateTokens,1400);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-consistency: 4 LLMs, in-lang vs out-lang
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__consGen=(window.__consGen||0)+1; var myG=window.__consGen;
+  var el=document.getElementById('anim-consistency'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=280;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var models=[
+    {name:'Aya-8B',   no:35, inl:62, out:48},
+    {name:'Llama-3B', no:28, inl:55, out:40},
+    {name:'Gemma-9B', no:42, inl:70, out:54},
+    {name:'Qwen-7B',  no:45, inl:72, out:57}
+  ];
+  var conditions=['Sem contexto','In-language','Out-language'];
+  var condClrs=['#888888','#4DB4FF','#4DFFB4'];
+
+  var ml=60, mr=20, mt=32, mb=42;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var xBand=d3.scaleBand().domain(models.map(function(d){return d.name;})).range([0,pw]).padding(0.3);
+  var xSub=d3.scaleBand().domain(conditions).range([0,xBand.bandwidth()]).padding(0.05);
+  var ySc=d3.scaleLinear().domain([0,85]).range([ph,0]);
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',18).attr('text-anchor','middle')
+    .style('fill','#555').style('font-size','9.5px').text('Acurácia em XQUAD: Sem contexto vs. In-language vs. Out-language (representativo)');
+
+  [20,40,60,80].forEach(function(v){
+    g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v))
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('text').attr('x',-8).attr('y',ySc(v)+4).attr('text-anchor','end')
+      .style('fill','#444').style('font-size','9px').text(v+'%');
+  });
+
+  var allBars=[];
+  models.forEach(function(m){
+    var gx=xBand(m.name);
+    g.append('text').attr('x',gx+xBand.bandwidth()/2).attr('y',ph+20).attr('text-anchor','middle')
+      .style('fill','rgba(255,255,255,0.5)').style('font-size','10px').style('font-weight','600').text(m.name);
+    var vals=[m.no, m.inl, m.out];
+    conditions.forEach(function(c,ci){
+      var bx=gx+xSub(c);
+      var bh=ph-ySc(vals[ci]);
+      var bar=g.append('rect').attr('x',bx).attr('y',ph).attr('width',xSub.bandwidth()).attr('height',0)
+        .attr('rx',2).style('fill',condClrs[ci]).style('opacity',0.82);
+      bar.transition().delay(300+ci*200).duration(800).attr('y',ySc(vals[ci])).attr('height',bh);
+      allBars.push({bar:bar,y:ySc(vals[ci]),h:bh});
+    });
+  });
+
+  // Legend
+  conditions.forEach(function(c,ci){
+    svg.append('rect').attr('x',ml+ci*120).attr('y',H-20).attr('width',10).attr('height',8)
+      .attr('rx',2).style('fill',condClrs[ci]).style('opacity',0.82);
+    svg.append('text').attr('x',ml+ci*120+14).attr('y',H-12).style('fill','rgba(255,255,255,0.35)').style('font-size','8.5px').text(c);
+  });
+
+  function refill(){
+    if(window.__consGen!==myG) return;
+    allBars.forEach(function(b,i){
+      b.bar.transition().delay(i*60).duration(400).attr('y',ph).attr('height',0)
+        .transition().duration(700).attr('y',b.y).attr('height',b.h)
+        .on('end',function(){ if(i===allBars.length-1) setTimeout(refill,2400); });
+    });
+  }
+  setTimeout(refill,3600);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-bilingual: Legal/Travel benchmark bars
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__biGen=(window.__biGen||0)+1; var myG=window.__biGen;
+  var el=document.getElementById('anim-bilingual'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=270;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var groups=[
+    {name:'Legal\nBenchmark',  noRag:27, bgem3:58, me5:48},
+    {name:'Travel\nBenchmark', noRag:37, bgem3:79, me5:67}
+  ];
+  var metrics=['No-RAG','BGE-M3','M-E5'];
+  var mClrs=['#888888','#4DB4FF','#4DFFB4'];
+
+  var ml=65, mr=20, mt=32, mb=46;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var xBand=d3.scaleBand().domain(groups.map(function(d){return d.name;})).range([0,pw]).padding(0.35);
+  var xSub=d3.scaleBand().domain(metrics).range([0,xBand.bandwidth()]).padding(0.07);
+  var ySc=d3.scaleLinear().domain([0,95]).range([ph,0]);
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',18).attr('text-anchor','middle')
+    .style('fill','#555').style('font-size','9.5px').text('Acurácia End-to-End — Benchmarks Corporativos UAE Árabe-Inglês');
+
+  [20,40,60,80].forEach(function(v){
+    g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v))
+      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('text').attr('x',-6).attr('y',ySc(v)+4).attr('text-anchor','end')
+      .style('fill','#444').style('font-size','9px').text(v+'%');
+  });
+
+  var allBars=[];
+  groups.forEach(function(gp){
+    var gx=xBand(gp.name);
+    gp.name.split('\n').forEach(function(ln,li){
+      g.append('text').attr('x',gx+xBand.bandwidth()/2).attr('y',ph+22+li*13).attr('text-anchor','middle')
+        .style('fill','rgba(255,255,255,0.5)').style('font-size','10px').style('font-weight','600').text(ln);
+    });
+    var vals=[gp.noRag, gp.bgem3, gp.me5];
+    metrics.forEach(function(m,mi){
+      var bx=gx+xSub(m);
+      var bval=vals[mi];
+      var bh=ph-ySc(bval);
+      var bar=g.append('rect').attr('x',bx).attr('y',ph).attr('width',xSub.bandwidth()).attr('height',0)
+        .attr('rx',2).style('fill',mClrs[mi]).style('opacity',0.85);
+      bar.transition().delay(300+mi*220).duration(800).attr('y',ySc(bval)).attr('height',bh);
+      var lbl=g.append('text').attr('x',bx+xSub.bandwidth()/2).attr('y',ySc(bval)-4).attr('text-anchor','middle')
+        .style('fill',mClrs[mi]).style('font-size','10px').style('font-weight','700').style('opacity',0).text(bval+'%');
+      lbl.transition().delay(1200+mi*220).duration(300).style('opacity',1);
+      allBars.push({bar:bar,lbl:lbl,y:ySc(bval),h:bh,val:bval});
+    });
+  });
+
+  metrics.forEach(function(m,mi){
+    svg.append('rect').attr('x',ml+mi*100).attr('y',H-22).attr('width',10).attr('height',8)
+      .attr('rx',2).style('fill',mClrs[mi]).style('opacity',0.85);
+    svg.append('text').attr('x',ml+mi*100+14).attr('y',H-14).style('fill','rgba(255,255,255,0.35)').style('font-size','8.5px').text(m);
+  });
+
+  function refill(){
+    if(window.__biGen!==myG) return;
+    allBars.forEach(function(b,i){
+      b.bar.transition().delay(i*80).duration(400).attr('y',ph).attr('height',0)
+        .transition().duration(750).attr('y',b.y).attr('height',b.h)
+        .on('end',function(){ if(i===allBars.length-1) setTimeout(refill,2400); });
+    });
+  }
+  setTimeout(refill,3600);
+})();
+
+// ═══════════════════════════════════════════════════════
+// D3 — anim-compare18: scatter 4 papers
+// ═══════════════════════════════════════════════════════
+(function(){
+  window.__cmp18Gen=(window.__cmp18Gen||0)+1; var myG=window.__cmp18Gen;
+  var el=document.getElementById('anim-compare18'); if(!el) return;
+  el.innerHTML='';
+  var W=el.offsetWidth||600, H=320;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var ml=52, mr=30, mt=28, mb=48;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+  var xSc=d3.scaleLinear().domain([0,10]).range([0,pw]);
+  var ySc=d3.scaleLinear().domain([0,10]).range([ph,0]);
+
+  g.append('line').attr('x1',0).attr('y1',ph).attr('x2',pw).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
+  g.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
+  g.append('text').attr('x',pw/2).attr('y',ph+34).attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Cobertura Linguística (# idiomas) →');
+  g.append('text').attr('transform','translate(-34,'+ph/2+') rotate(-90)').attr('text-anchor','middle')
+    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Profundidade de Análise →');
+
+  [2,4,6,8].forEach(function(v){
+    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph).style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v)).style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+  });
+
+  var papers=[
+    {label:'XRAG',         x:6.5, y:7.5, clr:'#4DFFB4', r:16, sub:'EMNLP 2025\n5 idiomas, 2 cenários'},
+    {label:'Lang. Drift',  x:5.0, y:8.5, clr:'#4DB4FF', r:16, sub:'AAAI 2026\nSCD training-free'},
+    {label:'mRAG Consist.',x:9.5, y:7.0, clr:'#FFD54D', r:16, sub:'48 idiomas\nInput vs. Decoding'},
+    {label:'XL Cost',      x:3.5, y:6.5, clr:'#B464FF', r:16, sub:'Árabe-Inglês\nRetrieval bottleneck'}
+  ];
+
+  var crefs=[];
+  papers.forEach(function(p,i){
+    var c=g.append('circle').attr('cx',xSc(p.x)).attr('cy',ySc(p.y)).attr('r',0)
+      .style('fill',p.clr).style('fill-opacity',0.18).style('stroke',p.clr).style('stroke-width',1.5);
+    c.transition().delay(300+i*220).duration(600).attr('r',p.r);
+    g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)+4).attr('text-anchor','middle')
+      .style('fill',p.clr).style('font-size','8px').style('font-weight','700')
+      .style('opacity',0).transition().delay(1000+i*220).duration(200).style('opacity',1).text(p.label);
+    p.sub.split('\n').forEach(function(ln,li){
+      g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)-p.r-8+li*11).attr('text-anchor','middle')
+        .style('fill','rgba(255,255,255,0.36)').style('font-size','7.5px')
+        .style('opacity',0).transition().delay(1200+i*220).duration(200).style('opacity',1).text(ln);
+    });
+    crefs.push({c:c, r:p.r, clr:p.clr});
+  });
+
+  function glow(){
+    if(window.__cmp18Gen!==myG) return;
+    var idx=Math.floor(Math.random()*crefs.length);
+    var ref=crefs[idx];
+    ref.c.transition().duration(500).attr('r',ref.r+6).style('fill-opacity',0.4).style('stroke-width',2.5)
+      .transition().duration(500).attr('r',ref.r).style('fill-opacity',0.18).style('stroke-width',1.5)
+      .on('end',function(){ setTimeout(glow,900); });
+  }
+  setTimeout(glow,2800);
+})();
+</script>
+</body>
+</html>
