@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Módulo 22 — Faithfulness & Alucinação em RAG</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mira-bg: #000000;
+    --mira-primary: #FF904D;
+    --mira-success: #4DFFB4;
+    --mira-warning: #FFD54D;
+    --mira-error: #FF6464;
+    --mira-blue: #4DB4FF;
+    --mira-purple: #B464FF;
+    --mira-teal: #26C6DA;
+    --mira-surface: #0d0d0d;
+    --mira-border: rgba(255,100,100,0.15);
+    --accent: var(--mira-error);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--mira-bg);
+    color: #e8e8e8;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  #particles-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.3; }
+  .slide {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 20px;
+    position: relative; z-index: 1;
+  }
+  .slide-inner { width: 100%; max-width: 900px; }
+  .capa {
+    background: radial-gradient(ellipse at 50% 40%, rgba(255,100,100,0.10) 0%, transparent 70%);
+    text-align: center;
+  }
+  .capa .modulo-badge {
+    display: inline-block;
+    border: 1px solid var(--mira-error);
+    color: var(--mira-error);
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 6px 18px; border-radius: 99px; margin-bottom: 28px;
+  }
+  .capa h1 { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; line-height: 1.15; margin-bottom: 20px; }
+  .capa h1 span { color: var(--mira-error); }
+  .capa .subtitulo { font-size: 1.05rem; color: #aaa; max-width: 620px; margin: 0 auto 40px; }
+  .capa .meta-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; max-width: 560px; margin: 0 auto; }
+  .capa .meta-item { background: rgba(255,100,100,0.07); border: 1px solid rgba(255,100,100,0.2); border-radius: 12px; padding: 14px 10px; }
+  .capa .meta-item .num { font-size: 1.5rem; font-weight: 800; color: var(--mira-error); }
+  .capa .meta-item .lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 0.1em; }
+  .card { background: rgba(13,13,13,0.85); border: 1px solid var(--mira-border); border-radius: 20px; padding: 40px; backdrop-filter: blur(8px); margin-bottom: 16px; }
+  .card-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
+  .card-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,100,100,0.10); border: 1px solid rgba(255,100,100,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.4rem; }
+  .card-title { font-size: 1.5rem; font-weight: 700; color: #f0f0f0; line-height: 1.2; }
+  .card-subtitle { font-size: 0.85rem; color: #888; margin-top: 4px; }
+  .problema-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .problema-item { background: rgba(255,100,100,0.06); border: 1px solid rgba(255,100,100,0.15); border-radius: 12px; padding: 18px; }
+  .problema-item .p-titulo { font-size: 0.8rem; font-weight: 600; color: var(--mira-error); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .problema-item p { font-size: 0.88rem; color: #bbb; line-height: 1.5; }
+  .metafora-box { background: linear-gradient(135deg, rgba(255,100,100,0.08) 0%, rgba(255,100,100,0.03) 100%); border: 1px solid rgba(255,100,100,0.25); border-left: 4px solid var(--mira-error); border-radius: 16px; padding: 28px 32px; margin-bottom: 20px; }
+  .metafora-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--mira-error); margin-bottom: 10px; }
+  .metafora-texto { font-size: 1.08rem; color: #ddd; line-height: 1.65; font-style: italic; }
+  .metafora-mapa { font-size: 0.83rem; color: #999; margin-top: 14px; line-height: 1.5; }
+  .metafora-mapa strong { color: var(--mira-error); }
+  .lista { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .lista li { display: flex; align-items: flex-start; gap: 12px; background: rgba(255,100,100,0.05); border: 1px solid rgba(255,100,100,0.10); border-radius: 10px; padding: 12px 16px; font-size: 0.88rem; color: #ccc; }
+  .lista li .bullet { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,100,100,0.15); color: var(--mira-error); font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .lista li strong { color: #f0f0f0; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .tag { font-size: 0.72rem; font-weight: 600; padding: 4px 12px; border-radius: 99px; border: 1px solid rgba(255,100,100,0.3); color: var(--mira-error); background: rgba(255,100,100,0.07); letter-spacing: 0.05em; }
+  .metricas-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 20px; }
+  .metrica-item { background: rgba(255,100,100,0.06); border: 1px solid rgba(255,100,100,0.18); border-radius: 14px; padding: 18px 14px; text-align: center; }
+  .metrica-item .m-val { font-size: 1.6rem; font-weight: 800; color: var(--mira-error); }
+  .metrica-item .m-desc { font-size: 0.72rem; color: #888; margin-top: 4px; line-height: 1.4; }
+  .comp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+  .comp-side { background: rgba(255,100,100,0.05); border: 1px solid rgba(255,100,100,0.15); border-radius: 12px; padding: 18px; }
+  .comp-side .cs-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .comp-side .cs-item { font-size: 0.84rem; color: #bbb; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .comp-side .cs-item:last-child { border-bottom: none; }
+  .d3-wrap { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,100,100,0.15); border-radius: 14px; padding: 10px; margin-top: 20px; overflow: hidden; }
+  .d3-wrap svg { width: 100%; display: block; }
+  .citacao { background: rgba(255,100,100,0.05); border-left: 3px solid var(--mira-error); border-radius: 0 12px 12px 0; padding: 18px 22px; margin-top: 16px; font-size: 0.9rem; color: #ccc; font-style: italic; line-height: 1.6; }
+  .citacao cite { display: block; margin-top: 8px; font-size: 0.75rem; color: #777; font-style: normal; }
+  .achado-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+  .achado-item { background: rgba(255,100,100,0.05); border: 1px solid rgba(255,100,100,0.12); border-radius: 12px; padding: 16px; }
+  .achado-item .a-num { font-size: 1.4rem; font-weight: 800; color: var(--mira-error); }
+  .achado-item .a-texto { font-size: 0.83rem; color: #bbb; line-height: 1.5; margin-top: 4px; }
+  .principio-lista { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+  .principio-item { display: flex; align-items: flex-start; gap: 14px; background: rgba(255,100,100,0.05); border: 1px solid rgba(255,100,100,0.12); border-radius: 12px; padding: 16px; }
+  .principio-item .p-num { font-size: 1.1rem; font-weight: 800; color: var(--mira-error); min-width: 28px; }
+  .principio-item .p-conteudo .p-title { font-size: 0.9rem; font-weight: 600; color: #f0f0f0; }
+  .principio-item .p-conteudo .p-desc { font-size: 0.82rem; color: #aaa; margin-top: 3px; line-height: 1.45; }
+  .fonte-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #666; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 99px; padding: 4px 12px; margin-top: 14px; }
+  .fonte-badge::before { content: '📄'; font-size: 0.75rem; }
+  .nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.05); z-index: 100; }
+  .nav-progress { height: 100%; background: linear-gradient(90deg, var(--mira-error), #ff9494); width: 0%; transition: width 0.2s ease; }
+  .nav-counter { position: fixed; bottom: 24px; right: 24px; font-size: 0.72rem; color: #555; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 99px; padding: 6px 14px; z-index: 100; backdrop-filter: blur(8px); }
+  @media (max-width: 640px) {
+    .card { padding: 24px 18px; }
+    .problema-grid, .comp-row, .achado-grid { grid-template-columns: 1fr; }
+    .metricas-grid { grid-template-columns: 1fr 1fr; }
+    .capa .meta-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particles-canvas"></canvas>
+<div class="nav-bar"><div class="nav-progress" id="nav-progress"></div></div>
+<div class="nav-counter" id="nav-counter">1 / 16</div>
+
+<!-- SLIDE 1 — CAPA -->
+<section class="slide capa" id="slide-1">
+  <div class="slide-inner">
+    <div data-aos="fade-down" data-aos-duration="700">
+      <div class="modulo-badge">Módulo 22 · RAG Studio — Série Final</div>
+    </div>
+    <h1 data-aos="fade-up" data-aos-delay="100" data-aos-duration="700">
+      Faithfulness & Alucinação:<br><span>A Crise de Confiança do RAG</span>
+    </h1>
+    <p class="subtitulo" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700">
+      Corretude não é fidelidade. Quatro artigos sobre detectar, medir e mitigar o problema mais crítico dos sistemas RAG em produção.
+    </p>
+    <div class="meta-grid" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700">
+      <div class="meta-item"><div class="num">4</div><div class="lbl">Artigos</div></div>
+      <div class="meta-item"><div class="num">6</div><div class="lbl">Animações D3</div></div>
+      <div class="meta-item"><div class="num">2026</div><div class="lbl">ICLR · ACL · arXiv</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 2 — O PROBLEMA -->
+<section class="slide" id="slide-2">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">⚠️</div>
+        <div>
+          <div class="card-title">O Problema Central: Confiar no Que o RAG Diz</div>
+          <div class="card-subtitle">Alucinação em RAG é mais sutil do que em LLMs puros — o modelo tem contexto e mesmo assim falha</div>
+        </div>
+      </div>
+      <div class="problema-grid">
+        <div class="problema-item">
+          <div class="p-titulo">Alucinação de Conteúdo</div>
+          <p>LLMs geram informações não suportadas pelo contexto recuperado: detalhes inventados, números fabricados, ou contradições diretas com a fonte — mesmo com documentos relevantes disponíveis.</p>
+        </div>
+        <div class="problema-item">
+          <div class="p-titulo">Post-Racionalização</div>
+          <p>Até 57% das citações são <em>post-rationalized</em>: o modelo responde por memória paramétrica e depois busca documentos que CONFIRMEM a resposta — citações corretas, raciocínio infiel.</p>
+        </div>
+        <div class="problema-item">
+          <div class="p-titulo">Detecção é Difícil</div>
+          <p>FaithBench mostra que métodos atuais chegam próximo ao acaso em benchmarks adversariais. Detectores fine-tuned precisam de dados anotados caros; LLM-judges têm custo de inferência alto.</p>
+        </div>
+        <div class="problema-item">
+          <div class="p-titulo">Deflexão Falha</div>
+          <p>GaRAGe: apenas 31% de verdadeiros positivos em deflexão — modelos raramente reconhecem quando o grounding é insuficiente e respondem mesmo assim, aumentando o risco de desinformação.</p>
+        </div>
+      </div>
+      <div class="citacao">
+        "RAG reduz alucinações ao ancorar respostas em evidências externas, mas LLMs frequentemente introduzem detalhes não suportados mesmo quando contexto relevante é fornecido."
+        <cite>— RAGLens, Xiong et al., ICLR 2026</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3 — METÁFORA PAPER 1 -->
+<section class="slide" id="slide-3">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">🕵️</div>
+        <div>
+          <div class="card-title">Correctness ≠ Faithfulness: O Detetive que Cita Provas Que Não Consultou</div>
+          <div class="card-subtitle">Wallat, Heuss, de Rijke, Anand — L3S Hannover + Amsterdam + TU Delft, Dez 2024</div>
+        </div>
+      </div>
+      <div class="metafora-box">
+        <div class="metafora-label">Metáfora</div>
+        <div class="metafora-texto">
+          Um detetive resolve o caso pela intuição — seu conhecimento prévio aponta o culpado. Depois, ele vasculha o arquivo em busca de provas que CONFIRMEM sua conclusão. As provas existem, são corretas, mas não foram o que guiou o raciocínio. Se questionado, ele cita o arquivo com confiança — mas o julgamento foi pré-definido. Isso é post-racionalização: a citação é correta, mas infiel ao processo real.
+        </div>
+        <div class="metafora-mapa">
+          <strong>Detetive</strong> = LLM com conhecimento paramétrico ·
+          <strong>Intuição</strong> = memória paramétrica (não o documento) ·
+          <strong>Arquivo consultado depois</strong> = citação post-hoc ·
+          <strong>Prova correta</strong> = citation correctness ·
+          <strong>Raciocínio fiel</strong> = citation faithfulness (ausente)
+        </div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-side">
+          <div class="cs-title" style="color:var(--mira-error);">Citation Correctness</div>
+          <div class="cs-item">O documento citado suporta a afirmação?</div>
+          <div class="cs-item">Avaliado por NLI — doc implica statement?</div>
+          <div class="cs-item">Necessária mas insuficiente para confiança</div>
+          <div class="cs-item">Foco da maioria das pesquisas anteriores</div>
+        </div>
+        <div class="comp-side">
+          <div class="cs-title" style="color:var(--mira-success);">Citation Faithfulness</div>
+          <div class="cs-item">O modelo USOU o doc para gerar a resposta?</div>
+          <div class="cs-item">Relação causal: doc → geração → citação</div>
+          <div class="cs-item">Essencial para confiança justificada</div>
+          <div class="cs-item">Negligenciada — até 57% das citações são pós-racionalizadas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 4 — PAPER 1 + D3 -->
+<section class="slide" id="slide-4">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">📎</div>
+        <div>
+          <div class="card-title">Os Quatro Cenários de Atribuição em RAG</div>
+          <div class="card-subtitle">4 desiderata: Correctness · Appropriateness · Comprehensiveness · Faithfulness</div>
+        </div>
+      </div>
+      <div class="d3-wrap">
+        <svg id="anim-faith1" viewBox="0 0 860 310" preserveAspectRatio="xMidYMid meet" style="height:310px;"></svg>
+      </div>
+      <div class="metricas-grid" style="margin-top:16px;">
+        <div class="metrica-item">
+          <div class="m-val">57%</div>
+          <div class="m-desc">das citações são post-rationalized (infiéis)</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">4</div>
+          <div class="m-desc">desiderata: correctness, appropriateness, comprehensiveness, faithfulness</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">GTR→RTG</div>
+          <div class="m-desc">Verifiable RTG mais fiel — atribuição durante geração, não post-hoc</div>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag">Post-rationalization</span>
+        <span class="tag">GTR · RTG · Verifiable RTG</span>
+        <span class="tag">Causal attribution</span>
+        <span class="tag">arXiv 2412.18004</span>
+      </div>
+      <div class="fonte-badge">Correctness is not Faithfulness · arXiv 2412.18004 · Wallat, Heuss, de Rijke, Anand · L3S/Amsterdam/TU Delft · Dez 2024</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5 — METÁFORA FAITHBENCH -->
+<section class="slide" id="slide-5">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">⚖️</div>
+        <div>
+          <div class="card-title">FaithJudge: O Júri que Aprende com Casos Anteriores</div>
+          <div class="card-subtitle">Tamber, Bao, Xu et al. — Vectara + Waterloo + Stanford, Nov 2025</div>
+        </div>
+      </div>
+      <div class="metafora-box">
+        <div class="metafora-label">Metáfora</div>
+        <div class="metafora-texto">
+          Um júri inexperiente julga pelo instinto — acerta às vezes, mas é inconsistente. Um júri experiente lê casos anteriores bem documentados antes de decidir: aprende o que conta como hallucination "Unwanted", o que é "Questionable" e o que é "Benign". Sem treinamento formal, sem prova de conceito — apenas leitura de exemplos anotados. E julga com muito mais precisão.
+        </div>
+        <div class="metafora-mapa">
+          <strong>Júri inexperiente</strong> = LLM zero-shot (RAGAS prompt, FACTS Grounding) ·
+          <strong>Casos anteriores</strong> = anotações humanas do FaithBench ·
+          <strong>FaithJudge</strong> = LLM que lê exemplos anotados antes de julgar ·
+          <strong>Unwanted/Questionable/Benign/Consistent</strong> = categorias de alucinação
+        </div>
+      </div>
+      <ul class="lista">
+        <li><div class="bullet">1</div><div><strong>HHEM-2.1-open (110M):</strong> leaderboard Vectara desde 2023, 160+ LLMs avaliados em faithfulness de sumarização</div></li>
+        <li><div class="bullet">2</div><div><strong>FaithBench:</strong> 75 artigos × 10 LLMs = 750 sumários anotados por humanos — benchmark adversarial que desafia todos os detectores</div></li>
+        <li><div class="bullet">3</div><div><strong>FaithJudge:</strong> LLM recebe anotações de outros resumos do mesmo artigo e julga — sensibilidade aumenta com mais exemplos, especificidade estável</div></li>
+        <li><div class="bullet">4</div><div><strong>RAGTruth:</strong> 3 tarefas (sumarização, QA, data-to-text) com 6 LLMs — FaithJudge: 86.3% F1 vs FACTS Grounding 77.1% em data-to-text</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 6 — FAITHBENCH + D3 -->
+<section class="slide" id="slide-6">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">📈</div>
+        <div>
+          <div class="card-title">FaithJudge: Detecção por Anotações Contextuais</div>
+          <div class="card-subtitle">o3-mini-high 84% Acc, 82.1% F1 · Supera HHEM, MiniCheck, TrueTeacher</div>
+        </div>
+      </div>
+      <div class="d3-wrap">
+        <svg id="anim-faithjudge" viewBox="0 0 860 310" preserveAspectRatio="xMidYMid meet" style="height:310px;"></svg>
+      </div>
+      <div class="metricas-grid" style="margin-top:16px;">
+        <div class="metrica-item">
+          <div class="m-val">84%</div>
+          <div class="m-desc">Acc FaithJudge (o3-mini-high) no FaithBench</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">160+</div>
+          <div class="m-desc">LLMs no leaderboard Vectara HHEM</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">&lt;50%</div>
+          <div class="m-desc">Acc dos métodos anteriores no FaithBench adversarial</div>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag">HHEM-2.1-open · 110M</span>
+        <span class="tag">FaithBench · 75 artigos × 10 LLMs</span>
+        <span class="tag">Unwanted · Questionable · Benign · Consistent</span>
+        <span class="tag">RAGTruth · Summary + QA + Data2txt</span>
+      </div>
+      <div class="fonte-badge">Benchmarking LLM Faithfulness in RAG · arXiv 2505.04847 · Tamber, Bao, Xu, Luo et al. · Vectara/Waterloo/Stanford · Nov 2025</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 7 — METÁFORA GaRAGe -->
+<section class="slide" id="slide-7">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">🏛️</div>
+        <div>
+          <div class="card-title">GaRAGe: O Tribunal com Provas Etiquetadas</div>
+          <div class="card-subtitle">Sorodoc, Ribeiro, Blloshmi et al. — Amazon AGI · ACL 2025</div>
+        </div>
+      </div>
+      <div class="metafora-box">
+        <div class="metafora-label">Metáfora</div>
+        <div class="metafora-texto">
+          Em um tribunal rigoroso, cada peça de evidência está marcada: "responde diretamente a acusação", "informação relacionada", "desatualizada" ou "irrelevante". O juiz só pode citar provas da pilha "responde a acusação" para sustentar a sentença. E avalia se o acusado (o LLM) fez o mesmo — ou se usou evidências irrelevantes para confundir o júri. Isso é a RAF: factualidade restrita às evidências que realmente importam.
+        </div>
+        <div class="metafora-mapa">
+          <strong>Provas etiquetadas</strong> = 35K passages com ANSWER / RELATED / OUTDATED / UNKNOWN ·
+          <strong>Acusado</strong> = LLM gerando resposta ·
+          <strong>Sentença correta</strong> = RAF (Relevance-Aware Factuality Score) ·
+          <strong>Deflexão</strong> = dizer "não há provas suficientes" quando o grounding é irrelevante
+        </div>
+      </div>
+      <div class="achado-grid">
+        <div class="achado-item">
+          <div class="a-num">2.366</div>
+          <div class="a-texto">questões com anotação humana profissional ($9,65/amostra via Centrifc)</div>
+        </div>
+        <div class="achado-item">
+          <div class="a-num">35K+</div>
+          <div class="a-texto">passages anotados por relevância (web + private KB: Enron, Arxiv, SEC filings)</div>
+        </div>
+        <div class="achado-item">
+          <div class="a-num">60%</div>
+          <div class="a-texto">RAF máximo (Nova Pro) — LLMs usam grounding irrelevante e sobre-sumarizam</div>
+        </div>
+        <div class="achado-item">
+          <div class="a-num">31%</div>
+          <div class="a-texto">TPR de deflexão (GPT-4o) — modelos raramente reconhecem grounding insuficiente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 8 — GaRAGe + D3 -->
+<section class="slide" id="slide-8">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">📋</div>
+        <div>
+          <div class="card-title">GaRAGe: RAF Score e Lacunas dos Modelos</div>
+          <div class="card-subtitle">Eligibility · Factuality · uRAF · RAF · Deflection · Attribution F1</div>
+        </div>
+      </div>
+      <div class="d3-wrap">
+        <svg id="anim-garage" viewBox="0 0 860 310" preserveAspectRatio="xMidYMid meet" style="height:310px;"></svg>
+      </div>
+      <div class="metricas-grid" style="margin-top:16px;">
+        <div class="metrica-item">
+          <div class="m-val">92,5%</div>
+          <div class="m-desc">GPT-4o Eligibility (mais alto) — mas usa memória paramétrica</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">58,9%</div>
+          <div class="m-desc">Attribution F1 máximo (Nova Micro) — gap enorme em citação precisa</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">−10%</div>
+          <div class="m-desc">RAF em fast-changing vs slow/static (raciocínio temporal prejudicado)</div>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag">RAF = eligibility + uRAF</span>
+        <span class="tag">Fast / Slow / Static questions</span>
+        <span class="tag">Private KB: Enron · Arxiv · SEC · AWS</span>
+        <span class="tag">ACL 2025 · Amazon AGI</span>
+      </div>
+      <div class="fonte-badge">GaRAGe · ACL 2025 pp.17030–17049 · Sorodoc, Ribeiro, Blloshmi, Davis, de Gispert · Amazon AGI</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 9 — METÁFORA RAGLens -->
+<section class="slide" id="slide-9">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">🧠</div>
+        <div>
+          <div class="card-title">RAGLens: O Polígrafo que Lê o Cérebro do LLM</div>
+          <div class="card-subtitle">Xiong, He, Liu, Sinha, Zhang — University of Virginia · ICLR 2026</div>
+        </div>
+      </div>
+      <div class="metafora-box">
+        <div class="metafora-label">Metáfora</div>
+        <div class="metafora-texto">
+          Um polígrafo não lê o que a pessoa diz — lê os sinais internos: frequência cardíaca, sudorese, respiração. Para detectar mentiras em LLMs, RAGLens não lê a resposta final — lê os estados internos das camadas ocultas (hidden states). SAEs (Sparse Autoencoders) disentangle esses estados em features semânticas específicas: algumas acendem exatamente durante alucinações RAG, como um sinal de alarme interno que o LLM não sabe que está emitindo.
+        </div>
+        <div class="metafora-mapa">
+          <strong>Polígrafo</strong> = RAGLens ·
+          <strong>Sinais fisiológicos</strong> = hidden states h_t das camadas do LLM ·
+          <strong>SAE</strong> = converte sinais brutos em features interpretáveis (z_t ∈ ℝ^K) ·
+          <strong>Max pooling + MI</strong> = seleciona os sinais mais diagnósticos ·
+          <strong>GAM</strong> = modelo leve, interpretável, que mapeia features → risco de alucinação
+        </div>
+      </div>
+      <ul class="lista">
+        <li><div class="bullet">h</div><div><strong>Hidden states:</strong> h_t = Φ_L(y_{1:t}, q, C) — LLM condiciona na query + contexto + geração até t</div></li>
+        <li><div class="bullet">z</div><div><strong>SAE features:</strong> z_t = E(h_t) ∈ ℝ^K — encoder esparso, K features, poucas ativas por token (monosemanticity)</div></li>
+        <li><div class="bullet">z̄</div><div><strong>Max pooling:</strong> z̄_k = max_{t} z_{t,k} — resume sequência em representação de instância</div></li>
+        <li><div class="bullet">MI</div><div><strong>Seleção por Mutual Information:</strong> I(z̄_k; ℓ) — top K' features mais diagnósticas de alucinação</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 10 — RAGLens + D3 -->
+<section class="slide" id="slide-10">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">🔬</div>
+        <div>
+          <div class="card-title">RAGLens: SAE + GAM → Detecção Interpretável</div>
+          <div class="card-subtitle">AUC &gt;80% no RAGTruth e Dolly · Supera CoT, RAGAS, LLM-judges · ICLR 2026</div>
+        </div>
+      </div>
+      <div class="d3-wrap">
+        <svg id="anim-raglens" viewBox="0 0 860 310" preserveAspectRatio="xMidYMid meet" style="height:310px;"></svg>
+      </div>
+      <div class="metricas-grid" style="margin-top:16px;">
+        <div class="metrica-item">
+          <div class="m-val">&gt;80%</div>
+          <div class="m-desc">AUC em RAGTruth + Dolly (Llama2-7B e 13B)</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">SAE &gt; CoT</div>
+          <div class="m-desc">Sinais internos superam auto-julgamento chain-of-thought em todos LLMs</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">2-nível</div>
+          <div class="m-desc">Explicação local (token) + global (feature dictionary) + mitigação</div>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag">Sparse Autoencoders (SAE)</span>
+        <span class="tag">GAM: Generalized Additive Model</span>
+        <span class="tag">RAGTruth · Dolly · AggreFact · TofuEval</span>
+        <span class="tag">ICLR 2026 · arXiv 2512.08892</span>
+      </div>
+      <div class="fonte-badge">RAGLens · ICLR 2026 · arXiv 2512.08892 · Xiong, He, Liu, Sinha, Zhang · University of Virginia · Fev 2026</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 11 — ESPECTRO DE ALUCINAÇÕES -->
+<section class="slide" id="slide-11">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">🌈</div>
+        <div>
+          <div class="card-title">O Espectro das Falhas de Faithfulness</div>
+          <div class="card-subtitle">De erros invisíveis a contradições explícitas — uma taxonomia unificada dos quatro artigos</div>
+        </div>
+      </div>
+      <div class="principio-lista">
+        <div class="principio-item">
+          <div class="p-num" style="color:#FF6464;">🔴</div>
+          <div class="p-conteudo">
+            <div class="p-title">Alucinação Factual (Unwanted)</div>
+            <div class="p-desc">Resposta contradiz ou não é suportada pelo contexto recuperado. Detectável por NLI ou LLM-judge. Mais comum em Fast-Changing questions (GaRAGe: −10% RAF).</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="p-num" style="color:#FFD54D;">🟡</div>
+          <div class="p-conteudo">
+            <div class="p-title">Post-Racionalização (Correct but Unfaithful)</div>
+            <div class="p-desc">Resposta é factualmente correta mas veio da memória paramétrica. Citação é post-hoc. 57% das atribuições — invisível à avaliação de correctness padrão (Paper 1).</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="p-num" style="color:#4DB4FF;">🔵</div>
+          <div class="p-conteudo">
+            <div class="p-title">Sobre-Sumarização (Over-Summarization)</div>
+            <div class="p-desc">Modelo usa grounding irrelevante ou desatualizado para construir resposta plausível. RAF penaliza; uRAF não detecta. Maior nas private KBs com menos grounding relevante.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="p-num" style="color:#4DFFB4;">🟢</div>
+          <div class="p-conteudo">
+            <div class="p-title">Fabricação de Detalhes (Benign/Extrapolation)</div>
+            <div class="p-desc">Resposta correta no geral mas com números, datas, nomes inventados. SAEs do RAGLens identificam features de "factual inserts" (datas/horas fabricadas) com alta precisão.</div>
+          </div>
+        </div>
+      </div>
+      <div class="citacao">
+        "A categoria 'Benign' do FaithBench — onde o LLM usa conhecimento de mundo válido mas ausente do artigo — é difícil de classificar: não é erro, não é correto. FaithJudge frequentemente classifica como Consistent."
+        <cite>— Tamber et al., Vectara / Waterloo, Nov 2025</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 12 — DETECÇÃO vs PREVENÇÃO vs MITIGAÇÃO -->
+<section class="slide" id="slide-12">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">🛡️</div>
+        <div>
+          <div class="card-title">Três Estratégias: Detectar, Prevenir, Mitigar</div>
+          <div class="card-subtitle">Cada paper cobre um ângulo diferente do mesmo problema de faithfulness</div>
+        </div>
+      </div>
+      <div class="problema-grid">
+        <div class="problema-item">
+          <div class="p-titulo" style="color:#FF6464;">Detectar (Post-hoc)</div>
+          <p><strong>RAGLens</strong>: SAE features + GAM, AUC &gt;80%, interpretável, leve. <strong>FaithJudge</strong>: LLM-as-a-judge com exemplos, 84% Acc sem fine-tuning. Detectam DEPOIS da geração.</p>
+        </div>
+        <div class="problema-item">
+          <div class="p-titulo" style="color:#FFD54D;">Avaliar (Benchmark)</div>
+          <p><strong>GaRAGe</strong>: 35K passages anotados, RAF score, deflection rate, attribution F1. <strong>FaithBench</strong>: 750 sumários humanos, adversarial, revela gaps dos detectores.</p>
+        </div>
+        <div class="problema-item">
+          <div class="p-titulo" style="color:#4DB4FF;">Compreender (Diagnóstico)</div>
+          <p><strong>Paper 1</strong> (Wallat et al.): distingue correctness de faithfulness, expõe post-rationalization como problema estrutural. Motiva reformulação das métricas de avaliação.</p>
+        </div>
+        <div class="problema-item">
+          <div class="p-titulo" style="color:#4DFFB4;">Mitigar (Feedback)</div>
+          <p><strong>RAGLens</strong>: explicação local (tokens) + global (features) → feedback multi-nível para LLM revisar output. Único dos quatro que fecha o loop de correção.</p>
+        </div>
+      </div>
+      <div class="tags" style="margin-top:16px;">
+        <span class="tag">Detecção: RAGLens · FaithJudge</span>
+        <span class="tag">Benchmark: GaRAGe · FaithBench</span>
+        <span class="tag">Diagnóstico: Correctness ≠ Faithfulness</span>
+        <span class="tag">Mitigação: SAE token-level feedback</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 13 — ACHADOS TRANSVERSAIS -->
+<section class="slide" id="slide-13">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">🔍</div>
+        <div>
+          <div class="card-title">O Que os Quatro Artigos Concordam</div>
+          <div class="card-subtitle">Convergências que definem o estado da arte em faithfulness e detecção de alucinações</div>
+        </div>
+      </div>
+      <div class="achado-grid">
+        <div class="achado-item">
+          <div class="a-num">🎯</div>
+          <div class="a-texto"><strong>RAG não elimina alucinações.</strong> GPT-4o, Gemini, Claude — todos alucinam mesmo com contexto relevante. A grounding não garante faithfulness; é condição necessária, não suficiente.</div>
+        </div>
+        <div class="achado-item">
+          <div class="a-num">🔎</div>
+          <div class="a-texto"><strong>Métodos atuais são insuficientes.</strong> FaithBench mostra que HHEM, NLI classifiers e zero-shot LLMs chegam perto do acaso em casos adversariais. O gap de detecção é real.</div>
+        </div>
+        <div class="achado-item">
+          <div class="a-num">📊</div>
+          <div class="a-texto"><strong>Modelos maiores ≠ mais fiéis.</strong> GPT-4o tem eligibility mais alta mas usa memória paramétrica (GaRAGe). Llama-7B alucinam de forma diferente dos 13B — tamanho não resolve.</div>
+        </div>
+        <div class="achado-item">
+          <div class="a-num">🏷️</div>
+          <div class="a-texto"><strong>Anotação humana é insubstituível.</strong> Os dois benchmarks (GaRAGe e FaithBench) pagaram anotadores profissionais. FaithJudge precisa de exemplos humanos. Dados sintéticos falham.</div>
+        </div>
+        <div class="achado-item">
+          <div class="a-num">⚡</div>
+          <div class="a-texto"><strong>Fast-changing é o pior cenário.</strong> Questões temporalmente sensíveis têm grounding mais ruidoso e modelos lutam mais. RAG temporal e faithfulness são problemas acoplados.</div>
+        </div>
+        <div class="achado-item">
+          <div class="a-num">🧩</div>
+          <div class="a-texto"><strong>Interpretabilidade é o caminho.</strong> SAEs revelam que LLMs "sabem mais do que dizem" — sinais internos superam auto-julgamento CoT. Mecanistic interpretability ilumina alucinações RAG.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 14 — COMPARATIVO + D3 -->
+<section class="slide" id="slide-14">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">📊</div>
+        <div>
+          <div class="card-title">Comparativo: Performance dos Detectores de Faithfulness</div>
+          <div class="card-subtitle">Accuracy em benchmarks adversariais — métodos claim-wise e summary-wise</div>
+        </div>
+      </div>
+      <div class="d3-wrap">
+        <svg id="anim-compare22" viewBox="0 0 860 340" preserveAspectRatio="xMidYMid meet" style="height:340px;"></svg>
+      </div>
+      <div class="fonte-badge">Síntese: FaithBench (Tamber et al.) · GaRAGe RAF (Sorodoc et al.) · RAGLens AUC (Xiong et al.) · Paper 1 post-rationalization (Wallat et al.)</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 15 — PRINCÍPIOS DESTILADOS -->
+<section class="slide" id="slide-15">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">💡</div>
+        <div>
+          <div class="card-title">Princípios do Faithfulness Moderno em RAG</div>
+          <div class="card-subtitle">Destilados dos quatro artigos — guia para sistemas RAG confiáveis em produção</div>
+        </div>
+      </div>
+      <div class="principio-lista">
+        <div class="principio-item">
+          <div class="p-num">01</div>
+          <div class="p-conteudo">
+            <div class="p-title">Avalie faithfulness, não só correctness</div>
+            <div class="p-desc">Citações corretas podem ser post-racionalizadas. Métricas de faithfulness exigem verificação causal: o modelo usou o documento durante a geração? GTR e RTG post-hoc são estruturalmente infiéis.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="p-num">02</div>
+          <div class="p-conteudo">
+            <div class="p-title">Use RAF, não factuality bruta</div>
+            <div class="p-desc">Medir factualidade sem restringir ao grounding relevante superestima a qualidade. RAF penaliza uso de evidências irrelevantes — captura a diferença entre "correto" e "fundamentado corretamente".</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="p-num">03</div>
+          <div class="p-conteudo">
+            <div class="p-title">Exemplos anotados > prompts zero-shot para detecção</div>
+            <div class="p-desc">FaithJudge mostra que um LLM com 5+ exemplos anotados supera todos os prompts zero-shot (FACTS Grounding, RAGAS). Qualidade das anotações > tamanho do LLM.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="p-num">04</div>
+          <div class="p-conteudo">
+            <div class="p-title">Sinais internos > saída textual para detecção</div>
+            <div class="p-desc">RAGLens prova que SAE features das camadas internas superam CoT self-judgment em todos os LLMs. O modelo "sabe que está alucinando" — mas não diz. Mid-layer features são mais diagnósticas.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="p-num">05</div>
+          <div class="p-conteudo">
+            <div class="p-title">Deflexão é capacidade crítica negligenciada</div>
+            <div class="p-desc">Apenas 31% TPR em deflexão (GaRAGe). Um sistema RAG confiável precisa saber dizer "não há grounding suficiente" — habilidade que todos os modelos atuais têm de forma rudimentar.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 16 — PANORAMA FINAL + D3 -->
+<section class="slide" id="slide-16">
+  <div class="slide-inner">
+    <div class="card" data-aos="fade-up" data-aos-duration="700">
+      <div class="card-header">
+        <div class="card-icon">🌌</div>
+        <div>
+          <div class="card-title">Panorama Final: RAG Studio Completo</div>
+          <div class="card-subtitle">22 módulos · 108 artigos · 503 slides · 183 animações D3 — a jornada completa do RAG</div>
+        </div>
+      </div>
+      <div class="d3-wrap">
+        <svg id="anim-panorama22" viewBox="0 0 860 360" preserveAspectRatio="xMidYMid meet" style="height:360px;"></svg>
+      </div>
+      <div class="metricas-grid" style="margin-top:16px;">
+        <div class="metrica-item">
+          <div class="m-val">22</div>
+          <div class="m-desc">Módulos completos · Chunking → Faithfulness</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">108</div>
+          <div class="m-desc">Artigos científicos · ICLR 2026 · ACL 2025 · EMNLP · arXiv</div>
+        </div>
+        <div class="metrica-item">
+          <div class="m-val">2026</div>
+          <div class="m-desc">Estado da arte em RAG — a série mais completa em PT-BR</div>
+        </div>
+      </div>
+      <div class="tags" style="margin-top:14px;">
+        <span class="tag">Correctness ≠ Faithfulness</span>
+        <span class="tag">FaithJudge · HHEM</span>
+        <span class="tag">GaRAGe · RAF Score</span>
+        <span class="tag">RAGLens · SAE · ICLR 2026</span>
+        <span class="tag">RAG Studio · Módulo Final · 22</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCRIPTS -->
+<script>
+AOS.init({ duration: 700, once: true, offset: 55 });
+
+// PARTÍCULAS
+(function(){
+  var canvas = document.getElementById('particles-canvas');
+  var ctx = canvas.getContext('2d');
+  var W, H, particles = [];
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  for(var i=0; i<55; i++){
+    particles.push({ x: Math.random()*2000, y: Math.random()*2000, r: Math.random()*1.4+0.4, vx: (Math.random()-0.5)*0.25, vy: (Math.random()-0.5)*0.25, a: Math.random()*0.4+0.1 });
+  }
+  function drawP(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(function(p){
+      ctx.beginPath(); ctx.arc(p.x%W, p.y%H, p.r, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,100,100,'+p.a+')'; ctx.fill();
+      p.x += p.vx; p.y += p.vy;
+    });
+    requestAnimationFrame(drawP);
+  }
+  drawP();
+})();
+
+// PROGRESS
+(function(){
+  var slides = document.querySelectorAll('.slide');
+  var prog = document.getElementById('nav-progress');
+  var counter = document.getElementById('nav-counter');
+  var N = slides.length;
+  window.addEventListener('scroll', function(){
+    var scrollY = window.scrollY;
+    var docH = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = Math.min(100, (scrollY/docH)*100) + '%';
+    var current = 1;
+    slides.forEach(function(s, i){ if(s.getBoundingClientRect().top <= window.innerHeight/2) current = i+1; });
+    counter.textContent = current + ' / ' + N;
+  });
+})();
+
+// ══════════════════════════════════════
+// D3 ANIM 1: Os 4 cenários de atribuição
+// ══════════════════════════════════════
+(function(){
+  window.__faith1Gen = (window.__faith1Gen||0)+1; var myG = window.__faith1Gen;
+  var el = document.getElementById('anim-faith1'); if(!el) return; el.innerHTML='';
+  var svg = d3.select(el);
+
+  var scenarios = [
+    { x:110, y:80, label:'a) Citação Fiel', desc:'Modelo usa doc → resposta', correct:true, faithful:true, color:'#4DFFB4' },
+    { x:320, y:80, label:'b) Contexto Relacionado', desc:'Cita doc relevante mas não usado', correct:false, faithful:false, color:'#FFD54D' },
+    { x:540, y:80, label:'c) Correto ≠ Fiel', desc:'Correto por memória, cita post-hoc', correct:true, faithful:false, color:'#FF6464' },
+    { x:750, y:80, label:'d) Citação Incorreta', desc:'Doc não suporta afirmação', correct:false, faithful:false, color:'#888' },
+  ];
+
+  var icons = ['✓', '✗', '✓/✗', '✗'];
+
+  scenarios.forEach(function(s, i){
+    var g = svg.append('g').attr('opacity',0);
+    g.append('rect').attr('x',s.x-90).attr('y',s.y-30).attr('width',170).attr('height',130)
+      .attr('rx',10).attr('fill','rgba('+hexRgb(s.color)+',0.07)').attr('stroke',s.color).attr('stroke-width',1.2);
+    g.append('text').attr('x',s.x).attr('y',s.y-10).attr('text-anchor','middle')
+      .attr('fill',s.color).attr('font-size',10).attr('font-weight','700').text(s.label);
+    g.append('text').attr('x',s.x).attr('y',s.y+16).attr('text-anchor','middle')
+      .attr('fill','#bbb').attr('font-size',9).text(s.desc.split(' ').slice(0,3).join(' '));
+    g.append('text').attr('x',s.x).attr('y',s.y+30).attr('text-anchor','middle')
+      .attr('fill','#bbb').attr('font-size',9).text(s.desc.split(' ').slice(3).join(' '));
+    // badges
+    g.append('rect').attr('x',s.x-80).attr('y',s.y+44).attr('width',72).attr('height',20).attr('rx',4)
+      .attr('fill', s.correct ? 'rgba(77,255,180,0.15)' : 'rgba(255,100,100,0.1)');
+    g.append('text').attr('x',s.x-44).attr('y',s.y+58).attr('text-anchor','middle')
+      .attr('fill', s.correct ? '#4DFFB4' : '#FF6464').attr('font-size',9).attr('font-weight','600')
+      .text(s.correct ? '✓ Correct' : '✗ Incorrect');
+    g.append('rect').attr('x',s.x+8).attr('y',s.y+44).attr('width',72).attr('height',20).attr('rx',4)
+      .attr('fill', s.faithful ? 'rgba(77,255,180,0.15)' : 'rgba(255,100,100,0.1)');
+    g.append('text').attr('x',s.x+44).attr('y',s.y+58).attr('text-anchor','middle')
+      .attr('fill', s.faithful ? '#4DFFB4' : '#FF6464').attr('font-size',9).attr('font-weight','600')
+      .text(s.faithful ? '✓ Faithful' : '✗ Unfaithful');
+    g.transition().duration(500).delay(300+i*200).attr('opacity',1);
+  });
+
+  // Destaque do caso C (o problema)
+  var highlight = svg.append('rect').attr('x',450).attr('y',44).attr('width',188).attr('height',142)
+    .attr('rx',12).attr('fill','none').attr('stroke','#FF6464').attr('stroke-width',2.5)
+    .attr('stroke-dasharray','6,3').attr('opacity',0);
+  svg.append('text').attr('x',544).attr('y',202).attr('text-anchor','middle')
+    .attr('fill','#FF6464').attr('font-size',10).attr('font-weight','700').text('← 57% das citações!').attr('opacity',0)
+    .transition().duration(500).delay(1600).attr('opacity',1);
+  highlight.transition().duration(600).delay(1400).attr('opacity',1);
+
+  // Linha do tempo de post-rationalization
+  var arrow = svg.append('g').attr('opacity',0);
+  arrow.append('path').attr('d','M 530,220 Q 530,260 610,260 Q 690,260 690,220')
+    .attr('fill','none').attr('stroke','#FF6464').attr('stroke-width',1.5).attr('stroke-dasharray','5,3')
+    .attr('marker-end','url(#arr22)');
+  arrow.append('text').attr('x',610).attr('y',278).attr('text-anchor','middle')
+    .attr('fill','#FF6464').attr('font-size',9).text('Post-rationalization loop');
+  arrow.transition().duration(500).delay(1800).attr('opacity',1);
+
+  var defs=svg.append('defs');
+  var mk=defs.append('marker').attr('id','arr22').attr('viewBox','0 0 10 10').attr('refX',8).attr('refY',5)
+    .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto');
+  mk.append('path').attr('d','M 0 0 L 10 5 L 0 10 z').attr('fill','#FF6464');
+
+  function hexRgb(hex){ var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return r+','+g+','+b; }
+
+  function loop(){
+    if(window.__faith1Gen!==myG) return;
+    highlight.transition().duration(400).attr('opacity',0.3).transition().duration(400).attr('opacity',1)
+      .on('end',function(){ setTimeout(loop,2000); });
+  }
+  setTimeout(loop,2200);
+})();
+
+// ══════════════════════════════════════
+// D3 ANIM 2: FaithJudge pipeline
+// ══════════════════════════════════════
+(function(){
+  window.__fjGen = (window.__fjGen||0)+1; var myG = window.__fjGen;
+  var el = document.getElementById('anim-faithjudge'); if(!el) return; el.innerHTML='';
+  var svg = d3.select(el);
+
+  var steps = [
+    { x:80, y:155, label:'Novo\nSumário', color:'#FF6464', w:90, h:50 },
+    { x:240, y:155, label:'FaithBench\nAnotações', color:'#FFD54D', w:110, h:50 },
+    { x:430, y:155, label:'LLM\nJudge', color:'#B464FF', w:90, h:50 },
+    { x:600, y:100, label:'Hallucinated', color:'#FF6464', w:105, h:38 },
+    { x:600, y:200, label:'Consistent', color:'#4DFFB4', w:105, h:38 },
+    { x:760, y:155, label:'Leaderboard\n160+ LLMs', color:'#FF904D', w:110, h:50 },
+  ];
+
+  steps.forEach(function(s,i){
+    var g = svg.append('g').attr('opacity',0);
+    g.append('rect').attr('x',s.x-s.w/2).attr('y',s.y-s.h/2).attr('width',s.w).attr('height',s.h)
+      .attr('rx',8).attr('fill','rgba('+hexRgb2(s.color)+',0.1)').attr('stroke',s.color).attr('stroke-width',1.5);
+    var lines=s.label.split('\n');
+    lines.forEach(function(l,j){ g.append('text').attr('x',s.x).attr('y',s.y+(j-lines.length/2+0.7)*14).attr('text-anchor','middle').attr('fill',s.color).attr('font-size',10).attr('font-weight','700').text(l); });
+    g.transition().duration(500).delay(200+i*180).attr('opacity',1);
+  });
+
+  // Setas
+  var links=[
+    {x1:135,y1:155,x2:185,y2:155},{x1:295,y1:155,x2:385,y2:155},
+    {x1:475,y1:138,x2:547,y2:110},{x1:475,y1:172,x2:547,y2:200},
+    {x1:653,y1:155,x2:705,y2:155}
+  ];
+  links.forEach(function(l,i){
+    svg.append('line').attr('x1',l.x1).attr('y1',l.y1).attr('x2',l.x2).attr('y2',l.y2)
+      .attr('stroke','#555').attr('stroke-width',1.5).attr('marker-end','url(#arr22b)').attr('opacity',0)
+      .transition().duration(400).delay(600+i*120).attr('opacity',1);
+  });
+
+  // Labels de métricas
+  var metrics = [
+    {x:600,y:62,text:'84.0% Acc',color:'#B464FF'},
+    {x:600,y:75,text:'82.1% F1',color:'#B464FF'},
+    {x:760,y:118,text:'FaithBench',color:'#FF904D'},
+    {x:760,y:131,text:'RAGTruth',color:'#FF904D'},
+  ];
+  metrics.forEach(function(m,i){
+    svg.append('text').attr('x',m.x).attr('y',m.y).attr('text-anchor','middle')
+      .attr('fill',m.color).attr('font-size',9.5).attr('font-weight','700').text(m.text).attr('opacity',0)
+      .transition().duration(400).delay(1600+i*100).attr('opacity',1);
+  });
+
+  // Barra de sensitividade
+  svg.append('text').attr('x',430).attr('y',248).attr('text-anchor','middle')
+    .attr('fill','#888').attr('font-size',10).attr('font-weight','600').text('Sensibilidade aumenta com mais exemplos anotados').attr('opacity',0)
+    .transition().duration(500).delay(2000).attr('opacity',1);
+
+  var barBg=svg.append('rect').attr('x',200).attr('y',258).attr('width',460).attr('height',10).attr('rx',5)
+    .attr('fill','rgba(255,255,255,0.06)').attr('opacity',0).transition().duration(300).delay(2100).attr('opacity',1);
+  var barFill=svg.append('rect').attr('x',200).attr('y',258).attr('width',0).attr('height',10).attr('rx',5)
+    .attr('fill','#B464FF').attr('opacity',0.7);
+  barFill.transition().duration(800).delay(2200).attr('width',368);
+
+  var defs=svg.append('defs');
+  var mk=defs.append('marker').attr('id','arr22b').attr('viewBox','0 0 10 10').attr('refX',8).attr('refY',5)
+    .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto');
+  mk.append('path').attr('d','M 0 0 L 10 5 L 0 10 z').attr('fill','#555');
+
+  function hexRgb2(hex){ var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return r+','+g+','+b; }
+
+  function loop(){
+    if(window.__fjGen!==myG) return;
+    barFill.transition().duration(600).attr('opacity',0.4).transition().duration(600).attr('opacity',0.8)
+      .on('end',function(){ setTimeout(loop,2200); });
+  }
+  setTimeout(loop,3200);
+})();
+
+// ══════════════════════════════════════
+// D3 ANIM 3: GaRAGe — RAF por modelo
+// ══════════════════════════════════════
+(function(){
+  window.__garageGen = (window.__garageGen||0)+1; var myG = window.__garageGen;
+  var el = document.getElementById('anim-garage'); if(!el) return; el.innerHTML='';
+  var svg = d3.select(el);
+
+  var models = [
+    { name:'Nova Pro', elig:87.77, raf:60.67, color:'#4DFFB4' },
+    { name:'Gemini 1.5', elig:84.88, raf:59.43, color:'#4DB4FF' },
+    { name:'Nova Lite', elig:80.15, raf:45.97, color:'#FFD54D' },
+    { name:'Claude Sonnet', elig:86.07, raf:48.91, color:'#B464FF' },
+    { name:'GPT-4o', elig:92.47, raf:52.88, color:'#FF6464' },
+    { name:'Qwen 32b', elig:90.50, raf:52.90, color:'#FF904D' },
+  ];
+
+  var margin={top:30,right:20,bottom:60,left:55};
+  var iW=860-margin.left-margin.right, iH=310-margin.top-margin.bottom;
+  var g=svg.append('g').attr('transform','translate('+margin.left+','+margin.top+')');
+
+  var x=d3.scaleBand().domain(models.map(function(m){ return m.name; })).range([0,iW]).padding(0.25);
+  var y=d3.scaleLinear().domain([0,100]).range([iH,0]);
+
+  g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(function(d){ return d+'%'; }))
+    .selectAll('text').attr('fill','#777').attr('font-size',10);
+  g.append('g').attr('transform','translate(0,'+iH+')').call(d3.axisBottom(x).tickSize(0))
+    .selectAll('text').attr('fill','#aaa').attr('font-size',10).attr('dy','1.2em');
+  g.selectAll('.domain').remove();
+
+  // Grid
+  g.selectAll('.grid-line').data([25,50,75]).enter().append('line')
+    .attr('x1',0).attr('x2',iW).attr('y1',function(d){ return y(d); }).attr('y2',function(d){ return y(d); })
+    .attr('stroke','rgba(255,255,255,0.05)').attr('stroke-dasharray','3,3');
+
+  // Barras Eligibility (fundo, mais larga)
+  models.forEach(function(m,i){
+    g.append('rect').attr('x',x(m.name)).attr('y',iH).attr('width',x.bandwidth()).attr('height',0)
+      .attr('rx',3).attr('fill','rgba(255,255,255,0.08)').attr('stroke','rgba(255,255,255,0.1)').attr('stroke-width',1)
+      .transition().duration(600).delay(300+i*100).attr('y',y(m.elig)).attr('height',iH-y(m.elig));
+    // RAF bar (em cima)
+    g.append('rect').attr('x',x(m.name)+x.bandwidth()*0.15).attr('y',iH).attr('width',x.bandwidth()*0.7).attr('height',0)
+      .attr('rx',3).attr('fill',m.color).attr('opacity',0.85)
+      .transition().duration(600).delay(600+i*100).attr('y',y(m.raf)).attr('height',iH-y(m.raf));
+    g.append('text').attr('x',x(m.name)+x.bandwidth()/2).attr('y',y(m.raf)-6).attr('text-anchor','middle')
+      .attr('fill',m.color).attr('font-size',9.5).attr('font-weight','700').text(m.raf.toFixed(1)+'%').attr('opacity',0)
+      .transition().duration(400).delay(1000+i*100).attr('opacity',1);
+  });
+
+  // Labels
+  g.append('text').attr('x',10).attr('y',-12).attr('fill','#888').attr('font-size',10)
+    .text('□ Eligibility (fundo)  ■ RAF — Relevance-Aware Factuality (topo)');
+
+  // Linha de 60%
+  g.append('line').attr('x1',0).attr('x2',iW).attr('y1',y(60)).attr('y2',y(60))
+    .attr('stroke','#FF6464').attr('stroke-dasharray','6,3').attr('stroke-width',1.5).attr('opacity',0)
+    .transition().duration(500).delay(1400).attr('opacity',0.7);
+  g.append('text').attr('x',iW).attr('y',y(60)-6).attr('text-anchor','end')
+    .attr('fill','#FF6464').attr('font-size',9).text('RAF máx ~60%').attr('opacity',0)
+    .transition().duration(400).delay(1600).attr('opacity',1);
+
+  function loop(){
+    if(window.__garageGen!==myG) return;
+    // pisca o melhor
+    g.selectAll('rect').filter(function(_,i){ return i===1; })
+      .transition().duration(300).attr('opacity',0.4).transition().duration(300).attr('opacity',1)
+      .on('end',function(){ setTimeout(loop,2500); });
+  }
+  setTimeout(loop,2000);
+})();
+
+// ══════════════════════════════════════
+// D3 ANIM 4: RAGLens SAE pipeline
+// ══════════════════════════════════════
+(function(){
+  window.__raglensGen = (window.__raglensGen||0)+1; var myG = window.__raglensGen;
+  var el = document.getElementById('anim-raglens'); if(!el) return; el.innerHTML='';
+  var svg = d3.select(el);
+
+  var pipeline = [
+    { x:70, y:155, label:'Query +\nContext', color:'#888', w:90, h:50 },
+    { x:210, y:155, label:'LLM\nhidden hₜ', color:'#4DB4FF', w:100, h:50 },
+    { x:360, y:155, label:'SAE\nEncoder E', color:'#B464FF', w:95, h:50 },
+    { x:500, y:155, label:'Max\nPooling z̄', color:'#FFD54D', w:90, h:50 },
+    { x:630, y:155, label:'MI\nSeleção K\'', color:'#FF904D', w:90, h:50 },
+    { x:770, y:155, label:'GAM\nŷ ∈ {0,1}', color:'#FF6464', w:90, h:50 },
+  ];
+
+  pipeline.forEach(function(s,i){
+    var g2=svg.append('g').attr('opacity',0);
+    g2.append('rect').attr('x',s.x-s.w/2).attr('y',s.y-s.h/2).attr('width',s.w).attr('height',s.h)
+      .attr('rx',8).attr('fill','rgba('+hr(s.color)+',0.1)').attr('stroke',s.color).attr('stroke-width',1.5);
+    var lines=s.label.split('\n');
+    lines.forEach(function(l,j){ g2.append('text').attr('x',s.x).attr('y',s.y+(j-lines.length/2+0.7)*14).attr('text-anchor','middle').attr('fill',s.color).attr('font-size',10).attr('font-weight','700').text(l); });
+    g2.transition().duration(500).delay(200+i*180).attr('opacity',1);
+  });
+
+  // Setas
+  for(var i=0;i<pipeline.length-1;i++){
+    var s1=pipeline[i], s2=pipeline[i+1];
+    svg.append('line').attr('x1',s1.x+s1.w/2).attr('y1',155).attr('x2',s2.x-s2.w/2).attr('y2',155)
+      .attr('stroke','#555').attr('stroke-width',1.5).attr('marker-end','url(#arrRL)').attr('opacity',0)
+      .transition().duration(400).delay(500+i*150).attr('opacity',1);
+  }
+
+  // Outputs debaixo
+  var outputs = [
+    {x:630,y:230,text:'Explicação Local',sub:'tokens problemáticos',color:'#FFD54D'},
+    {x:770,y:230,text:'Mitigação',sub:'feedback → LLM revisa',color:'#4DFFB4'},
+  ];
+  outputs.forEach(function(o,i){
+    svg.append('text').attr('x',o.x).attr('y',o.y).attr('text-anchor','middle')
+      .attr('fill',o.color).attr('font-size',10).attr('font-weight','700').text(o.text).attr('opacity',0)
+      .transition().duration(400).delay(1600+i*200).attr('opacity',1);
+    svg.append('text').attr('x',o.x).attr('y',o.y+14).attr('text-anchor','middle')
+      .attr('fill','#888').attr('font-size',9).text(o.sub).attr('opacity',0)
+      .transition().duration(400).delay(1800+i*200).attr('opacity',1);
+    svg.append('line').attr('x1',o.x).attr('y1',180).attr('x2',o.x).attr('y2',218)
+      .attr('stroke',o.color).attr('stroke-width',1).attr('stroke-dasharray','3,2').attr('opacity',0)
+      .transition().duration(300).delay(1500+i*200).attr('opacity',0.7);
+  });
+
+  // AUC label
+  svg.append('text').attr('x',430).attr('y',290).attr('text-anchor','middle')
+    .attr('fill','#FF6464').attr('font-size',11).attr('font-weight','700')
+    .text('AUC > 80% em RAGTruth e Dolly · SAE > CoT self-judgment em todos os LLMs').attr('opacity',0)
+    .transition().duration(500).delay(2200).attr('opacity',1);
+
+  // Defs
+  var defs=svg.append('defs');
+  var mk=defs.append('marker').attr('id','arrRL').attr('viewBox','0 0 10 10').attr('refX',8).attr('refY',5)
+    .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto');
+  mk.append('path').attr('d','M 0 0 L 10 5 L 0 10 z').attr('fill','#555');
+
+  function hr(hex){ var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return r+','+g+','+b; }
+
+  // Bola viajante
+  var dot=svg.append('circle').attr('r',7).attr('fill','#FF6464').attr('opacity',0);
+  function travel(idx){
+    if(window.__raglensGen!==myG) return;
+    if(idx>=pipeline.length){ setTimeout(function(){ travel(0); }, 1000); return; }
+    var s=pipeline[idx];
+    dot.attr('cx',idx===0?s.x:pipeline[idx-1].x).attr('cy',155).attr('opacity',1).attr('fill',s.color);
+    dot.transition().duration(400).attr('cx',s.x).attr('cy',155)
+      .on('end',function(){ setTimeout(function(){ travel(idx+1); },200); });
+  }
+  setTimeout(function(){ travel(0); }, 1400);
+})();
+
+// ══════════════════════════════════════
+// D3 ANIM 5: Comparativo detectores
+// ══════════════════════════════════════
+(function(){
+  window.__cmp22Gen = (window.__cmp22Gen||0)+1; var myG = window.__cmp22Gen;
+  var el = document.getElementById('anim-compare22'); if(!el) return; el.innerHTML='';
+  var svg = d3.select(el);
+
+  var methods = ['HHEM-2.1\nOpen', 'RAGAS\nPrompt', 'FaithJudge\n(o3-mini)', 'RAGLens\n(SAE)', 'GPT-4o\nZero-shot'];
+  var colors = ['#4DB4FF','#FFD54D','#B464FF','#FF6464','#4DFFB4'];
+  var datasets = [
+    { name:'AggreFact', vals:[66,61,72,78,76] },
+    { name:'FaithBench', vals:[45,51,84,82,66] },
+    { name:'RAGTruth', vals:[67,64,83,88,76] },
+    { name:'TofuEval', vals:[61,58,82,80,69] },
+  ];
+
+  var margin={top:30,right:20,bottom:70,left:55};
+  var iW=860-margin.left-margin.right, iH=340-margin.top-margin.bottom;
+  var g=svg.append('g').attr('transform','translate('+margin.left+','+margin.top+')');
+
+  var x0=d3.scaleBand().domain(datasets.map(function(d){ return d.name; })).range([0,iW]).padding(0.2);
+  var x1=d3.scaleBand().domain(methods).range([0,x0.bandwidth()]).padding(0.06);
+  var y=d3.scaleLinear().domain([0,100]).range([iH,0]);
+
+  g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(function(d){ return d+'%'; }))
+    .selectAll('text').attr('fill','#777').attr('font-size',10);
+  g.append('g').attr('transform','translate(0,'+iH+')')
+    .call(d3.axisBottom(x0).tickSize(0)).selectAll('text').attr('fill','#aaa').attr('font-size',12).attr('dy','1.2em');
+  g.selectAll('.domain').remove();
+
+  datasets.forEach(function(ds){
+    var gDs=g.append('g').attr('transform','translate('+x0(ds.name)+',0)');
+    methods.forEach(function(m,mi){
+      gDs.append('rect').attr('x',x1(m)).attr('y',iH).attr('width',x1.bandwidth()).attr('height',0)
+        .attr('rx',3).attr('fill',colors[mi]).attr('opacity',0.8)
+        .transition().duration(600).delay(300+mi*70).attr('y',y(ds.vals[mi])).attr('height',iH-y(ds.vals[mi]));
+    });
+  });
+
+  // Linha random (50%)
+  g.append('line').attr('x1',0).attr('x2',iW).attr('y1',y(50)).attr('y2',y(50))
+    .attr('stroke','#666').attr('stroke-dasharray','4,4').attr('stroke-width',1);
+  g.append('text').attr('x',iW).attr('y',y(50)-5).attr('text-anchor','end')
+    .attr('fill','#666').attr('font-size',9).text('Random ~50%');
+
+  // Legenda
+  var leg=svg.append('g').attr('transform','translate('+margin.left+','+(340-25)+')');
+  methods.forEach(function(m,i){
+    leg.append('rect').attr('x',i*160).attr('y',0).attr('width',11).attr('height',11).attr('rx',2).attr('fill',colors[i]);
+    leg.append('text').attr('x',i*160+15).attr('y',10).attr('fill','#aaa').attr('font-size',9.5)
+      .text(m.replace('\n',' '));
+  });
+
+  function loop(){
+    if(window.__cmp22Gen!==myG) return;
+    leg.selectAll('rect').transition().duration(350).attr('opacity',0.3).transition().duration(350).attr('opacity',1)
+      .on('end',function(){ setTimeout(loop,3000); });
+  }
+  setTimeout(loop,1800);
+})();
+
+// ══════════════════════════════════════
+// D3 ANIM 6: PANORAMA 22 — RAG Studio completo
+// ══════════════════════════════════════
+(function(){
+  window.__pano22Gen = (window.__pano22Gen||0)+1; var myG = window.__pano22Gen;
+  var el = document.getElementById('anim-panorama22'); if(!el) return; el.innerHTML='';
+  var svg = d3.select(el);
+
+  var modules = [
+    { x:430, y:180, r:52, color:'#FF6464', label:'Faithfulness\n& Alucinação', n:'22', final:true },
+    { x:280, y:100, r:34, color:'#B464FF', label:'Query\nRewriting', n:'21' },
+    { x:140, y:180, r:34, color:'#FFD54D', label:'Domínios\nEspec.', n:'20' },
+    { x:210, y:280, r:30, color:'#4DFFB4', label:'Fine-\nTuning', n:'19' },
+    { x:620, y:100, r:30, color:'#4DB4FF', label:'RAG\nMultilingue', n:'18' },
+    { x:720, y:200, r:30, color:'#FF904D', label:'Robustez\nSegurança', n:'17' },
+    { x:640, y:300, r:30, color:'#B464FF', label:'Dados\nEstruct.', n:'16' },
+    { x:380, y:70, r:26, color:'#26C6DA', label:'Avaliação\nReal', n:'14' },
+    { x:500, y:320, r:26, color:'#4DB4FF', label:'Graph\nRAG', n:'12' },
+    { x:360, y:310, r:24, color:'#FFD54D', label:'Reranking', n:'11' },
+  ];
+
+  // Centro (Módulo 22) primeiro com anel pulsante
+  var centerG = svg.append('g');
+  centerG.append('circle').attr('cx',430).attr('cy',180).attr('r',60)
+    .attr('fill','none').attr('stroke','#FF6464').attr('stroke-width',1).attr('opacity',0.3)
+    .attr('id','ring22');
+  centerG.append('circle').attr('cx',430).attr('cy',180).attr('r',52)
+    .attr('fill','rgba(255,100,100,0.15)').attr('stroke','#FF6464').attr('stroke-width',2);
+  var lines22 = ['Faithfulness', '& Alucinação', 'Módulo 22'];
+  lines22.forEach(function(l,i){
+    centerG.append('text').attr('x',430).attr('y',170+(i-1)*14).attr('text-anchor','middle')
+      .attr('fill','#FF6464').attr('font-size',i===2?9:10).attr('font-weight',i===2?'400':'700').text(l);
+  });
+
+  // Links ao centro
+  modules.slice(1).forEach(function(m,i){
+    svg.append('line').attr('x1',m.x).attr('y1',m.y).attr('x2',430).attr('y2',180)
+      .attr('stroke','rgba(255,100,100,0.12)').attr('stroke-width',1).attr('stroke-dasharray','3,4').attr('opacity',0)
+      .transition().duration(400).delay(300+i*80).attr('opacity',1);
+  });
+
+  // Outros módulos
+  modules.slice(1).forEach(function(m,i){
+    var g=svg.append('g').attr('opacity',0);
+    g.append('circle').attr('cx',m.x).attr('cy',m.y).attr('r',m.r)
+      .attr('fill','rgba('+hexR(m.color)+',0.08)').attr('stroke',m.color).attr('stroke-width',1.2);
+    var lines=m.label.split('\n');
+    lines.forEach(function(l,j){ g.append('text').attr('x',m.x).attr('y',m.y+(j-lines.length/2+0.65)*12).attr('text-anchor','middle').attr('fill',m.color).attr('font-size',9).attr('font-weight','600').text(l); });
+    g.append('text').attr('x',m.x).attr('y',m.y+m.r-5).attr('text-anchor','middle')
+      .attr('fill','rgba(255,255,255,0.3)').attr('font-size',8).text('#'+m.n);
+    g.transition().duration(500).delay(500+i*120).attr('opacity',1);
+  });
+
+  // Stats finais
+  var stats=[
+    {x:120,y:330,val:'22',label:'Módulos'},
+    {x:240,y:330,val:'108',label:'Artigos'},
+    {x:360,y:330,val:'503',label:'Slides'},
+    {x:480,y:330,val:'183',label:'D3 Anim.'},
+    {x:610,y:330,val:'ICLR\n2026',label:'Última pub.'},
+    {x:740,y:330,val:'PT-BR',label:'Idioma'},
+  ];
+  stats.forEach(function(s,i){
+    var sg=svg.append('g').attr('opacity',0);
+    var ls=s.val.split('\n');
+    ls.forEach(function(l,j){ sg.append('text').attr('x',s.x).attr('y',s.y+(j-ls.length/2)*13).attr('text-anchor','middle').attr('fill','#FF6464').attr('font-size',13).attr('font-weight','800').text(l); });
+    sg.append('text').attr('x',s.x).attr('y',s.y+18).attr('text-anchor','middle').attr('fill','#666').attr('font-size',9).text(s.label);
+    sg.transition().duration(400).delay(1600+i*150).attr('opacity',1);
+  });
+
+  function hexR(hex){ var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return r+','+g+','+b; }
+
+  // Pulsa anel
+  function pulseRing(){
+    if(window.__pano22Gen!==myG) return;
+    d3.select('#ring22').transition().duration(800).attr('r',72).attr('opacity',0)
+      .transition().duration(0).attr('r',58).attr('opacity',0.3)
+      .on('end',function(){ setTimeout(pulseRing,1200); });
+  }
+  setTimeout(pulseRing,1000);
+})();
+</script>
+</body>
+</html>
