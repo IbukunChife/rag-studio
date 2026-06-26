@@ -1,601 +1,534 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAG Fine-Tuning — Módulo 19 | RAG Studio</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
-<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<style>
-:root {
-  --mira-bg: #000000;
-  --mira-primary: #FF904D;
-  --mira-success: #4DFFB4;
-  --mira-warning: #FFD54D;
-  --mira-error: #FF6464;
-  --mira-blue: #4DB4FF;
-  --mira-purple: #B464FF;
-  --mira-teal: #26C6DA;
-  --mira-text: #E8E8E8;
-  --mira-muted: #888888;
-  --mira-card: rgba(255,255,255,0.04);
-  --mira-border: rgba(255,255,255,0.08);
-  --accent: var(--mira-success);
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{background:var(--mira-bg);color:var(--mira-text);font-family:'Inter',sans-serif;overflow-x:hidden}
-.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 24px;position:relative}
-.inner{width:100%;max-width:860px}
-.tag{display:inline-flex;align-items:center;gap:6px;background:rgba(77,255,180,0.1);border:1px solid rgba(77,255,180,0.28);color:var(--mira-success);padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px}
-h1.hero{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;line-height:1.1;letter-spacing:-.02em;margin-bottom:20px}
-h2.title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;line-height:1.2;margin-bottom:16px}
-.accent{color:var(--mira-success)}
-.lead{font-size:1.08rem;color:var(--mira-muted);line-height:1.7;margin-bottom:26px}
-.card{background:var(--mira-card);border:1px solid var(--mira-border);border-radius:16px;padding:24px 28px;margin-bottom:18px;backdrop-filter:blur(10px)}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-@media(max-width:600px){.g2,.g3{grid-template-columns:1fr}}
-.cell{background:rgba(255,255,255,0.03);border:1px solid var(--mira-border);border-radius:12px;padding:18px 20px}
-.num{font-size:1.9rem;font-weight:900;color:var(--accent);line-height:1;margin-bottom:6px}
-.cell h3{font-size:.92rem;font-weight:700;margin-bottom:6px}
-.cell p{font-size:.82rem;color:var(--mira-muted);line-height:1.5}
-.metaphor{background:rgba(77,255,180,0.06);border:1px solid rgba(77,255,180,0.18);border-left:4px solid var(--mira-success);border-radius:12px;padding:22px 26px;margin-bottom:22px}
-.mlabel{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-success);margin-bottom:10px}
-.metaphor p{font-size:.97rem;line-height:1.7;color:#b8f8d8}
-.anim-box{width:100%;border:1px solid var(--mira-border);border-radius:12px;overflow:hidden;background:rgba(0,0,0,0.4);margin-bottom:14px}
-ul.li{list-style:none;padding:0}
-ul.li li{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.92rem;line-height:1.5}
-ul.li li:last-child{border-bottom:none}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0}
-.pills{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
-.pill{background:rgba(77,255,180,0.08);border:1px solid rgba(77,255,180,0.22);border-radius:10px;padding:10px 18px;text-align:center}
-.pill .pv{font-size:1.5rem;font-weight:900;color:var(--accent)}
-.pill .pl{font-size:.68rem;color:var(--mira-muted);text-transform:uppercase;letter-spacing:.05em}
-.formula{background:rgba(0,0,0,0.6);border:1px solid rgba(77,255,180,0.18);border-radius:8px;padding:14px 20px;font-family:'Courier New',monospace;font-size:.9rem;color:var(--mira-success);text-align:center;margin:14px 0}
-.capa-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 70% 60% at 50% 40%,rgba(77,255,180,0.12) 0%,transparent 70%);pointer-events:none}
-.capa-c{position:relative;z-index:1;text-align:center}
-.mbadge{display:inline-block;padding:5px 16px;background:rgba(77,255,180,0.12);border:1px solid rgba(77,255,180,0.35);border-radius:30px;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-success);margin-bottom:26px}
-.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:26px}
-.chip{padding:4px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;font-size:.69rem;color:var(--mira-muted)}
-.progress-bar{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.06);z-index:1000}
-.progress-fill{height:100%;background:var(--mira-success);width:0%;transition:width .2s}
-.nav-btn{position:fixed;bottom:30px;right:30px;z-index:1000;width:46px;height:46px;border-radius:50%;background:var(--mira-success);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(77,255,180,0.35);transition:transform .2s,opacity .3s;opacity:0}
-.nav-btn.show{opacity:1}
-.nav-btn:hover{transform:scale(1.1)}
-.nav-btn svg{width:18px;height:18px;stroke:#000}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Módulo 19 · RAG Fine-Tuning — RAG Studio</title>
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --mira-primary: #FF904D;
+      --mira-bg: #000000;
+      --mira-success: #4DFFB4;
+      --mira-warning: #FFD54D;
+      --mira-error: #FF6464;
+      --mira-blue: #4DB4FF;
+      --mira-purple: #B464FF;
+      --mira-teal: #26C6DA;
+      --accent: var(--mira-success);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--mira-bg); color: #fff; overflow-x: hidden; }
+    #progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--mira-success); z-index: 9999; width: 0%; transition: width 0.2s ease; }
+    #back-btn { position: fixed; bottom: 2rem; right: 2rem; width: 3rem; height: 3rem; border-radius: 50%; background: var(--mira-success); border: none; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; z-index: 100; box-shadow: 0 4px 24px rgba(77,255,180,0.45); }
+    #back-btn.visible { opacity: 1; }
+    .slide { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 4rem 1.5rem; position: relative; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; backdrop-filter: blur(10px); max-width: 900px; width: 100%; padding: 2.75rem; }
+    .slide-hero { background: radial-gradient(ellipse 65% 55% at 15% 55%, rgba(77,255,180,0.10) 0%, transparent 60%), var(--mira-bg); }
+    .module-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(77,255,180,0.12); border: 1px solid rgba(77,255,180,0.3); color: var(--mira-success); border-radius: 2rem; padding: 0.4rem 1rem; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+    .hero-title { font-size: clamp(2.8rem, 7vw, 5rem); font-weight: 900; line-height: 1.0; letter-spacing: -0.03em; }
+    .hero-accent { color: var(--mira-success); }
+    .sec-label { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(77,255,180,0.1); border: 1px solid rgba(77,255,180,0.25); border-radius: 2rem; padding: 0.3rem 0.9rem; font-size: 0.7rem; color: var(--mira-success); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .metaphor-box { background: rgba(77,255,180,0.05); border: 1px solid rgba(77,255,180,0.18); border-radius: 1rem; padding: 1.5rem; }
+    .metaphor-icon { width: 3.5rem; height: 3.5rem; border-radius: 50%; background: rgba(77,255,180,0.14); border: 1px solid rgba(77,255,180,0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.4rem; }
+    .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 1rem; padding: 1.5rem; text-align: center; }
+    .stat-num { font-size: 2.6rem; font-weight: 900; line-height: 1; }
+    .stat-lbl { font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; font-weight: 500; }
+    .gi { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.2rem; }
+    .tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.65rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
+    .t-b { background: rgba(77,180,255,0.15); color: var(--mira-blue); border: 1px solid rgba(77,180,255,0.3); }
+    .t-g { background: rgba(77,255,180,0.15); color: var(--mira-success); border: 1px solid rgba(77,255,180,0.3); }
+    .t-p { background: rgba(180,100,255,0.15); color: var(--mira-purple); border: 1px solid rgba(180,100,255,0.3); }
+    .t-y { background: rgba(255,213,77,0.15); color: var(--mira-warning); border: 1px solid rgba(255,213,77,0.3); }
+    .t-r { background: rgba(255,100,100,0.15); color: var(--mira-error); border: 1px solid rgba(255,100,100,0.3); }
+    .t-o { background: rgba(255,144,77,0.15); color: var(--mira-primary); border: 1px solid rgba(255,144,77,0.3); }
+    .d3-wrap { width: 100%; border-radius: 1rem; overflow: hidden; background: rgba(255,255,255,0.02); }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: rgba(77,255,180,0.1); color: var(--mira-success); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.7rem 1rem; text-align: left; }
+    td { padding: 0.65rem 1rem; font-size: 0.83rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
+    tr:last-child td { border-bottom: none; }
+    .alert { border-radius: 0.875rem; padding: 1.1rem 1.4rem; border-left: 4px solid; }
+    .alert-b { background: rgba(77,180,255,0.07); border-color: var(--mira-blue); }
+    .alert-r { background: rgba(255,100,100,0.07); border-color: var(--mira-error); }
+    .alert-y { background: rgba(255,213,77,0.07); border-color: var(--mira-warning); }
+    .alert-g { background: rgba(77,255,180,0.07); border-color: var(--mira-success); }
+    .alert-p { background: rgba(180,100,255,0.07); border-color: var(--mira-purple); }
+    hr.div { border: none; border-top: 1px solid rgba(255,255,255,0.07); }
+    .accent-bar { width: 2.5rem; height: 3px; background: var(--mira-success); border-radius: 2px; }
+    .debate-col { border-radius: 1rem; padding: 1.4rem; flex: 1; }
+    .dec-node { background: rgba(255,255,255,0.04); border: 1px solid rgba(77,255,180,0.2); border-radius: 0.75rem; padding: 0.9rem 1.2rem; font-size: 0.83rem; }
+    .dec-node.answer { background: rgba(77,255,180,0.07); border-color: rgba(77,255,180,0.3); color: var(--mira-success); font-weight: 700; }
+    .dec-connector { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; padding: 0.2rem 0; }
+    .li-bullet { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.88rem; line-height: 1.5; }
+    .li-bullet:last-child { border-bottom: none; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mira-success); margin-top: 7px; flex-shrink: 0; }
+    .formula { background: rgba(0,0,0,0.6); border: 1px solid rgba(77,255,180,0.18); border-radius: 0.5rem; padding: 0.9rem 1.2rem; font-family: 'Courier New', monospace; font-size: 0.9rem; color: var(--mira-success); text-align: center; }
+  </style>
 </head>
 <body>
-<div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
-<button class="nav-btn" id="nav-btn" onclick="goNext()">
-  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+
+<div id="progress-bar"></div>
+<button id="back-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
 </button>
 
-<!-- ═══ SLIDE 01 — CAPA ═══ -->
-<section class="slide" id="s01">
-  <div class="capa-bg"></div>
-  <div class="inner capa-c">
-    <div class="mbadge">Módulo 19 · RAG Studio</div>
-    <h1 class="hero" data-aos="fade-up">RAG &<br><span class="accent">Fine-Tuning</span></h1>
-    <p class="lead" data-aos="fade-up" data-aos-delay="100">
-      Quando ajustar os pesos supera o retrieval, quando o retrieval supera o ajuste,<br>
-      e como treinar modelos pequenos a resistir ao ruído de contexto.
-    </p>
-    <div class="pills" data-aos="fade-up" data-aos-delay="200" style="justify-content:center">
-      <div class="pill"><div class="pv">4</div><div class="pl">artigos</div></div>
-      <div class="pill"><div class="pv">11</div><div class="pl">datasets</div></div>
-      <div class="pill"><div class="pv">2024–25</div><div class="pl">NAACL · SIGIR · arXiv</div></div>
+<!-- SLIDE 1 · CAPA -->
+<div class="slide slide-hero" id="slide-1">
+  <div class="card" style="border-color:rgba(77,255,180,0.18); max-width:960px;">
+    <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="module-badge mb-6">Módulo 19 · RAG Studio</div>
+      <h1 class="hero-title mb-4">RAG &amp;<br><span class="hero-accent">Fine-Tuning</span></h1>
+      <p style="color:rgba(255,255,255,0.5); font-size:1rem;" class="mb-8">Quando ajustar os pesos supera o retrieval — e como treinar resiliência ao ruído sem professor externo</p>
     </div>
-    <div class="chips" data-aos="fade-up" data-aos-delay="300">
-      <span class="chip">FT vs RAG Less Popular (SIGIR-AP 2024)</span>
-      <span class="chip">SimRAG (NAACL 2025)</span>
-      <span class="chip">Finetune-RAG (Pints AI, arXiv 2025)</span>
-      <span class="chip">RoseRAG (Purdue/Rutgers/Emory/GT 2025)</span>
+    <hr class="div mb-8" />
+    <div class="grid grid-cols-4 gap-4 mb-8" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success);">21pp</div><div class="stat-lbl">Finetune-RAG: 76,97%→98,18% acurácia</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success);">94%</div><div class="stat-lbl">SimRAG Gemma-27B do GPT-4 sem dados rotulados</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success);">1–3B</div><div class="stat-lbl">RoseRAG: SLMs superam baselines de 8B+</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success);">82%</div><div class="stat-lbl">StableLM 1.6B PopQA (vs 21.75% vanilla)</div></div>
+    </div>
+    <div class="flex flex-wrap gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-g">FT vs RAG Less Popular · SIGIR-AP 2024</span>
+      <span class="tag t-b">SimRAG · NAACL 2025</span>
+      <span class="tag t-o">Finetune-RAG · Pints AI · arXiv 2025</span>
+      <span class="tag t-p">RoseRAG · Purdue/Rutgers/Emory/GT 2025</span>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══ SLIDE 02 — O PROBLEMA ═══ -->
-<section class="slide" id="s02">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">O Problema</div>
-    <h2 class="title" data-aos="fade-up">Fine-Tuning ou RAG?<br><span class="accent">A Pergunta Errada</span></h2>
-    <p class="lead" data-aos="fade-up" data-aos-delay="100">
-      A literatura tratou FT e RAG como alternativas competitivas. Os 4 papers deste módulo mostram que a relação é mais sutil: a escolha depende da popularidade do conhecimento, do tamanho do modelo e da qualidade do retrieval.
-    </p>
-    <div class="g3" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <div class="num">+8,6%</div>
-        <h3>Ganho SimRAG</h3>
-        <p>SimRAG supera baselines em domínios especializados usando apenas corpus não-rotulado — sem anotação humana.</p>
-      </div>
-      <div class="cell">
-        <div class="num">98,2%</div>
-        <h3>Acurácia Finetune-RAG</h3>
-        <p>Modelo treinado com contexto fictício + correto alcança 98,18% de acurácia factual, vs. 76,97% do baseline.</p>
-      </div>
-      <div class="cell">
-        <div class="num">1–3B</div>
-        <h3>RoseRAG: Modelos Pequenos</h3>
-        <p>Qwen 1.5B e Llama 1B superam baselines de SLM com preferência contrastiva sem GPT-4 como professor.</p>
+<!-- SLIDE 2 · O PROBLEMA -->
+<div class="slide" id="slide-2">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">O Problema</div>
+      <h2 class="text-3xl font-black mb-1">Fine-Tuning ou RAG?<br><span style="color:var(--mira-success);">A Pergunta Errada</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">A literatura tratou FT e RAG como competidores — os 4 papers revelam que a relação depende de três fatores: popularidade do conhecimento, tamanho do modelo e qualidade do retrieval</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success);">21,75%</div><div class="stat-lbl">StableLM 1.6B sem RAG ou FT (PopQA raro) — teto do conhecimento paramétrico para entidades raras</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success);">82,09%</div><div class="stat-lbl">+FT+RAG (StableLM 1.6B, entidades raras) — 3,8x acima do baseline paramétrico</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning);">FT prejudica</div><div class="stat-lbl">modelos ≥7B com conhecimento popular — FT injeta o que já existe e degrada capacidade RAG</div></div>
+    </div>
+    <div class="alert alert-g" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-success);">A questão real:</strong> FT injeta conhecimento nos parâmetros (conhecimento paramétrico, permanente mas estático). RAG injeta na inferência (não-paramétrico, atualizável mas sujeito a ruído). Para conhecimento raro, RAG domina. Para retrieval ruidoso, treinar resiliência. Para domínio sem dados, auto-geração. O erro é não medir a popularidade antes de decidir.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3 · METÁFORA 1 — O MECÂNICO DOS CARROS RAROS -->
+<div class="slide" id="slide-3">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · FT vs. RAG (SIGIR-AP 2024)</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">🔧</div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-success);">O Mecânico que Só Conhece Carros Populares</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Um mecânico especializado em carros populares memorizou cada detalhe do Gol, Civic, Corolla — modelos que ele mais viu. Quando chega um Alfa Romeo Giulia GT de 1971, ele fica perdido: o carro é raro, pouco representado no seu treino. Dois cenários: <strong style="color:var(--mira-success);">(FT)</strong> fazer o mecânico estudar o manual do Alfa antes de ele aparecer; <strong style="color:var(--mira-success);">(RAG)</strong> deixar o mecânico como está, mas colocar o manual correto na bancada quando o Alfa aparecer. Soudani et al. (SIGIR-AP 2024) mostram que para entidades raras (&lt;10² pageviews Wikipedia), o manual na bancada supera a memorização por larga margem. Para carros comuns, o mecânico já sabe de cor — o manual pode até atrapalhar com ruído.
+          </p>
+        </div>
       </div>
     </div>
-    <div class="card" data-aos="fade-up" data-aos-delay="300">
-      <p style="font-size:.92rem;line-height:1.7;color:var(--mira-muted)">
-        <strong style="color:var(--mira-text)">A questão real:</strong> Fine-tuning injeta conhecimento nos parâmetros (conhecimento paramétrico); RAG injeta no momento da inferência (conhecimento não-paramétrico). Para conhecimento raro e específico de domínio, o que funciona melhor — e o que fazer quando o retrieval falha e traz ruído?
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-success); font-size:0.88rem;">Entidades Raras: RAG Domina</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">&lt;10² pageviews Wikipedia → LLMs têm memória paramétrica fraca. RAG supera FT por larga margem. Combinação +FT+RAG melhora modelos pequenos (1–3B) mas degrada modelos grandes (≥7B): FT mais memória paramétrica gera interferência.</p></div>
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-warning); font-size:0.88rem;">Entidades Populares: FT Pode Prejudicar</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">&gt;10⁵ pageviews → LLMs já têm memória forte. FT amplifica o que já existe. SRAG (Stimulus RAG: a sentença mais relevante no topo do prompt via Hint Extractor) supera todos os FT sem custo de treino.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4 · FT vs RAG Popularidade [D3] -->
+<div class="slide" id="slide-4">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">SIGIR-AP 2024 · PopQA</div>
+      <h2 class="text-3xl font-black mb-1">Popularidade Decide<br><span style="color:var(--mira-success);">Qual Estratégia Vence</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">StableLM 1.6B em PopQA · eixo X = popularidade da entidade (pageviews Wikipedia) · 3 estratégias competindo</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-popularity" style="height:240px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center"><div class="font-bold mb-1" style="color:var(--mira-success); font-size:0.82rem;">+FT+RAG: 82,09%</div><p style="font-size:0.72rem; color:rgba(255,255,255,0.55);">melhor para StableLM 1.6B com entidades raras — vs. 21,75% vanilla</p></div>
+      <div class="gi text-center"><div class="font-bold mb-1" style="color:var(--mira-warning); font-size:0.82rem;">SRAG sem treino</div><p style="font-size:0.72rem; color:rgba(255,255,255,0.55);">Hint Extractor seleciona sentença mais relevante do top-K — supera FT em modelos grandes</p></div>
+      <div class="gi text-center"><div class="font-bold mb-1" style="color:rgba(255,255,255,0.5); font-size:0.82rem;">3 docs = sweet spot</div><p style="font-size:0.72rem; color:rgba(255,255,255,0.55);">1→3 docs: grande melhoria. 5 docs: sem ganho ou queda — sobrecarga do contexto</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5 · D3 CONCEITUAL ÚNICO — O Dial de Popularidade-Estratégia -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Animação Conceitual · Seleção de Estratégia</div>
+      <h2 class="text-3xl font-black mb-1">A Popularidade <span style="color:var(--mira-success);">Roteando a Decisão</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Conforme a popularidade da entidade cresce — de raridade extrema a onipresença — a estratégia ótima muda automaticamente: o "dial" de rotas mostra quando FT ajuda e quando prejudica</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-dial" style="height:250px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-success); font-size:0.88rem;">Zona Fria (Entidades Raras)</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Memória paramétrica quase zero. RAG é essencial. FT+RAG melhora modelos pequenos (1–3B). SRAG não ajuda muito — sem sinal forte no retrieval.</p></div>
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-warning); font-size:0.88rem;">Zona Quente (Entidades Populares)</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Memória paramétrica forte. RAG com SRAG (hint na frente) é suficiente. FT em modelos ≥7B prejudica: interfere com o raciocínio contextual já bem calibrado.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6 · METÁFORA 2 — O ESTUDANTE QUE CRIA AS PRÓPRIAS PROVAS -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · SimRAG (NAACL 2025)</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">📖</div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">O Estudante que Cria as Próprias Provas</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Um estudante de medicina precisa se especializar em doenças raras tropicais. Problema: não existem exercícios prontos — há apenas monografias sem questões. Solução: ele lê cada monografia e, usando o que já aprendeu, <strong style="color:var(--mira-blue);">gera as próprias perguntas e respostas</strong>. Mas ele é inteligente: só mantém uma questão se, ao buscá-la num banco de dados, a monografia original reaparece no topo dos resultados — <strong style="color:var(--mira-blue);">round-trip consistency</strong>. Questões que não passam esse teste são descartadas. Depois estuda com as questões filtradas e melhora ainda mais. Isso é o SimRAG: um LLM que se especializa em domínios sem dados rotulados, auto-gerando e filtrando exemplos de treino a partir de corpus não-anotado.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-blue); font-size:0.88rem;">Stage I — Base RAG Sólida</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">SFT em instruction-following geral + QA de domínio geral + retrieval-related data. Equipa o LLM com capacidades básicas de answer generation e query generation — sem especialização ainda.</p></div>
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-success); font-size:0.88rem;">Stage II — Auto-Especialização</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Gera pseudo-labeled tuples (q', D', a') do corpus não-rotulado. Round-trip consistency filtra: só retém pares onde a resposta gerada está nos top-k documentos recuperados pela questão gerada. Melhora iterativa.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7 · SimRAG Pipeline + Resultados [D3] -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">SimRAG · NAACL 2025</div>
+      <h2 class="text-3xl font-black mb-1">93,99% do GPT-4 <span style="color:var(--mira-blue);">Sem Um Único Dado Rotulado</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Gemma-27B em medicina, ciências e CS · baseline sem auto-especialização ~75% do GPT-4 · 3 tipos de questão (short-span, MCQ, claim verification)</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-simrag" style="height:230px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center"><div class="font-bold mb-1" style="color:var(--mira-blue); font-size:1.5rem; font-weight:900;">94%</div><div style="font-size:0.72rem; color:rgba(255,255,255,0.45);">do GPT-4 (medicina)</div></div>
+      <div class="gi text-center"><div class="font-bold mb-1" style="color:var(--mira-blue); font-size:1.5rem; font-weight:900;">11</div><div style="font-size:0.72rem; color:rgba(255,255,255,0.45);">datasets avaliados</div></div>
+      <div class="gi text-center"><div class="font-bold mb-1" style="color:var(--mira-blue); font-size:1.5rem; font-weight:900;">+8,6%</div><div style="font-size:0.72rem; color:rgba(255,255,255,0.45);">ganho máximo sobre baselines</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8 · METÁFORA 3 — O DETETIVE -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · Finetune-RAG (Pints AI 2025)</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">🕵️</div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-primary);">O Detetive que Aprende a Ignorar Pistas Plantadas</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Um detetive chega à cena e encontra dois tipos de evidência: uma faca com as impressões digitais do suspeito real (<strong style="color:var(--mira-primary);">documento correto</strong>) e um bilhete forjado apontando para outra pessoa (<strong style="color:var(--mira-error);">documento fictício</strong>). Um detetive inexperiente fica confuso. O Finetune-RAG treina detetives de forma inusitada: durante o treino, deliberadamente apresenta cenas com uma evidência correta e uma fictícia, e o detetive aprende a responder usando <em>apenas</em> a evidência correta. O objetivo de treino é modelar P(a|q, d_correto, d_fictício) → P(a|q, d_correto): mesmo tendo acesso aos dois documentos, gera a resposta como se só o correto existisse. Em produção, quando o retriever traz ruído, o modelo já desenvolveu o instinto de filtrar.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-primary); font-size:0.88rem;">Dataset com Contexto Duplo</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">1.653 exemplos: documentos legais, artigos científicos, notícias, relatórios técnicos. Cada exemplo tem d_correto + d_fictício (plausível, gerado por GPT-4o). Treino com LLaMA 3.1-8B por 20 steps.</p></div>
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-warning); font-size:0.88rem;">Texto Plano &gt; XML</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Baseline (texto plano) 98,18% &gt; XML 97,58%. LLaMA tem viés para texto não-estruturado — seus dados de pré-treino predominantemente usavam esse formato. Outros modelos podem ter viés oposto.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9 · Finetune-RAG Curva [D3] -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Finetune-RAG · Curva de Treino</div>
+      <h2 class="text-3xl font-black mb-1">76,97% → 98,18%<br><span style="color:var(--mira-primary);">em 20 Passos</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">LLaMA 3.1-8B · Bench-RAG (LLM-as-a-Judge via GPT-4o) · queda temporária no step 2 é padrão de SFT fora da distribuição</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-finetunerag" style="height:230px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="alert alert-y" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-warning);">O "dip" do step 2:</strong> Ambos os formatos mostram queda temporária de acurácia — o modelo está reorganizando sua atenção para separar documentos corretos dos fictícios. É um sinal de aprendizado real, não de falha. Após o step 4, a trajetória é monotonicamente crescente.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10 · METÁFORA 4 — O BOXEADOR -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · RoseRAG (Purdue/Rutgers/Emory/GT 2025)</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">🥊</div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-purple);">O Boxeador que Treina com o Adversário Mais Difícil</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Um boxeador júnior (SLM 1–3B parâmetros) precisa melhorar. O treinador convencional (SFT) mostra vídeos de lutas vencidas — funciona, mas o boxeador fica bom apenas nessas situações específicas. O RoseRAG usa <strong style="color:var(--mira-purple);">preferência contrastiva</strong>: para cada situação, seleciona deliberadamente a resposta que o boxeador quase errou — a de mínima probabilidade mas correta (<em>chosen mínimo</em>) — e o erro que ele cometeu com máxima confiança (<em>rejected máximo</em>). Treinar especificamente nesses pares extremos maximiza o aprendizado. Sem precisar de um campeão mundial (GPT-4) como professor, o boxeador júnior aprende a discriminar situações difíceis usando <strong style="color:var(--mira-purple);">ORPO</strong> — que integra alinhamento diretamente no SFT sem modelo de referência separado.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-purple); font-size:0.88rem;">Preference Data sem GPT-4</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Multi-turn prompting com rejection sampling: se geração acerta = chosen y_w; resposta vanilla RAG = rejected y_l. Seleção contrastiva: Positive(Min) × Negative(Max) = casos mais informativos para treino.</p></div>
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-success); font-size:0.88rem;">ORPO — Sem Modelo de Referência</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Integra preferência diretamente no SFT. Mais estável que DPO (sem reference model instability). ℓ_ORPO = ℓ_SFT + β·(−log σ(log OR(y_w,y_l))). Qwen 1.5B: F1 39,6 → 44,8 em HotpotQA.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11 · RoseRAG Pipeline + Resultados [D3] -->
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">RoseRAG · 3 SLMs · 3 Benchmarks</div>
+      <h2 class="text-3xl font-black mb-1">SLMs 1–2B que <span style="color:var(--mira-purple);">Superam Baselines de 8B</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Qwen2.5-1.5B, Llama-3.2-1B, Gemma-2-2B · HotpotQA · WebQ · PopQA · vs. 8 baselines incluindo InstructRAG</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-roserag" style="height:240px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="alert alert-p" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-purple);">Por que funciona:</strong> A seleção Positive(Mínima) × Negative(Máxima) força o modelo a aprender exatamente nos casos mais informativos — onde ele estava mais incerto quando correto, e mais confiante quando errado. É a versão de treinamento do paradoxo do boxeador que melhora mais ao lutar com quem quase o derrota.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12 · O DEBATE [NOVO] -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Tensão Conceitual · O Debate</div>
+      <h2 class="text-3xl font-black mb-1">Para Retrieval Ruidoso:<br><span style="color:var(--mira-success);">Treinar com Ruído ou Treinar Discriminação?</span></h2>
+      <div class="accent-bar mb-5"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="background:rgba(255,144,77,0.07); border:1px solid rgba(255,144,77,0.2); border-radius:1rem; padding:1.4rem;">
+        <div class="font-bold mb-2" style="color:var(--mira-primary); font-size:0.9rem;">🕵️ Finetune-RAG: Treinar com Ruído Explícito</div>
+        <p style="font-size:0.82rem; color:rgba(255,255,255,0.75); line-height:1.5;">Tese: o modelo precisa ver contexto correto E fictício durante treino, com sinal de supervisão apontando qual é qual. Aprende a <em>ignorar explicitamente</em> o documento errado. Requer dataset curado com duplo contexto.</p>
+        <div style="margin-top:0.8rem; padding:0.6rem 0.8rem; background:rgba(255,144,77,0.1); border-radius:0.5rem; font-size:0.75rem; color:var(--mira-primary);">Resultado: 76,97% → 98,18% (LLaMA 3.1-8B, 1.653 exemplos)</div>
+      </div>
+      <div style="background:rgba(180,100,255,0.07); border:1px solid rgba(180,100,255,0.2); border-radius:1rem; padding:1.4rem;">
+        <div class="font-bold mb-2" style="color:var(--mira-purple); font-size:0.9rem;">🥊 RoseRAG: Treinar Discriminação por Preferência</div>
+        <p style="font-size:0.82rem; color:rgba(255,255,255,0.75); line-height:1.5;">Tese: o modelo precisa aprender a rankear respostas — não apenas imitar as corretas. ORPO maximiza a distância entre chosen/rejected. Não requer dataset curado: o próprio modelo gera os pares.</p>
+        <div style="margin-top:0.8rem; padding:0.6rem 0.8rem; background:rgba(180,100,255,0.1); border-radius:0.5rem; font-size:0.75rem; color:var(--mira-purple);">Resultado: Qwen 1.5B supera InstructRAG (8B) em 3 benchmarks</div>
+      </div>
+    </div>
+    <div class="alert alert-g" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-success);">Síntese (não-arbitrada):</strong> São complementares em escala diferente. Finetune-RAG treina para tipos <em>específicos</em> de ruído que você conhece de antemão (requer curadoria). RoseRAG treina a capacidade <em>geral</em> de discriminação sem curadoria manual — mas é mais lento para convergir. Para edge devices (1–3B), RoseRAG é mais econômico. Para casos onde os tipos de ruído são conhecidos, Finetune-RAG dá maior especificidade.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 13 · QUANDO USAR [NOVO] -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Guia Prático · Quando Usar Cada Abordagem</div>
+      <h2 class="text-3xl font-black mb-1">Na Segunda-Feira: <span style="color:var(--mira-success);">Meu RAG com Fine-Tuning</span></h2>
+      <div class="accent-bar mb-5"></div>
+    </div>
+    <div class="space-y-2" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="dec-node">📏 <strong>O conhecimento do meu domínio é raro (&lt;10² aparições no corpus)?</strong></div>
+      <div class="dec-connector">↓ sim — memória paramétrica é fraca</div>
+      <div class="dec-node">📦 <strong>Meu modelo é pequeno (&lt;3B parâmetros)?</strong></div>
+      <div class="flex gap-4 mt-1 mb-2" style="margin-left:1rem;">
+        <div style="flex:1;">
+          <div class="dec-connector">↓ sim</div>
+          <div class="dec-node answer">→ <strong>+FT+RAG</strong> (SIGIR) — FT melhora capacidade RAG em SLMs. PopQA: 21,75%→82,09%</div>
+        </div>
+        <div style="flex:1;">
+          <div class="dec-connector">↓ não (≥7B)</div>
+          <div class="dec-node answer">→ <strong>Apenas RAG com SRAG</strong> — FT em modelos grandes prejudica raciocínio contextual. Hint Extractor no topo do prompt</div>
+        </div>
+      </div>
+      <div class="dec-connector mt-2">↓ não — domínio especializado sem dados rotulados</div>
+      <div class="dec-node">🎓 <strong>Tenho corpus não-anotado do domínio?</strong></div>
+      <div class="dec-connector">↓ sim</div>
+      <div class="dec-node answer">→ <strong>SimRAG</strong> — 2-stage self-training com round-trip consistency. 94% do GPT-4 em medicina sem anotação humana</div>
+      <div class="dec-connector">↓ retrieval em produção traz documentos ruidosos</div>
+      <div class="flex gap-4 mt-1" style="margin-left:1rem;">
+        <div style="flex:1;">
+          <div class="dec-connector">↓ conheço os tipos de ruído</div>
+          <div class="dec-node answer">→ <strong>Finetune-RAG</strong> — dataset com duplo contexto (correto + fictício). 76,97%→98,18%. Requer curadoria</div>
+        </div>
+        <div style="flex:1;">
+          <div class="dec-connector">↓ preciso de solução geral / edge device</div>
+          <div class="dec-node answer">→ <strong>RoseRAG</strong> — ORPO sem GPT-4, sem curadoria. SLM 1.5B supera baselines de 8B. Ideal para deploy em hardware limitado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14 · ORPO vs SFT -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Técnica · Preferência vs. Imitação</div>
+      <h2 class="text-3xl font-black mb-1">Por Que Preferência<br><span style="color:var(--mira-success);">Supera Imitação Direta</span></h2>
+      <div class="accent-bar mb-5"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-4" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-bold mb-2" style="color:var(--mira-error); font-size:0.88rem;">SFT — Limitações</div>
+        <div class="li-bullet"><span class="dot" style="background:var(--mira-error);"></span>Imita a distribuição de treino — overfits cenários específicos</div>
+        <div class="li-bullet"><span class="dot" style="background:var(--mira-error);"></span>Não aprende a resistir a informação incorreta no contexto</div>
+        <div class="li-bullet"><span class="dot" style="background:var(--mira-error);"></span>Generalização limitada para tipos de ruído não vistos</div>
+      </div>
+      <div class="gi">
+        <div class="font-bold mb-2" style="color:var(--mira-success); font-size:0.88rem;">ORPO — Vantagens</div>
+        <div class="li-bullet"><span class="dot"></span>Maximiza odds ratio entre chosen/rejected — ensina discriminação</div>
+        <div class="li-bullet"><span class="dot"></span>Sem modelo de referência separado — integrado no SFT</div>
+        <div class="li-bullet"><span class="dot"></span>Mais estável que DPO — sem reference model instability</div>
+      </div>
+    </div>
+    <div class="formula mb-4" data-aos="fade-up" data-aos-delay="150" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      ℓ<sub>ORPO</sub>(x, y_w, y_l) = ℓ<sub>SFT</sub> + β · (−log σ(log OR_θ(x, y_w, y_l)))
+    </div>
+    <div class="alert alert-p" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-purple);">Seleção Contrastiva RoseRAG:</strong> Positive = chosen com mínima probabilidade (quase errou, mais informativo). Negative = rejected com máxima probabilidade (quase aceitou o erro, mais perigoso). Essa seleção concentra o treino nos pontos de maior incerteza — onde o aprendizado é mais denso por exemplo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 15 · Tabela Comparativa -->
+<div class="slide" id="slide-15">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Comparativo · 4 Abordagens</div>
+      <h2 class="text-3xl font-black mb-5">RAG Fine-Tuning em <span style="color:var(--mira-success);">4 Estratégias</span></h2>
+    </div>
+    <div style="overflow-x:auto;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <table>
+        <thead><tr><th>Paper</th><th>Problema</th><th>Método</th><th>Resultado Chave</th><th>Custo</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:700; color:var(--mira-success);">FT vs RAG (SIGIR)</td><td>Qual estratégia para conhecimento raro?</td><td style="color:var(--mira-success);">SRAG + buckets de popularidade</td><td style="color:var(--mira-warning);">RAG &gt;&gt; FT para entidades raras; SRAG &gt; FT para populares</td><td style="color:rgba(255,255,255,0.4);">Zero treino (SRAG)</td></tr>
+          <tr><td style="font-weight:700; color:var(--mira-blue);">SimRAG (NAACL)</td><td>Domínio especializado, sem dados rotulados</td><td style="color:var(--mira-blue);">2-stage self-training + round-trip</td><td style="color:var(--mira-success);">93,99% do GPT-4 em medicina</td><td style="color:rgba(255,255,255,0.4);">GPU própria, sem anotação</td></tr>
+          <tr><td style="font-weight:700; color:var(--mira-primary);">Finetune-RAG (Pints)</td><td>Modelo confia em contexto fictício</td><td style="color:var(--mira-primary);">SFT com duplo contexto correto+fictício</td><td style="color:var(--mira-success);">76,97% → 98,18% acurácia</td><td style="color:rgba(255,255,255,0.4);">1.653 exemplos curados</td></tr>
+          <tr><td style="font-weight:700; color:var(--mira-purple);">RoseRAG (Purdue)</td><td>SLMs frágeis com retrieval ruidoso</td><td style="color:var(--mira-purple);">Margin-aware ORPO sem GPT-4</td><td style="color:var(--mira-success);">Qwen 1.5B SOTA em 3 benchmarks</td><td style="color:rgba(255,255,255,0.4);">Auto-geração de preference data</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 16 · Mapa D3 -->
+<div class="slide" id="slide-16">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Panorama · 4 Papers</div>
+      <h2 class="text-3xl font-black mb-1">Mapa da Pesquisa <span style="color:var(--mira-success);">RAG + Fine-Tuning 2025</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Complexidade de implementação × ganho de performance — convergência: treinar resiliência ao ruído supera otimizar o retriever</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-compare19" style="height:240px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-success); font-size:0.85rem;">Tendência 2025: Resiliência no Gerador</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Finetune-RAG e RoseRAG atacam o mesmo problema por rotas diferentes: ao invés de melhorar o retriever, tornam o gerador robusto ao que o retriever traz. Trend dominante em 2025.</p></div>
+      <div class="gi"><div class="font-bold mb-2" style="color:var(--mira-warning); font-size:0.85rem;">Próxima Fronteira</div><p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">SimRAG iterativo com múltiplos rounds, Finetune-RAG multimodal (imagens enganosas), RoseRAG para 3–7B, e SRAG adaptativo que aprende o threshold de relevância de hint.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 17 · PRINCÍPIOS + FECHAMENTO DAS 4 METÁFORAS -->
+<div class="slide" id="slide-17">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 19 · Princípios Destilados</div>
+      <h2 class="text-3xl font-black mb-6">Os 4 Especialis-<span style="color:var(--mira-success);">tas em Ação</span></h2>
+    </div>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.9rem; color:rgba(255,255,255,0.8); line-height:1.7;">
+        <strong style="color:var(--mira-success);">Lembram dos 4 especialistas que conhecemos?</strong> O mecânico (SIGIR) agora só abre o manual do Alfa quando o carro é realmente raro — para o Civic, sua memória interna é melhor que qualquer manual. O estudante (SimRAG) gerou 11 datasets próprios de questões, filtrou com round-trip consistency e alcançou 94% do GPT-4 sem um único dado rotulado. O detetive (Finetune-RAG) treinou centenas de cenas com pistas plantadas — hoje, em produção, descarta documentos fictícios automaticamente com 98% de acurácia. O boxeador (RoseRAG) treinou especificamente nos rounds que quase perdeu — hoje, com 1,5B parâmetros, supera adversários de 8B que só treinaram com lutas vencidas. <strong style="color:var(--mira-warning);">Nenhum deles melhorou fazendo mais do mesmo — todos treinaram na fronteira de sua incompetência.</strong>
       </p>
     </div>
+    <div class="space-y-3" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi flex gap-3 items-start"><span class="tag t-g" style="flex-shrink:0;">P1</span><p style="font-size:0.84rem; color:rgba(255,255,255,0.8);"><strong>Meça a popularidade antes de decidir</strong> — use proxies de frequência (pageviews, ocorrências no corpus) para escolher entre FT, RAG ou SRAG. A escolha errada pode piorar um modelo bom.</p></div>
+      <div class="gi flex gap-3 items-start"><span class="tag t-b" style="flex-shrink:0;">P2</span><p style="font-size:0.84rem; color:rgba(255,255,255,0.8);"><strong>Corpus não-rotulado tem valor real</strong> — SimRAG demonstra que auto-geração com round-trip consistency transforma texto bruto em dados de treino eficientes. Se você tem documentos, você tem dados.</p></div>
+      <div class="gi flex gap-3 items-start"><span class="tag t-o" style="flex-shrink:0;">P3</span><p style="font-size:0.84rem; color:rgba(255,255,255,0.8);"><strong>Em produção, retrieval nunca é perfeito</strong> — treine para ruído (Finetune-RAG) ou para discriminação (RoseRAG). Um modelo treinado apenas em retrieval perfeito falha no mundo real.</p></div>
+      <div class="gi flex gap-3 items-start"><span class="tag t-p" style="flex-shrink:0;">P4</span><p style="font-size:0.84rem; color:rgba(255,255,255,0.8);"><strong>Dica no prompt às vezes elimina o custo de FT</strong> — SRAG demonstra que o hint certo no início do contexto supera modelos fine-tunados. Tente sempre o caminho zero-custo primeiro.</p></div>
+    </div>
   </div>
-</section>
+</div>
 
-<!-- ═══ SLIDE 03 — METÁFORA FT VS RAG ═══ -->
-<section class="slide" id="s03">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Metáfora · FT vs. RAG (SIGIR-AP 2024)</div>
-    <h2 class="title" data-aos="fade-up">O Mecânico que Só<br><span class="accent">Conhece Carros Populares</span></h2>
-    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
-      <div class="mlabel">Metáfora do Cotidiano</div>
-      <p>Imagine um mecânico especializado em carros populares. Ele memorizou cada detalhe do motor do Gol, do Civic, do Corolla — são os modelos que ele mais viu. Quando chega um Alfa Romeo Giulia GT de 1971 na oficina, ele fica perdido: o carro é raro, estava pouco nos seus dados de treino. Agora imagine dois cenários: (1) <strong style="color:var(--mira-success)">Fine-tuning</strong> = fazer o mecânico estudar exaustivamente o manual do Alfa de 1971 antes de ele aparecer. (2) <strong style="color:var(--mira-success)">RAG</strong> = deixar o mecânico continuar como está, mas quando o Alfa aparecer, colocar o manual correto na bancada ao lado dele. O paper de Soudani et al. mostra que, para carros raros (entidades de baixa popularidade), o manual na bancada (RAG) supera memorização prévia (FT) por uma margem enorme. Para carros comuns, o mecânico já sabe de cor — o manual na bancada pode até atrapalhar com ruído.</p>
+<!-- SLIDE 18 · PRÓXIMO MÓDULO -->
+<div class="slide" id="slide-18" style="background:radial-gradient(ellipse 60% 50% at 80% 50%, rgba(255,213,77,0.10) 0%, transparent 55%), var(--mira-bg);">
+  <div class="card" style="border-color:rgba(255,213,77,0.18);">
+    <div data-aos="fade-up" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="inline-flex items-center gap-2 mb-6" style="background:rgba(255,213,77,0.1); border:1px solid rgba(255,213,77,0.25); border-radius:2rem; padding:0.35rem 0.9rem; font-size:0.7rem; color:var(--mira-warning); font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">A Seguir · Módulo 20</div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem); font-weight:900; line-height:1.05; letter-spacing:-0.02em; margin-bottom:1rem;">RAG em Domínios<br><span style="color:var(--mira-warning);">Especializados</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.95rem; margin-bottom:2rem;">Biomedicina, direito, finanças. ModernBERT, OG-RAG (grafos ontológicos), ColBERT para registros clínicos — quando RAG precisa conhecer o vocabulário do domínio.</p>
     </div>
-    <div class="g2" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Conhecimento Popular: FT Funciona</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Para entidades com >10⁵ pageviews no Wikipedia, LLMs têm forte memória paramétrica. FT amplifica o que já existe. Combinação +FT+RAG pode atrapalhar raciocínio em modelos maiores (≥7B params).</p>
-      </div>
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Conhecimento Raro: RAG é Superior</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Para entidades com &lt;10² pageviews, RAG supera FT por larga margem em todos os modelos testados. O retriever é mais eficaz para entidades raras (menos ruído concorrente no corpus).</p>
-      </div>
+    <hr class="div mb-6" />
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning);">4</div><div class="stat-lbl">artigos científicos</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning);">ModernBERT</div><div class="stat-lbl">novo backbone para domínio biomédico</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning);">OG-RAG</div><div class="stat-lbl">grafos ontológicos para RAG especializado</div></div>
+    </div>
+    <div class="mt-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <a href="../index.html" style="display:inline-flex; align-items:center; gap:0.5rem; color:var(--mira-blue); font-weight:600; font-size:0.9rem; text-decoration:none; border:1px solid rgba(77,180,255,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; background:rgba(77,180,255,0.08);">← Voltar ao Portal</a>
     </div>
   </div>
-</section>
-
-<!-- ═══ SLIDE 04 — FT vs RAG + D3 ═══ -->
-<section class="slide" id="s04">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">FT vs RAG · Popularidade</div>
-    <h2 class="title" data-aos="fade-up">Popularidade Decide<br><span class="accent">Qual Estratégia Vence</span></h2>
-    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:270px">
-      <div id="anim-popularity" style="width:100%;height:100%"></div>
-    </div>
-    <div class="g3" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <div class="num">82%</div>
-        <h3>+FT+RAG StableLM 1.6B</h3>
-        <p>PopQA — melhor combinação para modelos pequenos. +FT+RAG alcança 82.09% vs 21.75% do vanilla.</p>
-      </div>
-      <div class="cell">
-        <div class="num">SRAG</div>
-        <h3>Stimulus RAG</h3>
-        <p>Hint Extractor identifica a sentença mais relevante do top-K e a coloca no início do prompt — supera todos os FT.</p>
-      </div>
-      <div class="cell">
-        <div class="num">3 docs</div>
-        <h3>Sweet Spot de Documentos</h3>
-        <p>Aumentar de 1 para 3 documentos melhora muito; 5 documentos = sem ganho ou queda. LLMs ficam sobrecarregados.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 05 — METÁFORA SIMRAG ═══ -->
-<section class="slide" id="s05">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Metáfora · SimRAG (NAACL 2025)</div>
-    <h2 class="title" data-aos="fade-up">O Estudante que<br><span class="accent">Cria as Próprias Provas</span></h2>
-    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
-      <div class="mlabel">Metáfora do Cotidiano</div>
-      <p>Um estudante de medicina precisa se especializar em doenças raras tropicais. O problema: não existem exercícios prontos para estudar — o material de treino disponível é apenas monografias acadêmicas sem questões. Solução: ele lê cada monografia e, usando o que já aprendeu, <strong style="color:var(--mira-success)">gera as próprias perguntas e respostas</strong> de estudo. Mas ele é inteligente: só mantém uma questão se, ao procurá-la em um banco de dados, a monografia original reaparece no topo dos resultados (round-trip consistency). Questões que não passam nesse teste são descartadas — provavelmente eram mal formuladas. Depois, estuda com essas questões auto-geradas e melhora ainda mais. Isso é o SimRAG: um LLM que se especializa em domínios sem dados rotulados, gerando e filtrando seus próprios exemplos de treino a partir de corpus não-rotulado.</p>
-    </div>
-    <div class="g2" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Stage I: Base RAG Sólida</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">SFT em dados gerais de instruction-following, QA de domínio geral e retrieval-related data. Equipa o LLM com capacidades básicas de answer generation e query generation — sem especialização ainda.</p>
-      </div>
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Stage II: Auto-Especialização</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">O LLM gera pseudo-labeled tuples (q', D', a') do corpus não-rotulado do domínio alvo. Round-trip consistency filtra: só retém pares onde a resposta gerada está nos top-k documentos recuperados pela questão gerada.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 06 — SIMRAG + D3 ═══ -->
-<section class="slide" id="s06">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">SimRAG · Pipeline e Resultados</div>
-    <h2 class="title" data-aos="fade-up">Self-Training em<br><span class="accent">3 Domínios</span></h2>
-    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:270px">
-      <div id="anim-simrag" style="width:100%;height:100%"></div>
-    </div>
-    <div class="g3" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <div class="num">94%</div>
-        <h3>do GPT-4 (Gemma-27B)</h3>
-        <p>SimRAG 27B alcança 93,99%, 98,95%, 86,66% do GPT-4 em medicina, ciências, ciência da computação respectivamente.</p>
-      </div>
-      <div class="cell">
-        <div class="num">3 tipos</div>
-        <h3>de Questão Auto-Geradas</h3>
-        <p>Short-span QA + multiple-choice QA + claim verification — variedade que evita overfitting a um único formato de tarefa.</p>
-      </div>
-      <div class="cell">
-        <div class="num">11</div>
-        <h3>Datasets Avaliados</h3>
-        <p>Medicina (PubMedQA, BioASQ, MedQA, MMLU-med, LiveQA, MedMCQA), ciências (ARC, SciQ, MMLU-sci), CS (CS-Bench).</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 07 — METÁFORA FINETUNE-RAG ═══ -->
-<section class="slide" id="s07">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Metáfora · Finetune-RAG (Pints AI, 2025)</div>
-    <h2 class="title" data-aos="fade-up">O Detetive que Aprende<br><span class="accent">a Ignorar Pistas Plantadas</span></h2>
-    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
-      <div class="mlabel">Metáfora do Cotidiano</div>
-      <p>Um detetive experiente chega à cena do crime e encontra dois tipos de evidência: uma faca com as impressões digitais do suspeito real (evidência correta) e um bilhete forjado apontando para outra pessoa (evidência fictícia). Um detetive inexperiente fica confuso — leva em conta os dois. O <strong style="color:var(--mira-success)">Finetune-RAG</strong> treina detetives de uma forma inusitada: durante o treinamento, apresenta deliberadamente cenas com uma evidência correta e uma fictícia, e o detetive treina a responder usando APENAS a evidência correta. Após esse treino, quando uma cena real ambígua aparece, o modelo já desenvolveu a habilidade de identificar e ignorar as pistas plantadas. O objetivo de treino é modelar P*(a|q, d_correct, d_fictitious) → P(a|q, d_correct): mesmo tendo acesso aos dois documentos, gera a resposta como se só o correto existisse.</p>
-    </div>
-    <div class="g2" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Dataset com Contexto Duplo</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">1.653 exemplos de domínios diversos: documentos legais, artigos científicos, notícias, relatórios técnicos. Cada exemplo tem um chunk correto + um chunk fictício plausível gerado por GPT-4o.</p>
-      </div>
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Bench-RAG: LLM-as-a-Judge</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Avaliação com GPT-4o como juiz mede 4 dimensões: Accuracy (binário), Helpfulness (1-10), Relevance (1-10), Depth (1-10). A acurácia sobe sem sacrificar as demais dimensões.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 08 — FINETUNE-RAG + D3 ═══ -->
-<section class="slide" id="s08">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Finetune-RAG · Curva de Treino</div>
-    <h2 class="title" data-aos="fade-up">76,97% → 98,18%<br><span class="accent">em 20 Passos</span></h2>
-    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:270px">
-      <div id="anim-finetunerag" style="width:100%;height:100%"></div>
-    </div>
-    <div class="g2" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Baseline &gt; XML</h3>
-        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Surpreendentemente, formato de texto plano (Baseline) supera XML estruturado (98,18% vs 97,58%). LLaMA tem viés indutivo para texto não-estruturado — seus dados de treino predominantemente usavam esse formato.</p>
-      </div>
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Dip no Step 2</h3>
-        <p style="font-size:.83rem;line-height:1.55;color:var(--mira-muted)">Ambos os formatos mostram queda temporária de acurácia no step 2 (aprendizado de reorganização de atenção), seguida de melhora consistente. Pattern típico de SFT em dados fora da distribuição de pré-treino.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 09 — METÁFORA ROSERAG ═══ -->
-<section class="slide" id="s09">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Metáfora · RoseRAG (Purdue/Rutgers/Emory 2025)</div>
-    <h2 class="title" data-aos="fade-up">O Boxeador que Treina<br><span class="accent">com o Adversário Mais Difícil</span></h2>
-    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
-      <div class="mlabel">Metáfora do Cotidiano</div>
-      <p>Um boxeador júnior (modelo pequeno, 1-3B parâmetros) precisa aprender a lutar contra sparring partners mais pesados. O treinador convencional (SFT) mostra ao boxeador vídeos de lutas vencidas e pede para imitar — funciona um pouco, mas o boxeador fica bom apenas nas situações dos vídeos. O RoseRAG usa uma estratégia diferente: <strong style="color:var(--mira-success)">preferência contrastiva</strong>. Para cada situação de luta, seleciona deliberadamente a resposta mais difícil do boxeador (a que ele acertou mas com menos confiança — chosen mínimo) e o erro mais grave (o que ele errou com mais confiança — rejected máximo). Treinar especificamente nesses pares difíceis maximiza o aprendizado — é como focar o treino nos round onde o boxeador quase perdeu. Sem precisar de um campeão mundial como professor (GPT-4), o boxeador júnior melhora sua própria capacidade de discriminação.</p>
-    </div>
-    <div class="g2" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Preference Data Generation</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Multi-turn prompting: fornece query + documentos + resposta correta → modelo gera rationale via rejection sampling. Se a geração acerta = chosen y_w; resposta vanilla RAG = rejected y_l. Sem GPT-4.</p>
-      </div>
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">ORPO: Sem Modelo de Referência</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">ORPO integra alinhamento de preferência diretamente no SFT — sem precisar de um reward model separado ou de RLHF. A perda combina SFT loss + penalidade baseada em odds ratio entre chosen/rejected.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 10 — ROSERAG + D3 ═══ -->
-<section class="slide" id="s10">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">RoseRAG · Pipeline e Resultados</div>
-    <h2 class="title" data-aos="fade-up">SLMs que Superam<br><span class="accent">8 Baselines Fortes</span></h2>
-    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:280px">
-      <div id="anim-roserag" style="width:100%;height:100%"></div>
-    </div>
-    <div class="g3" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <div class="num">44,8</div>
-        <h3>F1 Qwen 1.5B HotpotQA</h3>
-        <p>vs. 39,6 do InstructRAG (melhor baseline). RoseRAG com o menor modelo supera métodos supervisionados mais pesados.</p>
-      </div>
-      <div class="cell">
-        <div class="num">3 SLMs</div>
-        <h3>Testados (1–2B params)</h3>
-        <p>Qwen2.5-1.5B, Llama-3.2-1B, Gemma-2-2B — todos melhoram consistentemente com RoseRAG em 3 datasets.</p>
-      </div>
-      <div class="cell">
-        <div class="num">Mínimo × Máximo</div>
-        <h3>Seleção Contrastiva Chave</h3>
-        <p>Positive(Minimal) × Negative(Maximal) = melhor combinação. Força o modelo a aprender nos casos mais difíceis.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 11 — QUANDO FT × RAG × FT+RAG ═══ -->
-<section class="slide" id="s11">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Decisão</div>
-    <h2 class="title" data-aos="fade-up">FT, RAG ou FT+RAG?<br><span class="accent">Depende do Contexto</span></h2>
-    <p class="lead" data-aos="fade-up" data-aos-delay="100">Os 4 papers convergem em um mapa de decisão claro — a escolha ótima depende de 3 fatores: tamanho do modelo, popularidade do conhecimento e disponibilidade de dados rotulados.</p>
-    <div class="card" data-aos="fade-up" data-aos-delay="200">
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.83rem">
-          <thead>
-            <tr style="border-bottom:1px solid rgba(77,255,180,0.3)">
-              <th style="text-align:left;padding:9px 10px;color:var(--mira-success);font-weight:700">Cenário</th>
-              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Estratégia</th>
-              <th style="text-align:center;padding:9px 8px;color:var(--mira-muted)">Evidência</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-              <td style="padding:9px 10px;font-weight:600">Modelo pequeno (&lt;2B), conhecimento raro</td>
-              <td style="padding:9px 8px;text-align:center;color:#4DFFB4">+FT+RAG ou RoseRAG</td>
-              <td style="padding:9px 8px;text-align:center;color:rgba(255,255,255,0.4)">SIGIR + RoseRAG papers</td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-              <td style="padding:9px 10px;font-weight:600">Modelo grande (≥7B), conhecimento popular</td>
-              <td style="padding:9px 8px;text-align:center;color:#FFD54D">Só RAG (SRAG)</td>
-              <td style="padding:9px 8px;text-align:center;color:rgba(255,255,255,0.4)">SIGIR paper — FT prejudica</td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-              <td style="padding:9px 10px;font-weight:600">Domínio especializado, sem dados rotulados</td>
-              <td style="padding:9px 8px;text-align:center;color:#B464FF">SimRAG (self-training)</td>
-              <td style="padding:9px 8px;text-align:center;color:rgba(255,255,255,0.4)">NAACL 2025</td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-              <td style="padding:9px 10px;font-weight:600">Retrieval ruidoso em produção</td>
-              <td style="padding:9px 8px;text-align:center;color:#FF904D">Finetune-RAG ou RoseRAG</td>
-              <td style="padding:9px 8px;text-align:center;color:rgba(255,255,255,0.4)">Pints AI + RoseRAG</td>
-            </tr>
-            <tr>
-              <td style="padding:9px 10px;font-weight:600">Deploy em edge (SLM, baixa latência)</td>
-              <td style="padding:9px 8px;text-align:center;color:#4DFFB4">RoseRAG (1–3B)</td>
-              <td style="padding:9px 8px;text-align:center;color:rgba(255,255,255,0.4)">RoseRAG paper</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 12 — ORPO vs SFT ═══ -->
-<section class="slide" id="s12">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Técnica</div>
-    <h2 class="title" data-aos="fade-up">Por Que Preferência<br><span class="accent">Supera Imitação Direta</span></h2>
-    <p class="lead" data-aos="fade-up" data-aos-delay="100">SFT (Supervised Fine-Tuning) ensina o modelo a imitar exemplos corretos. Preference optimization ensina o modelo a <em>discriminar</em> — a distância entre bom e ruim é o sinal de treino.</p>
-    <div class="g2" data-aos="fade-up" data-aos-delay="150">
-      <div class="cell">
-        <h3 style="color:var(--mira-warning);margin-bottom:8px">SFT — Limitações</h3>
-        <ul class="li" style="margin-top:6px">
-          <li><span class="dot" style="background:var(--mira-error)"></span>Mimics training data — overfits distribuição específica</li>
-          <li><span class="dot" style="background:var(--mira-error)"></span>Não aprende a resistir a informação errada no contexto</li>
-          <li><span class="dot" style="background:var(--mira-error)"></span>Generalização limitada para domínios não vistos</li>
-        </ul>
-      </div>
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">ORPO — Vantagens</h3>
-        <ul class="li" style="margin-top:6px">
-          <li><span class="dot"></span>Maximiza odds ratio entre respostas chosen/rejected</li>
-          <li><span class="dot"></span>Sem modelo de referência separado (monolítico)</li>
-          <li><span class="dot"></span>Mais estável que DPO — sem reference model instability</li>
-        </ul>
-      </div>
-    </div>
-    <div class="formula" data-aos="fade-up" data-aos-delay="200">
-      ℓ_ORPO(x, y_w, y_l) = ℓ_SFT + β · (−log σ(log OR_θ(x, y_w, y_l)))
-    </div>
-    <div class="card" data-aos="fade-up" data-aos-delay="250">
-      <p style="font-size:.9rem;line-height:1.6;color:var(--mira-muted)">
-        <strong style="color:var(--mira-text)">Seleção contrastiva (RoseRAG):</strong> Positive = resposta chosen com mínima probabilidade (modelo quase errou); Negative = resposta rejected com máxima probabilidade (modelo quase aceitou o erro). Essa seleção foca o treino nos casos mais informativos — onde o modelo estava mais incerto ou mais confiante no errado.
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 13 — ACHADOS TRANSVERSAIS ═══ -->
-<section class="slide" id="s13">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Achados Transversais</div>
-    <h2 class="title" data-aos="fade-up">5 Verdades sobre<br><span class="accent">Fine-Tuning para RAG</span></h2>
-    <div class="card" data-aos="fade-up" data-aos-delay="100">
-      <ul class="li">
-        <li><span class="dot"></span><div><strong>Verdade 1 — PEFT preserva raciocínio:</strong> PEFT (LoRA, QLoRA) supera full FT em modelos &lt;2B quando combinado com RAG. Full FT injeta conhecimento mas compromete a capacidade de usar contexto externo — exatamente o que RAG requer.</div></li>
-        <li><span class="dot"></span><div><strong>Verdade 2 — Prompt-based QA generation &gt; E2E:</strong> Dados gerados por prompts de alto nível (CoT-guided) superam E2E fine-tuned generators. Qualidade do dado de treino supera quantidade.</div></li>
-        <li><span class="dot"></span><div><strong>Verdade 3 — Retriever impacta mais que o LLM:</strong> No cenário com retrieval, melhorar o retriever de BM25 → DPR melhora mais a acurácia final do que escalar o modelo gerador de 1B → 7B.</div></li>
-        <li><span class="dot"></span><div><strong>Verdade 4 — Round-trip consistency é filtro crítico:</strong> No SimRAG, reter apenas amostras que passam round-trip é a diferença entre dados que melhoram e dados que pioram o modelo.</div></li>
-        <li><span class="dot"></span><div><strong>Verdade 5 — Formato de prompt importa por modelo:</strong> O mesmo fine-tuning com Baseline vs. XML produz resultados diferentes. LLaMA tem viés para texto plano — outros modelos podem ter viés oposto.</div></li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 14 — COMPARATIVO ═══ -->
-<section class="slide" id="s14">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Comparativo</div>
-    <h2 class="title" data-aos="fade-up">4 Abordagens de<br><span class="accent">Fine-Tuning para RAG</span></h2>
-    <div class="card" data-aos="fade-up" data-aos-delay="100">
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.81rem">
-          <thead>
-            <tr style="border-bottom:1px solid rgba(77,255,180,0.3)">
-              <th style="text-align:left;padding:9px 10px;color:var(--mira-success);font-weight:700">Paper</th>
-              <th style="text-align:center;padding:9px 6px;color:var(--mira-muted)">Problema</th>
-              <th style="text-align:center;padding:9px 6px;color:var(--mira-muted)">Método</th>
-              <th style="text-align:center;padding:9px 6px;color:var(--mira-muted)">Resultado Chave</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-              <td style="padding:9px 10px;font-weight:600">FT vs RAG</td>
-              <td style="padding:9px 6px;text-align:center;color:var(--mira-muted)">Qual abordagem para conhecimento raro?</td>
-              <td style="padding:9px 6px;text-align:center;color:#4DFFB4">SRAG + popularidade buckets</td>
-              <td style="padding:9px 6px;text-align:center;color:#FFD54D">RAG &gt;&gt; FT para entidades raras</td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-              <td style="padding:9px 10px;font-weight:600">SimRAG</td>
-              <td style="padding:9px 6px;text-align:center;color:var(--mira-muted)">Adaptar RAG a domínio sem dados</td>
-              <td style="padding:9px 6px;text-align:center;color:#B464FF">2-stage self-training</td>
-              <td style="padding:9px 6px;text-align:center;color:#4DFFB4">+1,2–8,6% em 11 datasets</td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-              <td style="padding:9px 10px;font-weight:600">Finetune-RAG</td>
-              <td style="padding:9px 6px;text-align:center;color:var(--mira-muted)">Modelo confia em contexto fictício</td>
-              <td style="padding:9px 6px;text-align:center;color:#FF904D">SFT com dual context</td>
-              <td style="padding:9px 6px;text-align:center;color:#4DFFB4">76,97% → 98,18% acurácia</td>
-            </tr>
-            <tr>
-              <td style="padding:9px 10px;font-weight:600">RoseRAG</td>
-              <td style="padding:9px 6px;text-align:center;color:var(--mira-muted)">SLMs frágeis com retrieval ruidoso</td>
-              <td style="padding:9px 6px;text-align:center;color:#FF6464">Margin-aware ORPO</td>
-              <td style="padding:9px 6px;text-align:center;color:#4DFFB4">SOTA em 3 benchmarks</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 15 — PRINCÍPIOS ═══ -->
-<section class="slide" id="s15">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Princípios</div>
-    <h2 class="title" data-aos="fade-up">Guia Prático para<br><span class="accent">Fine-Tuning em RAG</span></h2>
-    <div class="card" data-aos="fade-up" data-aos-delay="100">
-      <ul class="li">
-        <li><span class="dot"></span><div><strong>Princípio 1 — Meça a Popularidade Antes de Decidir:</strong> Para a maioria do conhecimento de negócios (domínio corporativo, propriedade intelectual), as entidades são raras — RAG vai dominar. Use proxies de frequência (Wikipedia pageviews, ocorrências no corpus interno) para decidir.</div></li>
-        <li><span class="dot"></span><div><strong>Princípio 2 — Corpus não-rotulado tem valor:</strong> SimRAG demonstra que corpus não-rotulado de domínio + auto-geração de QA com round-trip consistency vale mais que não ter dados. Se seu domínio tem documentos sem anotação, use-os via self-training.</div></li>
-        <li><span class="dot"></span><div><strong>Princípio 3 — Treine para Retrieval Imperfeito:</strong> Em produção, retrieval nunca é perfeito. Treinar com exemplos que incluem contexto fictício (Finetune-RAG) ou com preferência para casos de ruído (RoseRAG) prepara melhor para o mundo real.</div></li>
-        <li><span class="dot"></span><div><strong>Princípio 4 — Preference Optimization para Edge:</strong> Para deployment em modelos pequenos onde custo é crítico, RoseRAG com ORPO é superior a SFT. Não precisa de GPT-4 para gerar preference data.</div></li>
-        <li><span class="dot"></span><div><strong>Princípio 5 — Dica no Prompt Elimina FT:</strong> Stimulus RAG demonstra que adicionar apenas a sentença mais relevante no topo do prompt (Hint Extractor) supera modelos fine-tunados — sem custo de treino.</div></li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SLIDE 16 — PANORAMA + D3 ═══ -->
-<section class="slide" id="s16">
-  <div class="inner">
-    <div class="tag" data-aos="fade-right">Panorama</div>
-    <h2 class="title" data-aos="fade-up">Mapa da Pesquisa<br><span class="accent">RAG Fine-Tuning 2025</span></h2>
-    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:320px">
-      <div id="anim-compare19" style="width:100%;height:100%"></div>
-    </div>
-    <div class="g2" data-aos="fade-up" data-aos-delay="200">
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Tendência: Treinar para Ruído</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Finetune-RAG e RoseRAG ambos atacam o mesmo problema: retrieval imperfeito. A tendência de 2025 é construir resiliência no gerador, não só melhorar o retriever. São complementares, não competitivos.</p>
-      </div>
-      <div class="cell">
-        <h3 style="color:var(--mira-success);margin-bottom:8px">Próxima Fronteira</h3>
-        <p style="font-size:.84rem;line-height:1.55;color:var(--mira-muted)">Iterative SimRAG (múltiplos rounds de self-training), Finetune-RAG multimodal (imagens enganosas), RoseRAG para modelos maiores (3–7B), e SRAG adaptativo que aprende o threshold de hint relevance.</p>
-      </div>
-    </div>
-  </div>
-</section>
+</div>
 
 <script>
-AOS.init({duration:700, once:true, offset:55});
-
-var slides=document.querySelectorAll('.slide');
-var total=slides.length;
-function getActive(){
-  var cy=window.scrollY+window.innerHeight/2;
-  var best=0,bd=Infinity;
-  slides.forEach(function(s,i){
-    var d=Math.abs(s.getBoundingClientRect().top+window.scrollY+s.offsetHeight/2-cy);
-    if(d<bd){bd=d;best=i;}
-  });
-  return best;
-}
-function goNext(){var i=getActive();if(i<total-1)slides[i+1].scrollIntoView({behavior:'smooth'});}
-document.addEventListener('keydown',function(e){
-  var i=getActive();
-  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key==='PageDown'){if(i<total-1)slides[i+1].scrollIntoView({behavior:'smooth'});}
-  if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){if(i>0)slides[i-1].scrollIntoView({behavior:'smooth'});}
-});
-window.addEventListener('scroll',function(){
-  var p=window.scrollY/(document.body.scrollHeight-window.innerHeight);
-  document.getElementById('prog').style.width=(p*100)+'%';
-  document.getElementById('nav-btn').classList.toggle('show',window.scrollY>300);
-});
-
-// ═══════════════════════════════════════════════
-// D3 — anim-popularity: FT vs RAG por popularidade
-// ═══════════════════════════════════════════════
+AOS.init({ duration: 700, once: true, offset: 55 });
 (function(){
-  window.__popGen=(window.__popGen||0)+1; var myG=window.__popGen;
-  var el=document.getElementById('anim-popularity'); if(!el) return;
-  el.innerHTML='';
-  var W=el.offsetWidth||600, H=270;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+  var bar = document.getElementById('progress-bar');
+  var btn = document.getElementById('back-btn');
+  window.addEventListener('scroll', function(){
+    var pct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    bar.style.width = Math.min(100, pct) + '%';
+    btn.classList.toggle('visible', window.scrollY > 300);
+  });
+})();
 
-  var buckets=['10²','10³','10⁴','10⁵','>10⁵'];
-  var series=[
+/* ═══ ANIM 1: FT vs RAG — popularidade ═══ */
+(function(){
+  window.__popGen = (window.__popGen||0)+1; var myG = window.__popGen;
+  var el = document.getElementById('anim-popularity'); if(!el) return; el.innerHTML='';
+  var W = 860, H = 240;
+  var svg = d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var buckets = ['10²','10³','10⁴','10⁵','>10⁵'];
+  var series = [
     {name:'-FT+RAG',values:[82,79,74,68,62],clr:'#4DFFB4'},
     {name:'+FT+RAG',values:[61,67,72,72,71],clr:'#FFD54D'},
     {name:'-FT-RAG',values:[17,22,27,30,33],clr:'#888888'}
   ];
-
-  var ml=44, mr=20, mt=28, mb=48;
-  var pw=W-ml-mr, ph=H-mt-mb;
+  var ml=46, mr=20, mt=28, mb=48, pw=W-ml-mr, ph=H-mt-mb;
   var xBand=d3.scaleBand().domain(buckets).range([0,pw]).padding(0.28);
   var xSub=d3.scaleBand().domain(series.map(function(s){return s.name;})).range([0,xBand.bandwidth()]).padding(0.06);
   var ySc=d3.scaleLinear().domain([0,95]).range([ph,0]);
   var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
-
   svg.append('text').attr('x',ml+pw/2).attr('y',17).attr('text-anchor','middle')
-    .style('fill','#555').style('font-size','9.5px').text('Acurácia PopQA (StableLM 1.6B) — Popularidade Wikipedia (pageviews)');
-
+    .attr('fill','rgba(255,255,255,0.2)').attr('font-size',9.5).text('Acurácia PopQA (StableLM 1.6B) por Popularidade Wikipedia');
   [20,40,60,80].forEach(function(v){
     g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v))
-      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+      .attr('stroke','rgba(255,255,255,0.04)').attr('stroke-dasharray','3,4');
     g.append('text').attr('x',-6).attr('y',ySc(v)+4).attr('text-anchor','end')
-      .style('fill','#444').style('font-size','9px').text(v+'%');
+      .attr('fill','rgba(255,255,255,0.25)').attr('font-size',9).text(v+'%');
   });
   buckets.forEach(function(b){
     g.append('text').attr('x',xBand(b)+xBand.bandwidth()/2).attr('y',ph+18).attr('text-anchor','middle')
-      .style('fill','rgba(255,255,255,0.4)').style('font-size','10px').text(b);
+      .attr('fill','rgba(255,255,255,0.4)').attr('font-size',10).text(b);
   });
-
   var allBars=[];
   series.forEach(function(s){
     s.values.forEach(function(v,i){
       var bx=xBand(buckets[i])+xSub(s.name);
       var bh=ph-ySc(v);
       var bar=g.append('rect').attr('x',bx).attr('y',ph).attr('width',xSub.bandwidth()).attr('height',0)
-        .attr('rx',2).style('fill',s.clr).style('opacity',0.85);
+        .attr('rx',2).attr('fill',s.clr).attr('opacity',0.85);
       bar.transition().delay(300+i*100).duration(800).attr('y',ySc(v)).attr('height',bh);
       allBars.push({bar:bar,y:ySc(v),h:bh});
     });
   });
-
   series.forEach(function(s,si){
-    svg.append('rect').attr('x',ml+si*100).attr('y',H-20).attr('width',10).attr('height',8)
-      .attr('rx',2).style('fill',s.clr).style('opacity',0.85);
-    svg.append('text').attr('x',ml+si*100+14).attr('y',H-12).style('fill','rgba(255,255,255,0.35)').style('font-size','8.5px').text(s.name);
+    svg.append('rect').attr('x',ml+si*110).attr('y',H-18).attr('width',10).attr('height',8)
+      .attr('rx',2).attr('fill',s.clr).attr('opacity',0.85);
+    svg.append('text').attr('x',ml+si*110+14).attr('y',H-10)
+      .attr('fill','rgba(255,255,255,0.35)').attr('font-size',8.5).text(s.name);
   });
-
   function refill(){
     if(window.__popGen!==myG) return;
     allBars.forEach(function(b,i){
@@ -607,86 +540,158 @@ window.addEventListener('scroll',function(){
   setTimeout(refill,3600);
 })();
 
-// ═══════════════════════════════════════════════
-// D3 — anim-simrag: 2-stage pipeline flow
-// ═══════════════════════════════════════════════
+/* ═══ ANIM 2: O Dial de Popularidade-Estratégia (D3 CONCEITUAL ÚNICO) ═══ */
 (function(){
-  window.__simGen=(window.__simGen||0)+1; var myG=window.__simGen;
-  var el=document.getElementById('anim-simrag'); if(!el) return;
-  el.innerHTML='';
-  var W=el.offsetWidth||600, H=270;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+  window.__dialGen = (window.__dialGen||0)+1; var myG = window.__dialGen;
+  var el = document.getElementById('anim-dial'); if(!el) return; el.innerHTML='';
+  var W = 860, H = 250;
+  var svg = d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
 
-  var stageANodes=[
-    {label:'SFT\nGeral',x:W*0.08,y:90,clr:'#888888'},
-    {label:'QA\nGeral',x:W*0.08,y:150,clr:'#888888'},
-    {label:'Retrieval\nData',x:W*0.08,y:210,clr:'#888888'},
-    {label:'LLM\nStage-I',x:W*0.28,y:150,clr:'#4DB4FF'}
+  // Popularity spectrum gradient bar
+  var gradId = 'popGrad';
+  var defs = svg.append('defs');
+  var grad = defs.append('linearGradient').attr('id',gradId).attr('x1','0%').attr('x2','100%');
+  grad.append('stop').attr('offset','0%').attr('stop-color','#4DB4FF').attr('stop-opacity',0.9);
+  grad.append('stop').attr('offset','50%').attr('stop-color','#FFD54D').attr('stop-opacity',0.9);
+  grad.append('stop').attr('offset','100%').attr('stop-color','#FF6464').attr('stop-opacity',0.9);
+
+  var barX = 60, barY = 50, barW = W-120, barH = 18;
+  svg.append('rect').attr('x',barX).attr('y',barY).attr('width',barW).attr('height',barH).attr('rx',9)
+    .attr('fill','url(#'+gradId+')').attr('opacity',0.7);
+  svg.append('text').attr('x',barX).attr('y',barY-8).attr('fill','rgba(77,180,255,0.7)').attr('font-size',9).attr('font-weight','700').text('Raro (&lt;10²)');
+  svg.append('text').attr('x',barX+barW/2).attr('y',barY-8).attr('text-anchor','middle').attr('fill','rgba(255,213,77,0.7)').attr('font-size',9).attr('font-weight','700').text('Moderado (10⁴)');
+  svg.append('text').attr('x',barX+barW).attr('y',barY-8).attr('text-anchor','end').attr('fill','rgba(255,100,100,0.7)').attr('font-size',9).attr('font-weight','700').text('Popular (&gt;10⁵)');
+
+  // Strategy zones
+  var zones = [
+    {label:'Zona: +FT+RAG',sub:'SLMs: 21%→82%',x:barX,w:barW*0.38,clr:'#4DFFB4'},
+    {label:'Zona: RAG+SRAG',sub:'Hint Extractor',x:barX+barW*0.38,w:barW*0.32,clr:'#FFD54D'},
+    {label:'Zona: Só RAG (FT prejudica)',sub:'Modelos ≥7B',x:barX+barW*0.7,w:barW*0.3,clr:'#FF6464'}
   ];
-  var stageBNodes=[
-    {label:'Corpus\nDom.',x:W*0.5,y:90,clr:'#888888'},
-    {label:'Gera\nQ+A',x:W*0.65,y:90,clr:'#FFD54D'},
-    {label:'Round-trip\nFilter',x:W*0.8,y:90,clr:'#FF904D'},
-    {label:'LLM\nStage-II',x:W*0.65,y:200,clr:'#4DFFB4'}
-  ];
+  zones.forEach(function(z,i){
+    svg.append('rect').attr('x',z.x).attr('y',barY+barH).attr('width',0).attr('height',6).attr('fill',z.clr).attr('opacity',0.5)
+      .transition().duration(700).delay(600+i*300).attr('width',z.w);
+    svg.append('text').attr('x',z.x+z.w/2).attr('y',barY+barH+22).attr('text-anchor','middle')
+      .attr('fill',z.clr).attr('font-size',9).attr('font-weight','700').attr('opacity',0)
+      .transition().duration(300).delay(1200+i*300).attr('opacity',1).text(z.label);
+    svg.append('text').attr('x',z.x+z.w/2).attr('y',barY+barH+34).attr('text-anchor','middle')
+      .attr('fill','rgba(255,255,255,0.35)').attr('font-size',7.5).attr('opacity',0)
+      .transition().duration(300).delay(1400+i*300).attr('opacity',1).text(z.sub);
+  });
 
-  svg.append('text').attr('x',W*0.18).attr('y',28).attr('text-anchor','middle')
-    .style('fill','rgba(77,180,255,0.55)').style('font-size','9px').style('font-weight','700').text('Stage I — Retrieval-Oriented FT');
-  svg.append('text').attr('x',W*0.67).attr('y',28).attr('text-anchor','middle')
-    .style('fill','rgba(77,255,180,0.55)').style('font-size','9px').style('font-weight','700').text('Stage II — Domain Adaptive Self-Training');
-  svg.append('line').attr('x1',W*0.38).attr('x2',W*0.38).attr('y1',24).attr('y2',H-14)
-    .style('stroke','rgba(255,255,255,0.07)').style('stroke-dasharray','4,4');
+  // Animated needle
+  var needleX = barX;
+  var needle = svg.append('line').attr('x1',needleX).attr('y1',barY-4).attr('x2',needleX).attr('y2',barY+barH+38)
+    .attr('stroke','#fff').attr('stroke-width',2).attr('opacity',0.9);
+  var needleHead = svg.append('circle').attr('cx',needleX).attr('cy',barY-6).attr('r',5)
+    .attr('fill','#fff').attr('opacity',0.9);
+  var needleLabel = svg.append('text').attr('x',needleX).attr('y',barY-16).attr('text-anchor','middle')
+    .attr('fill','#fff').attr('font-size',8.5).attr('font-weight','700').attr('opacity',0.9);
 
+  // Performance bars at needle position
+  var perfBars = [];
+  var barLabels = ['+FT+RAG','RAG','No-RAG'];
+  var barClrs = ['#4DFFB4','#FFD54D','#888888'];
+  var perfY = barY+barH+55, perfBarH = 60;
+  barLabels.forEach(function(lb,i){
+    var bx = W/2 - 90 + i*90;
+    var bg = svg.append('rect').attr('x',bx-16).attr('y',perfY).attr('width',32).attr('height',0)
+      .attr('rx',3).attr('fill',barClrs[i]).attr('opacity',0.8);
+    var lbl = svg.append('text').attr('x',bx).attr('y',perfY+perfBarH+14).attr('text-anchor','middle')
+      .attr('fill','rgba(255,255,255,0.4)').attr('font-size',8).text(lb);
+    var vt = svg.append('text').attr('x',bx).attr('y',perfY-4).attr('text-anchor','middle')
+      .attr('fill',barClrs[i]).attr('font-size',9).attr('font-weight','700').attr('opacity',0);
+    perfBars.push({bg:bg,vt:vt});
+  });
+
+  function updatePerf(t){
+    if(window.__dialGen!==myG) return;
+    var pct = Math.min(1, Math.max(0, (needleX-barX)/barW));
+    var ft, rag, noRag;
+    if(pct < 0.38){ ft=82; rag=65; noRag=17; }
+    else if(pct < 0.7){ ft=72; rag=74; noRag=28; }
+    else { ft=55; rag=80; noRag=36; }
+    var vals = [ft, rag, noRag];
+    vals.forEach(function(v,i){
+      var h = (v/100)*perfBarH;
+      perfBars[i].bg.attr('y',perfY+(perfBarH-h)).attr('height',h);
+      perfBars[i].vt.attr('y',perfY+(perfBarH-h)-4).attr('opacity',1).text(v+'%');
+    });
+    needleLabel.text(pct<0.38?'Entidade Rara':pct<0.7?'Moderada':'Entidade Popular');
+  }
+
+  function moveNeedle(){
+    if(window.__dialGen!==myG) return;
+    var targets = [barX+barW*0.1, barX+barW*0.55, barX+barW*0.9, barX+barW*0.25, barX+barW*0.75];
+    var i = 0;
+    function step(){
+      if(window.__dialGen!==myG) return;
+      var tx = targets[i%targets.length];
+      needle.transition().duration(1200).ease(d3.easeCubicInOut).attr('x1',tx).attr('x2',tx).on('end',function(){needleX=tx; updatePerf(); setTimeout(step,800);});
+      needleHead.transition().duration(1200).ease(d3.easeCubicInOut).attr('cx',tx);
+      needleLabel.transition().duration(1200).ease(d3.easeCubicInOut).attr('x',tx);
+      i++;
+    }
+    step();
+  }
+  setTimeout(moveNeedle, 1200);
+  updatePerf();
+})();
+
+/* ═══ ANIM 3: SimRAG 2-stage pipeline ═══ */
+(function(){
+  window.__simGen = (window.__simGen||0)+1; var myG = window.__simGen;
+  var el = document.getElementById('anim-simrag'); if(!el) return; el.innerHTML='';
+  var W = 860, H = 230;
+  var svg = d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var stageANodes=[{label:'SFT Geral',x:W*0.06,y:80,clr:'#888888'},{label:'QA Geral',x:W*0.06,y:135,clr:'#888888'},{label:'Retrieval Data',x:W*0.06,y:190,clr:'#888888'},{label:'LLM Stage-I',x:W*0.25,y:135,clr:'#4DB4FF'}];
+  var stageBNodes=[{label:'Corpus Dom.',x:W*0.5,y:70,clr:'#888888'},{label:'Gera Q+A',x:W*0.66,y:70,clr:'#FFD54D'},{label:'Round-trip Filter',x:W*0.82,y:70,clr:'#FF904D'},{label:'LLM Stage-II',x:W*0.66,y:175,clr:'#4DFFB4'}];
+  svg.append('text').attr('x',W*0.15).attr('y',22).attr('text-anchor','middle').attr('fill','rgba(77,180,255,0.55)').attr('font-size',9.5).attr('font-weight','700').text('Stage I — Retrieval-Oriented FT');
+  svg.append('text').attr('x',W*0.67).attr('y',22).attr('text-anchor','middle').attr('fill','rgba(77,255,180,0.55)').attr('font-size',9.5).attr('font-weight','700').text('Stage II — Domain Adaptive Self-Training');
+  svg.append('line').attr('x1',W*0.37).attr('x2',W*0.37).attr('y1',24).attr('y2',H-8).attr('stroke','rgba(255,255,255,0.06)').attr('stroke-dasharray','4,4');
+  var bw=72, bh=30;
   var allNodes=stageANodes.concat(stageBNodes);
-  var bw=56, bh=32;
   var nodeEls=[];
   allNodes.forEach(function(n){
-    var bg=svg.append('rect').attr('x',n.x-bw/2).attr('y',n.y-bh/2).attr('width',bw).attr('height',bh)
-      .attr('rx',6).style('fill','rgba(255,255,255,0.04)').style('stroke',n.clr).style('stroke-width',1).style('stroke-opacity',0.5);
-    n.label.split('\n').forEach(function(ln,li){
-      svg.append('text').attr('x',n.x).attr('y',n.y-4+li*12).attr('text-anchor','middle')
-        .style('fill','rgba(255,255,255,0.75)').style('font-size','8px').style('font-weight','700').text(ln);
-    });
+    var bg=svg.append('rect').attr('x',n.x-bw/2).attr('y',n.y-bh/2).attr('width',bw).attr('height',bh).attr('rx',6)
+      .attr('fill','rgba(255,255,255,0.04)').attr('stroke',n.clr).attr('stroke-width',1).attr('stroke-opacity',0.5);
+    n.label.split(' ').reduce(function(acc,w,i,arr){
+      var lines=[arr.slice(0,Math.ceil(arr.length/2)).join(' '),arr.slice(Math.ceil(arr.length/2)).join(' ')];
+      return lines;
+    },[]).forEach(function(l,j){});
+    svg.append('text').attr('x',n.x).attr('y',n.y+4).attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.8)').attr('font-size',8).attr('font-weight','700').text(n.label);
     nodeEls.push({bg:bg,clr:n.clr});
   });
-
-  // Arrows Stage I
-  [[0,3],[1,3],[2,3]].forEach(function(pair){
-    var a=stageANodes[pair[0]], b=stageANodes[pair[1]];
-    svg.append('line').attr('x1',a.x+bw/2).attr('y1',a.y).attr('x2',b.x-bw/2-4).attr('y2',b.y)
-      .style('stroke','rgba(77,180,255,0.2)').style('stroke-width',1);
+  [[0,3],[1,3],[2,3]].forEach(function(p){
+    var a=stageANodes[p[0]], b=stageANodes[p[1]];
+    svg.append('line').attr('x1',a.x+bw/2+2).attr('y1',a.y).attr('x2',b.x-bw/2-2).attr('y2',b.y)
+      .attr('stroke','rgba(77,180,255,0.15)').attr('stroke-width',1);
   });
-  // Stage I → II
-  svg.append('line').attr('x1',stageANodes[3].x+bw/2).attr('y1',stageANodes[3].y)
-    .attr('x2',stageBNodes[0].x-bw/2-4).attr('y2',stageBNodes[0].y)
-    .style('stroke','rgba(255,255,255,0.12)').style('stroke-width',1.5).style('stroke-dasharray','5,4');
-
-  // Arrows Stage II
-  [[0,1],[1,2]].forEach(function(pair){
-    var a=stageBNodes[pair[0]], b=stageBNodes[pair[1]];
-    svg.append('line').attr('x1',a.x+bw/2).attr('y1',a.y).attr('x2',b.x-bw/2-4).attr('y2',b.y)
-      .style('stroke','rgba(255,144,77,0.2)').style('stroke-width',1);
+  svg.append('line').attr('x1',stageANodes[3].x+bw/2+2).attr('y1',stageANodes[3].y)
+    .attr('x2',stageBNodes[0].x-bw/2-2).attr('y2',stageBNodes[0].y)
+    .attr('stroke','rgba(255,255,255,0.1)').attr('stroke-width',1.5).attr('stroke-dasharray','5,4');
+  [[0,1],[1,2]].forEach(function(p){
+    var a=stageBNodes[p[0]], b=stageBNodes[p[1]];
+    svg.append('line').attr('x1',a.x+bw/2+2).attr('y1',a.y).attr('x2',b.x-bw/2-2).attr('y2',b.y)
+      .attr('stroke','rgba(255,144,77,0.2)').attr('stroke-width',1);
   });
-  svg.append('line').attr('x1',stageBNodes[2].x).attr('y1',stageBNodes[2].y+bh/2)
-    .attr('x2',stageBNodes[3].x).attr('y2',stageBNodes[3].y-bh/2-4)
-    .style('stroke','rgba(77,255,180,0.25)').style('stroke-width',1.5);
-  // Loop arrow Stage II
+  svg.append('line').attr('x1',stageBNodes[2].x).attr('y1',stageBNodes[2].y+bh/2+2)
+    .attr('x2',stageBNodes[3].x+bw/2).attr('y2',stageBNodes[3].y)
+    .attr('stroke','rgba(77,255,180,0.25)').attr('stroke-width',1.5);
+  // Loop arrow
   svg.append('path').attr('d','M'+stageBNodes[3].x+','+(stageBNodes[3].y+bh/2)+' C'+stageBNodes[3].x+','+(H-8)+' '+stageBNodes[1].x+','+(H-8)+' '+stageBNodes[1].x+','+(stageBNodes[1].y+bh/2))
-    .style('fill','none').style('stroke','rgba(77,255,180,0.15)').style('stroke-dasharray','4,4').style('stroke-width',1);
-  svg.append('text').attr('x',W*0.65).attr('y',H-6).attr('text-anchor','middle')
-    .style('fill','rgba(77,255,180,0.3)').style('font-size','7.5px').text('auto-melhoria (iterativa)');
-
+    .attr('fill','none').attr('stroke','rgba(77,255,180,0.12)').attr('stroke-dasharray','4,4').attr('stroke-width',1);
+  svg.append('text').attr('x',W*0.65).attr('y',H-2).attr('text-anchor','middle').attr('fill','rgba(77,255,180,0.3)').attr('font-size',7.5).text('auto-melhoria (iterativa)');
   var cur=0;
   function anim(){
     if(window.__simGen!==myG) return;
     nodeEls.forEach(function(n,i){
       n.bg.transition().duration(200)
-        .style('fill', i===cur ? 'rgba(77,255,180,0.15)' : 'rgba(255,255,255,0.04)')
-        .style('stroke-opacity', i===cur ? 1 : 0.5)
-        .style('stroke-width', i===cur ? 2 : 1);
+        .attr('fill', i===cur ? 'rgba(77,255,180,0.12)' : 'rgba(255,255,255,0.04)')
+        .attr('stroke-opacity', i===cur ? 1 : 0.45).attr('stroke-width', i===cur ? 2 : 1);
     });
     cur=(cur+1)%nodeEls.length;
     setTimeout(anim,500);
@@ -694,169 +699,113 @@ window.addEventListener('scroll',function(){
   setTimeout(anim,1200);
 })();
 
-// ═══════════════════════════════════════════════
-// D3 — anim-finetunerag: accuracy curve over steps
-// ═══════════════════════════════════════════════
+/* ═══ ANIM 4: Finetune-RAG accuracy curve ═══ */
 (function(){
-  window.__ftRagGen=(window.__ftRagGen||0)+1; var myG=window.__ftRagGen;
-  var el=document.getElementById('anim-finetunerag'); if(!el) return;
-  el.innerHTML='';
-  var W=el.offsetWidth||600, H=270;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
+  window.__ftRagGen = (window.__ftRagGen||0)+1; var myG = window.__ftRagGen;
+  var el = document.getElementById('anim-finetunerag'); if(!el) return; el.innerHTML='';
+  var W = 860, H = 230;
+  var svg = d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var steps=[0,2,4,6,8,10,12,14,16,18,20];
   var baseline=[76.97,67.88,91.52,93.94,96.36,97.58,96.36,96.97,97.58,97.58,98.18];
   var xml=[78.79,52.73,87.88,95.76,94.55,94.55,95.76,95.76,97.58,97.58,96.97];
-
-  var ml=46, mr=16, mt=28, mb=40;
-  var pw=W-ml-mr, ph=H-mt-mb;
+  var ml=46, mr=16, mt=28, mb=40, pw=W-ml-mr, ph=H-mt-mb;
   var xSc=d3.scaleLinear().domain([0,20]).range([0,pw]);
   var ySc=d3.scaleLinear().domain([45,102]).range([ph,0]);
   var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
-
   svg.append('text').attr('x',ml+pw/2).attr('y',17).attr('text-anchor','middle')
-    .style('fill','#555').style('font-size','9.5px').text('Finetune-RAG — Acurácia por Checkpoint de Treino (Llama 3.1-8B)');
-
+    .attr('fill','rgba(255,255,255,0.2)').attr('font-size',9.5).text('Finetune-RAG — Acurácia por Checkpoint (LLaMA 3.1-8B) · Bench-RAG');
   [60,70,80,90,100].forEach(function(v){
     g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v))
-      .style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+      .attr('stroke','rgba(255,255,255,0.04)').attr('stroke-dasharray','3,4');
     g.append('text').attr('x',-6).attr('y',ySc(v)+4).attr('text-anchor','end')
-      .style('fill','#444').style('font-size','9px').text(v+'%');
+      .attr('fill','rgba(255,255,255,0.25)').attr('font-size',9).text(v+'%');
   });
   [0,5,10,15,20].forEach(function(s){
     g.append('text').attr('x',xSc(s)).attr('y',ph+16).attr('text-anchor','middle')
-      .style('fill','#444').style('font-size','9px').text('step '+s);
+      .attr('fill','rgba(255,255,255,0.3)').attr('font-size',9).text('step '+s);
   });
-
   var lineGen=d3.line().x(function(d,i){return xSc(steps[i]);}).y(function(d){return ySc(d);}).curve(d3.curveMonotoneX);
   var pathBase=g.append('path').datum(baseline).attr('d',lineGen).attr('fill','none')
-    .style('stroke','#4DFFB4').style('stroke-width',2.5).style('stroke-dasharray','0,9999');
+    .attr('stroke','#4DFFB4').attr('stroke-width',2.5);
   var pathXml=g.append('path').datum(xml).attr('d',lineGen).attr('fill','none')
-    .style('stroke','#FFD54D').style('stroke-width',2).style('stroke-dasharray','0,9999');
-
-  var len1=pathBase.node().getTotalLength();
-  var len2=pathXml.node().getTotalLength();
-  pathBase.style('stroke-dasharray',len1+','+len1).style('stroke-dashoffset',len1)
-    .transition().delay(400).duration(1800).style('stroke-dashoffset',0);
-  pathXml.style('stroke-dasharray',len2+','+len2).style('stroke-dashoffset',len2)
-    .transition().delay(700).duration(1800).style('stroke-dashoffset',0);
-
+    .attr('stroke','#FFD54D').attr('stroke-width',2).attr('stroke-dasharray','5,3');
+  var l1=pathBase.node().getTotalLength();
+  var l2=pathXml.node().getTotalLength();
+  pathBase.attr('stroke-dasharray',l1+','+l1).attr('stroke-dashoffset',l1)
+    .transition().delay(400).duration(1800).attr('stroke-dashoffset',0);
+  pathXml.attr('stroke-dasharray',l2+','+l2).attr('stroke-dashoffset',l2)
+    .transition().delay(700).duration(1800).attr('stroke-dashoffset',0);
   baseline.forEach(function(v,i){
-    g.append('circle').attr('cx',xSc(steps[i])).attr('cy',ySc(v)).attr('r',4)
-      .style('fill','#4DFFB4').style('opacity',0)
-      .transition().delay(400+i*100).duration(200).style('opacity',1);
+    g.append('circle').attr('cx',xSc(steps[i])).attr('cy',ySc(v)).attr('r',4).attr('fill','#4DFFB4').attr('opacity',0)
+      .transition().delay(400+i*100).duration(200).attr('opacity',1);
   });
-  xml.forEach(function(v,i){
-    g.append('circle').attr('cx',xSc(steps[i])).attr('cy',ySc(v)).attr('r',3.5)
-      .style('fill','#FFD54D').style('opacity',0)
-      .transition().delay(700+i*100).duration(200).style('opacity',1);
-  });
-
-  // Highlight peak
-  g.append('text').attr('x',xSc(20)+4).attr('y',ySc(98.18)-6).style('fill','#4DFFB4').style('font-size','9.5px').style('font-weight','700').text('98.18%');
-  g.append('text').attr('x',xSc(18)+4).attr('y',ySc(97.58)-6).style('fill','#FFD54D').style('font-size','9px').text('97.58%');
-
-  // Legend
-  svg.append('rect').attr('x',ml).attr('y',H-22).attr('width',10).attr('height',8).attr('rx',2).style('fill','#4DFFB4').style('opacity',0.85);
-  svg.append('text').attr('x',ml+14).attr('y',H-14).style('fill','rgba(255,255,255,0.35)').style('font-size','8.5px').text('Baseline (texto plano)');
-  svg.append('rect').attr('x',ml+130).attr('y',H-22).attr('width',10).attr('height',8).attr('rx',2).style('fill','#FFD54D').style('opacity',0.85);
-  svg.append('text').attr('x',ml+144).attr('y',H-14).style('fill','rgba(255,255,255,0.35)').style('font-size','8.5px').text('XML estruturado');
-
-  function loopAnim(){
+  g.append('text').attr('x',xSc(20)+4).attr('y',ySc(98.18)-6).attr('fill','#4DFFB4').attr('font-size',9.5).attr('font-weight','700').text('98,18%');
+  g.append('text').attr('x',xSc(0)+4).attr('y',ySc(76.97)-6).attr('fill','rgba(255,255,255,0.3)').attr('font-size',8.5).text('76,97%');
+  // "dip" annotation
+  g.append('text').attr('x',xSc(2)).attr('y',ySc(67.88)-8).attr('text-anchor','middle').attr('fill','rgba(255,100,100,0.5)').attr('font-size',8).text('↓ dip');
+  svg.append('rect').attr('x',ml).attr('y',H-18).attr('width',10).attr('height',8).attr('rx',2).attr('fill','#4DFFB4').attr('opacity',0.85);
+  svg.append('text').attr('x',ml+14).attr('y',H-10).attr('fill','rgba(255,255,255,0.35)').attr('font-size',8.5).text('Baseline (texto plano)');
+  svg.append('rect').attr('x',ml+160).attr('y',H-18).attr('width',10).attr('height',8).attr('rx',2).attr('fill','#FFD54D').attr('opacity',0.85);
+  svg.append('text').attr('x',ml+174).attr('y',H-10).attr('fill','rgba(255,255,255,0.35)').attr('font-size',8.5).text('XML estruturado');
+  function loop(){
     if(window.__ftRagGen!==myG) return;
-    pathBase.style('stroke-dashoffset',len1).transition().duration(2000).style('stroke-dashoffset',0);
-    pathXml.style('stroke-dashoffset',len2).transition().delay(300).duration(2000).style('stroke-dashoffset',0)
-      .on('end',function(){ setTimeout(loopAnim,1800); });
+    pathBase.attr('stroke-dashoffset',l1).transition().duration(2000).attr('stroke-dashoffset',0);
+    pathXml.attr('stroke-dashoffset',l2).transition().delay(300).duration(2000).attr('stroke-dashoffset',0)
+      .on('end',function(){ setTimeout(loop,2000); });
   }
-  setTimeout(loopAnim,3500);
+  setTimeout(loop,3800);
 })();
 
-// ═══════════════════════════════════════════════
-// D3 — anim-roserag: preference pipeline + results
-// ═══════════════════════════════════════════════
+/* ═══ ANIM 5: RoseRAG pipeline + results ═══ */
 (function(){
-  window.__roseGen=(window.__roseGen||0)+1; var myG=window.__roseGen;
-  var el=document.getElementById('anim-roserag'); if(!el) return;
-  el.innerHTML='';
-  var W=el.offsetWidth||600, H=280;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
-  var stages=[
-    {label:'Preference\nData Gen.',x:W*0.15,y:80,clr:'#4DB4FF',sub:'Multi-turn prompting\nRejection sampling'},
-    {label:'Preference\nSelection',x:W*0.5,y:80,clr:'#FFD54D',sub:'Min likelihood chosen\nMax likelihood rejected'},
-    {label:'ORPO\nOptimization',x:W*0.85,y:80,clr:'#4DFFB4',sub:'Margin-aware loss\nSem reference model'}
-  ];
-
-  svg.append('text').attr('x',W/2).attr('y',20).attr('text-anchor','middle')
-    .style('fill','rgba(77,255,180,0.5)').style('font-size','9.5px').text('RoseRAG — Pipeline de 3 Etapas');
-
+  window.__roseGen = (window.__roseGen||0)+1; var myG = window.__roseGen;
+  var el = document.getElementById('anim-roserag'); if(!el) return; el.innerHTML='';
+  var W = 860, H = 240;
+  var svg = d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var stages=[{label:'Preference\nData Gen.',x:W*0.15,y:70,clr:'#4DB4FF'},{label:'Preference\nSelection',x:W*0.5,y:70,clr:'#FFD54D'},{label:'ORPO\nOptimization',x:W*0.85,y:70,clr:'#4DFFB4'}];
+  svg.append('text').attr('x',W/2).attr('y',16).attr('text-anchor','middle').attr('fill','rgba(77,255,180,0.45)').attr('font-size',9.5).text('RoseRAG — Pipeline · 3 Etapas');
   var bw=100, bh=40;
   var stageEls=[];
   stages.forEach(function(s,i){
-    // Arrow
     if(i>0){
       var prev=stages[i-1];
-      svg.append('line').attr('x1',prev.x+bw/2+4).attr('y1',80).attr('x2',s.x-bw/2-4).attr('y2',80)
-        .style('stroke','rgba(255,255,255,0.12)').style('stroke-width',1.5);
-      svg.append('polygon').attr('points',(s.x-bw/2-2)+',80 '+(s.x-bw/2-8)+',76 '+(s.x-bw/2-8)+',84')
-        .style('fill','rgba(255,255,255,0.2)');
+      svg.append('line').attr('x1',prev.x+bw/2+4).attr('y1',70).attr('x2',s.x-bw/2-4).attr('y2',70)
+        .attr('stroke','rgba(255,255,255,0.1)').attr('stroke-width',1.5);
     }
     var bg=svg.append('rect').attr('x',s.x-bw/2).attr('y',s.y-bh/2).attr('width',bw).attr('height',bh)
-      .attr('rx',8).style('fill','rgba(255,255,255,0.04)').style('stroke',s.clr).style('stroke-width',1.5).style('stroke-opacity',0.5);
+      .attr('rx',8).attr('fill','rgba(255,255,255,0.04)').attr('stroke',s.clr).attr('stroke-width',1.5).attr('stroke-opacity',0.5);
     s.label.split('\n').forEach(function(ln,li){
       svg.append('text').attr('x',s.x).attr('y',s.y-4+li*12).attr('text-anchor','middle')
-        .style('fill','rgba(255,255,255,0.85)').style('font-size','8.5px').style('font-weight','700').text(ln);
-    });
-    s.sub.split('\n').forEach(function(ln,li){
-      svg.append('text').attr('x',s.x).attr('y',s.y+bh/2+16+li*11).attr('text-anchor','middle')
-        .style('fill','rgba(255,255,255,0.3)').style('font-size','7.5px').text(ln);
+        .attr('fill','rgba(255,255,255,0.85)').attr('font-size',8.5).attr('font-weight','700').text(ln);
     });
     stageEls.push({bg:bg,clr:s.clr});
   });
-
   // Results bars
-  var models=['Qwen 1.5B','Llama 1B','Gemma 2B'];
-  var scores=[44.8,44.1,54.0];
-  var baselines=[38.4,37.0,46.6];
-  var xStart=W*0.04, bSpace=(W*0.92)/3;
-  var yBot=H-20, yTop=160;
-  var maxScore=60;
-
+  var models=[{name:'Qwen 1.5B',base:38.4,rose:44.8},{name:'Llama 1B',base:37.0,rose:44.1},{name:'Gemma 2B',base:46.6,rose:54.0}];
+  var xStart=W*0.06, bSpace=(W*0.88)/3, yBot=H-20, yTop=120, maxScore=60;
   models.forEach(function(m,i){
     var cx=xStart+bSpace*i+bSpace/2;
     var bwb=bSpace*0.28;
-    var hBase=(baselines[i]/maxScore)*(yBot-yTop-20);
-    var hScore=(scores[i]/maxScore)*(yBot-yTop-20);
-    // baseline bar
-    var bar1=svg.append('rect').attr('x',cx-bwb-4).attr('y',yBot).attr('width',bwb).attr('height',0)
-      .attr('rx',2).style('fill','#888').style('opacity',0.6);
+    var hBase=(m.base/maxScore)*(yBot-yTop-10);
+    var hRose=(m.rose/maxScore)*(yBot-yTop-10);
+    var bar1=svg.append('rect').attr('x',cx-bwb-4).attr('y',yBot).attr('width',bwb).attr('height',0).attr('rx',2).attr('fill','#888').attr('opacity',0.6);
     bar1.transition().delay(400+i*200).duration(800).attr('y',yBot-hBase).attr('height',hBase);
-    // score bar
-    var bar2=svg.append('rect').attr('x',cx+4).attr('y',yBot).attr('width',bwb).attr('height',0)
-      .attr('rx',2).style('fill','#4DFFB4').style('opacity',0.85);
-    bar2.transition().delay(600+i*200).duration(800).attr('y',yBot-hScore).attr('height',hScore);
-    svg.append('text').attr('x',cx).attr('y',yBot+14).attr('text-anchor','middle')
-      .style('fill','rgba(255,255,255,0.4)').style('font-size','8.5px').text(m);
-    var vt=svg.append('text').attr('x',cx+4+bwb/2).attr('y',yBot-hScore-4).attr('text-anchor','middle')
-      .style('fill','#4DFFB4').style('font-size','9px').style('font-weight','800').style('opacity',0).text(scores[i]);
-    vt.transition().delay(1500+i*200).duration(200).style('opacity',1);
+    var bar2=svg.append('rect').attr('x',cx+4).attr('y',yBot).attr('width',bwb).attr('height',0).attr('rx',2).attr('fill','#4DFFB4').attr('opacity',0.85);
+    bar2.transition().delay(600+i*200).duration(800).attr('y',yBot-hRose).attr('height',hRose);
+    svg.append('text').attr('x',cx).attr('y',yBot+14).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size',8.5).text(m.name);
+    var vt=svg.append('text').attr('x',cx+4+bwb/2).attr('y',yBot-hRose-4).attr('text-anchor','middle').attr('fill','#4DFFB4').attr('font-size',9).attr('font-weight','800').attr('opacity',0).text(m.rose);
+    vt.transition().delay(1500+i*200).duration(200).attr('opacity',1);
+    var vb=svg.append('text').attr('x',cx-bwb/2-4).attr('y',yBot-hBase-4).attr('text-anchor','middle').attr('fill','rgba(136,136,136,0.7)').attr('font-size',8).attr('opacity',0).text(m.base);
+    vb.transition().delay(1200+i*200).duration(200).attr('opacity',1);
   });
-  svg.append('text').attr('x',W/2).attr('y',yTop-6).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.2)').style('font-size','8px').text('F1 HotpotQA — vanilla RAG (cinza) vs RoseRAG (verde)');
-
+  svg.append('text').attr('x',W/2).attr('y',yTop-4).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.15)').attr('font-size',8).text('F1 HotpotQA — cinza=baseline RAG, verde=RoseRAG');
   var cur=0;
   function glow(){
     if(window.__roseGen!==myG) return;
     stageEls.forEach(function(s,i){
-      s.bg.transition().duration(350)
-        .style('fill', i===cur ? 'rgba(77,255,180,0.12)' : 'rgba(255,255,255,0.04)')
-        .style('stroke-opacity', i===cur ? 1 : 0.5);
+      s.bg.transition().duration(350).attr('fill',i===cur?'rgba(77,255,180,0.12)':'rgba(255,255,255,0.04)').attr('stroke-opacity',i===cur?1:0.5);
     });
     cur=(cur+1)%stageEls.length;
     setTimeout(glow,900);
@@ -864,64 +813,49 @@ window.addEventListener('scroll',function(){
   setTimeout(glow,1800);
 })();
 
-// ═══════════════════════════════════════════════
-// D3 — anim-compare19: scatter 4 papers
-// ═══════════════════════════════════════════════
+/* ═══ ANIM 6: Scatter 4 papers ═══ */
 (function(){
-  window.__cmp19Gen=(window.__cmp19Gen||0)+1; var myG=window.__cmp19Gen;
-  var el=document.getElementById('anim-compare19'); if(!el) return;
-  el.innerHTML='';
-  var W=el.offsetWidth||600, H=320;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
-  var ml=52, mr=24, mt=28, mb=48;
+  window.__cmp19Gen = (window.__cmp19Gen||0)+1; var myG = window.__cmp19Gen;
+  var el = document.getElementById('anim-compare19'); if(!el) return; el.innerHTML='';
+  var W = 860, H = 240;
+  var svg = d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var ml=52, mr=24, mt=28, mb=52;
   var pw=W-ml-mr, ph=H-mt-mb;
   var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
   var xSc=d3.scaleLinear().domain([0,10]).range([0,pw]);
   var ySc=d3.scaleLinear().domain([0,10]).range([ph,0]);
-
-  g.append('line').attr('x1',0).attr('y1',ph).attr('x2',pw).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
-  g.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',ph).style('stroke','rgba(255,255,255,0.1)').style('stroke-width',1);
-  g.append('text').attr('x',pw/2).attr('y',ph+34).attr('text-anchor','middle').style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Complexidade de Implementação →');
-  g.append('text').attr('transform','translate(-36,'+ph/2+') rotate(-90)').attr('text-anchor','middle').style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Ganho de Performance →');
-
+  g.append('g').attr('transform','translate(0,'+ph+')').call(d3.axisBottom(xSc).ticks(4).tickFormat(function(d){return ({0:'Baixa',5:'Média',10:'Alta'}[d]||'');})).selectAll('text').attr('fill','rgba(255,255,255,0.3)').attr('font-size','9px');
+  g.append('g').call(d3.axisLeft(ySc).ticks(4).tickFormat(function(d){return ({0:'Baixa',5:'Média',10:'Alta'}[d]||'');})).selectAll('text').attr('fill','rgba(255,255,255,0.3)').attr('font-size','9px');
+  g.selectAll('.domain,.tick line').attr('stroke','rgba(255,255,255,0.07)');
+  g.append('text').attr('x',pw/2).attr('y',ph+38).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.22)').attr('font-size',9.5).text('Complexidade de Implementação →');
+  g.append('text').attr('transform','translate(-38,'+ph/2+') rotate(-90)').attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.22)').attr('font-size',9.5).text('↑ Ganho de Performance');
   [2,4,6,8].forEach(function(v){
-    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph).style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
-    g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v)).style('stroke','rgba(255,255,255,0.04)').style('stroke-dasharray','3,4');
+    g.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph).attr('stroke','rgba(255,255,255,0.03)').attr('stroke-dasharray','3,4');
+    g.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v)).attr('stroke','rgba(255,255,255,0.03)').attr('stroke-dasharray','3,4');
   });
-
   var papers=[
-    {label:'FT vs RAG',    x:3.0, y:6.5, clr:'#4DFFB4', r:17, sub:'SIGIR-AP 2024\nSRAG: hint sem treino'},
-    {label:'SimRAG',       x:6.5, y:8.5, clr:'#4DB4FF', r:17, sub:'NAACL 2025\n+1.2-8.6% 11 datasets'},
-    {label:'Finetune-RAG', x:4.5, y:7.0, clr:'#FF904D', r:17, sub:'Pints AI 2025\n76.97%→98.18%'},
-    {label:'RoseRAG',      x:7.5, y:9.0, clr:'#B464FF', r:17, sub:'Purdue 2025\nSLM 1-3B SOTA'}
+    {label:'FT vs RAG',x:2.5,y:6,r:18,col:'#4DFFB4',note:'SIGIR-AP 2024\nSRAG: hint zero-cost'},
+    {label:'SimRAG',x:6.5,y:8.5,r:18,col:'#4DB4FF',note:'NAACL 2025\n94% do GPT-4'},
+    {label:'Finetune-RAG',x:4.0,y:7.5,r:17,col:'#FF904D',note:'Pints AI 2025\n76%→98% acurácia'},
+    {label:'RoseRAG',x:7.0,y:9.0,r:17,col:'#B464FF',note:'Purdue 2025\n1.5B&gt;8B baselines'}
   ];
-
   var crefs=[];
   papers.forEach(function(p,i){
-    var c=g.append('circle').attr('cx',xSc(p.x)).attr('cy',ySc(p.y)).attr('r',0)
-      .style('fill',p.clr).style('fill-opacity',0.18).style('stroke',p.clr).style('stroke-width',1.5);
+    var c=g.append('circle').attr('cx',xSc(p.x)).attr('cy',ySc(p.y)).attr('r',0).attr('fill',p.col+'15').attr('stroke',p.col).attr('stroke-width',1.5);
     c.transition().delay(300+i*220).duration(600).attr('r',p.r);
-    g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)+4).attr('text-anchor','middle')
-      .style('fill',p.clr).style('font-size','8px').style('font-weight','700')
-      .style('opacity',0).transition().delay(1000+i*220).duration(200).style('opacity',1).text(p.label);
-    p.sub.split('\n').forEach(function(ln,li){
-      g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)-p.r-8+li*11).attr('text-anchor','middle')
-        .style('fill','rgba(255,255,255,0.3)').style('font-size','7.5px')
-        .style('opacity',0).transition().delay(1200+i*220).duration(200).style('opacity',1).text(ln);
+    g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)+4).attr('text-anchor','middle').attr('fill',p.col).attr('font-size',8).attr('font-weight','700').attr('opacity',0).text(p.label).transition().delay(1000+i*220).duration(200).attr('opacity',1);
+    p.note.split('\n').forEach(function(ln,j){
+      g.append('text').attr('x',xSc(p.x)).attr('y',ySc(p.y)-p.r-8+j*11).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size',7.5).attr('opacity',0).text(ln).transition().delay(1200+i*220).duration(200).attr('opacity',1);
     });
-    crefs.push({c:c, r:p.r, clr:p.clr});
+    crefs.push({c:c,r:p.r});
   });
-
   function glow(){
     if(window.__cmp19Gen!==myG) return;
     var idx=Math.floor(Math.random()*crefs.length);
     var ref=crefs[idx];
-    ref.c.transition().duration(500).attr('r',ref.r+6).style('fill-opacity',0.38).style('stroke-width',2.5)
-      .transition().duration(500).attr('r',ref.r).style('fill-opacity',0.18).style('stroke-width',1.5)
+    ref.c.transition().duration(500).attr('r',ref.r+6).attr('fill-opacity',0.38).attr('stroke-width',2.5)
+      .transition().duration(500).attr('r',ref.r).attr('fill-opacity',0.15).attr('stroke-width',1.5)
       .on('end',function(){ setTimeout(glow,900); });
   }
   setTimeout(glow,2800);
