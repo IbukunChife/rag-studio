@@ -2,7 +2,7 @@
 
 Apresentações animadas sobre as estratégias que definem como LLMs recuperam, organizam e usam informação.
 
-**12 módulos · 317 slides · 125 animações D3.js · 64 artigos científicos**
+**13 módulos · 339 slides · 131 animações D3.js · 68 artigos científicos**
 
 [Abrir portal →](https://ibukunchife.github.io/rag-studio/)
 
@@ -24,6 +24,7 @@ Apresentações animadas sobre as estratégias que definem como LLMs recuperam, 
 | 10 | [Banco Vetorial & Índices](banco-vetorial/) | 22 | 5 | 6 |
 | 11 | [Reranking em RAG](reranking/) | 20 | 3 | 6 |
 | 12 | [GraphRAG](graph-rag/) | 22 | 4 | 6 |
+| 13 | [Otimização de Pipeline RAG](otimizacao-pipeline/) | 22 | 4 | 6 |
 
 ## Abordagem
 
