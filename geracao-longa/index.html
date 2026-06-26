@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Módulo 09 · Geração Longa — RAG Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --mira-primary: #FF904D;
+      --mira-bg: #000000;
+      --mira-success: #4DFFB4;
+      --mira-warning: #FFD54D;
+      --mira-error: #FF6464;
+      --mira-blue: #4DB4FF;
+      --mira-purple: #B464FF;
+      --mira-teal: #26C6DA;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--mira-bg); color: #fff; overflow-x: hidden; }
+
+    /* Progress */
+    #progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--mira-purple); z-index: 9999; width: 0%; transition: width 0.2s ease; }
+
+    /* Back button */
+    #back-btn { position: fixed; bottom: 2rem; right: 2rem; width: 3rem; height: 3rem; border-radius: 50%; background: var(--mira-purple); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; z-index: 100; box-shadow: 0 4px 24px rgba(180,100,255,0.45); }
+    #back-btn.visible { opacity: 1; }
+
+    /* Slides */
+    .slide { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 4rem 1.5rem; position: relative; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; backdrop-filter: blur(10px); max-width: 900px; width: 100%; padding: 2.75rem; }
+
+    /* Hero */
+    .slide-hero { background: radial-gradient(ellipse 65% 55% at 15% 55%, rgba(180,100,255,0.13) 0%, transparent 60%), radial-gradient(ellipse 45% 40% at 85% 25%, rgba(77,100,255,0.07) 0%, transparent 50%), var(--mira-bg); }
+    .module-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(180,100,255,0.12); border: 1px solid rgba(180,100,255,0.3); color: var(--mira-purple); border-radius: 2rem; padding: 0.4rem 1rem; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+    .hero-title { font-size: clamp(2.8rem, 7vw, 5rem); font-weight: 900; line-height: 1.0; letter-spacing: -0.03em; }
+    .hero-accent { color: var(--mira-purple); }
+
+    /* Section label */
+    .sec-label { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(180,100,255,0.1); border: 1px solid rgba(180,100,255,0.25); border-radius: 2rem; padding: 0.3rem 0.9rem; font-size: 0.7rem; color: var(--mira-purple); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+    /* Metaphor */
+    .metaphor-box { background: rgba(180,100,255,0.05); border: 1px solid rgba(180,100,255,0.18); border-radius: 1rem; padding: 1.5rem; }
+    .metaphor-icon { width: 3.5rem; height: 3.5rem; border-radius: 50%; background: rgba(180,100,255,0.14); border: 1px solid rgba(180,100,255,0.3); display: flex; align-items: center; justify-content: center; color: var(--mira-purple); flex-shrink: 0; }
+
+    /* Stats */
+    .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 1rem; padding: 1.5rem; text-align: center; }
+    .stat-num { font-size: 2.6rem; font-weight: 900; line-height: 1; }
+    .stat-lbl { font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; font-weight: 500; }
+
+    /* Grid items */
+    .gi { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.2rem; }
+
+    /* Tags */
+    .tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.65rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
+    .t-p { background: rgba(180,100,255,0.15); color: var(--mira-purple); border: 1px solid rgba(180,100,255,0.3); }
+    .t-b { background: rgba(77,180,255,0.15); color: var(--mira-blue); border: 1px solid rgba(77,180,255,0.3); }
+    .t-g { background: rgba(77,255,180,0.15); color: var(--mira-success); border: 1px solid rgba(77,255,180,0.3); }
+    .t-y { background: rgba(255,213,77,0.15); color: var(--mira-warning); border: 1px solid rgba(255,213,77,0.3); }
+    .t-o { background: rgba(255,144,77,0.15); color: var(--mira-primary); border: 1px solid rgba(255,144,77,0.3); }
+    .t-t { background: rgba(38,198,218,0.15); color: var(--mira-teal); border: 1px solid rgba(38,198,218,0.3); }
+    .t-r { background: rgba(255,100,100,0.15); color: var(--mira-error); border: 1px solid rgba(255,100,100,0.3); }
+
+    /* D3 wrapper */
+    .d3-wrap { width: 100%; border-radius: 1rem; overflow: hidden; background: rgba(255,255,255,0.02); }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; }
+    th { background: rgba(180,100,255,0.1); color: var(--mira-purple); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.7rem 1rem; text-align: left; }
+    td { padding: 0.65rem 1rem; font-size: 0.83rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Alert */
+    .alert { border-radius: 0.875rem; padding: 1.1rem 1.4rem; border-left: 4px solid; }
+    .alert-r { background: rgba(255,100,100,0.07); border-color: var(--mira-error); }
+    .alert-p { background: rgba(180,100,255,0.07); border-color: var(--mira-purple); }
+    .alert-g { background: rgba(77,255,180,0.07); border-color: var(--mira-success); }
+    .alert-b { background: rgba(77,180,255,0.07); border-color: var(--mira-blue); }
+
+    /* Timeline */
+    .tl-num { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; }
+
+    hr.div { border: none; border-top: 1px solid rgba(255,255,255,0.07); }
+    .accent-bar { width: 2.5rem; height: 3px; background: var(--mira-purple); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<button id="back-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 1 · CAPA
+══════════════════════════════════════════════ -->
+<div class="slide slide-hero" id="slide-1">
+  <div class="card" style="border-color:rgba(180,100,255,0.18); max-width:960px;">
+    <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="module-badge mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Módulo 09 · RAG Studio
+      </div>
+      <h1 class="hero-title mb-4">Geração<br><span class="hero-accent">Longa</span></h1>
+      <p style="color:rgba(255,255,255,0.5); font-size:1rem;" class="mb-8">Benchmarks Verificáveis · Escala Sequencial-Paralela · Contexto Multi-Escala</p>
+    </div>
+    <hr class="div mb-8" />
+    <div class="grid grid-cols-3 gap-4 mb-8" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">3</div>
+        <div class="stat-lbl">artigos científicos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">20</div>
+        <div class="stat-lbl">slides animados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">6</div>
+        <div class="stat-lbl">animações D3</div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-p">LongWeave · CoV-Eval</span>
+      <span class="tag t-b">SPARC-RAG · Seq-Par</span>
+      <span class="tag t-t">MacRAG · Multi-Escala</span>
+      <span class="tag t-y">23 LLMs testados</span>
+      <span class="tag t-g">+6.2 F1 ganho</span>
+      <span class="tag t-o">Alibaba · USC · POSCO</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 2 · METÁFORA 1 — A Redação de 20 Páginas
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-2">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · Por que geração longa é difícil</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-purple);">A Redação de 20 Páginas</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Imagine um estudante universitário com uma tarefa desafiadora: escrever um relatório de pesquisa de 20 páginas sobre o mercado financeiro do trimestre passado. O professor não quer apenas um texto longo — ele exige dados corretos, referências verificáveis, estrutura lógica e conclusões embasadas. O problema não é <em>escrever muito</em>. É <em>escrever muito e estar certo ao mesmo tempo</em>.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-3 mb-6">
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <span class="tag t-r mt-0.5">Problema 1</span>
+        <p style="font-size:0.875rem; color:rgba(255,255,255,0.75);">Benchmarks antigos pedem ao professor para "sentir se está bom" (LLM-as-a-judge) — subjetivo, inconsistente, não escalável.</p>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="280" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <span class="tag t-r mt-0.5">Problema 2</span>
+        <p style="font-size:0.875rem; color:rgba(255,255,255,0.75);">Benchmarks sintéticos simplificam a tarefa ao ponto de não refletir a complexidade real — é como pedir para escrever 3 frases em vez de 20 páginas.</p>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="360" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <span class="tag t-g mt-0.5">Solução</span>
+        <p style="font-size:0.875rem; color:rgba(255,255,255,0.75);"><strong style="color:var(--mira-purple);">LongWeave</strong>: o professor cria a <em>tarefa e os critérios de correção ao mesmo tempo</em>, antes de ver a redação. Verificação objetiva, cenário real.</p>
+      </div>
+    </div>
+    <div class="flex gap-2 flex-wrap" data-aos="fade-up" data-aos-delay="440" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-p">Zhejiang University</span>
+      <span class="tag t-p">Alibaba Qwen Team</span>
+      <span class="tag t-y">arXiv Oct 2025</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 3 · LONGWEAVE — 3 Paradigmas de Avaliação
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-3">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">LongWeave · Benchmarks de Geração Longa</div>
+      <h2 class="text-3xl font-black mb-2">Por que Medir <span style="color:var(--mira-purple);">Textos Longos</span> é Difícil</h2>
+      <div class="accent-bar mb-6"></div>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-8" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style="background:rgba(255,100,100,0.12); border:1px solid rgba(255,100,100,0.25);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--mira-error)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="font-bold mb-1" style="font-size:0.88rem;">Referência Estática</div>
+        <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);" class="mb-2">BLEU, ROUGE, Similarity</div>
+        <div class="tag t-r mx-auto" style="display:table;">similaridade ≠ correção</div>
+      </div>
+      <div class="gi text-center">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style="background:rgba(255,100,100,0.12); border:1px solid rgba(255,100,100,0.25);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--mira-error)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="font-bold mb-1" style="font-size:0.88rem;">LLM-as-a-Judge</div>
+        <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);" class="mb-2">LongWriter-Bench, HelloBench</div>
+        <div class="tag t-r mx-auto" style="display:table;">subjetivo &amp; inconsistente</div>
+      </div>
+      <div class="gi text-center" style="border-color:rgba(180,100,255,0.25); background:rgba(180,100,255,0.05);">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style="background:rgba(180,100,255,0.15); border:1px solid rgba(180,100,255,0.35);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--mira-purple)" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-purple);">CoV-Eval (LongWeave)</div>
+        <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);" class="mb-2">Constraint-Verifier Pairs</div>
+        <div class="tag t-g mx-auto" style="display:table;">objetivo &amp; verificável</div>
+      </div>
+    </div>
+    <div class="alert alert-p" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.88rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-purple);">Inovação chave:</strong> a Restrição (C) e o Verificador (V) são gerados <em>antes</em> da pergunta ser feita ao modelo. O texto gerado é avaliado contra critérios determinísticos embutidos — sem opinião subjetiva.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 4 · LONGWEAVE — CoV-Eval Pipeline [D3]
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-4">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">LongWeave · CoV-Eval</div>
+      <h2 class="text-3xl font-black mb-1">Pipeline de <span style="color:var(--mira-purple);">Avaliação Verificável</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">O verificador é gerado junto com a tarefa — nunca após a resposta do modelo</p>
+    </div>
+    <div class="d3-wrap mb-6" id="anim-cov" style="height:180px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.85rem; color:var(--mira-purple);">Gerador de Tarefas (f_gen)</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.6);">Scripts determinísticos que produzem tripletas (Material, Restrição, Verificador) simultaneamente. Nenhuma subjetividade no loop.</p>
+      </div>
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.85rem; color:var(--mira-success);">Pontuação S = Score(O_gen, V)</div>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.6);">A saída do modelo é comparada ao Verificador usando regras determinísticas. Sem LLM-judge, sem similaridade semântica subjetiva.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 5 · LONGWEAVE — As 7 Tarefas
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">LongWeave · Tarefas</div>
+      <h2 class="text-3xl font-black mb-1">Sete Desafios <span style="color:var(--mira-purple);">do Mundo Real</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Entrada até 64K tokens · Saída 1K–8K tokens · Dificuldade ajustável</p>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(180,100,255,0.15); font-size:0.72rem; font-weight:800; color:var(--mira-purple);">CF</div>
+        <div>
+          <div class="font-semibold" style="font-size:0.84rem;">Correção de Código</div>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Corrigir violações Flake8 — verificador: execução automática</div>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="130" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(77,180,255,0.15); font-size:0.72rem; font-weight:800; color:var(--mira-blue);">BioG</div>
+        <div>
+          <div class="font-semibold" style="font-size:0.84rem;">Biografia por Grafo</div>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Gerar biografia a partir de triplas KG — verificador: taxa de cobertura</div>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(77,255,180,0.15); font-size:0.72rem; font-weight:800; color:var(--mira-success);">SR</div>
+        <div>
+          <div class="font-semibold" style="font-size:0.84rem;">Relatório de Vendas CSV</div>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Análise de transações — verificador: taxa de acerto nas respostas</div>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="230" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(255,213,77,0.15); font-size:0.72rem; font-weight:800; color:var(--mira-warning);">NW</div>
+        <div>
+          <div class="font-semibold" style="font-size:0.84rem;">Notícia AP Style</div>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Artigo seguindo AP Stylebook — verificador: cobertura de fatos + estilo</div>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="280" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(255,144,77,0.15); font-size:0.72rem; font-weight:800; color:var(--mira-primary);">KVG</div>
+        <div>
+          <div class="font-semibold" style="font-size:0.84rem;">Dicionário Chave-Valor</div>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Gerar string com par KV na posição exata — verificador: posição e formato</div>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="330" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(38,198,218,0.15); font-size:0.72rem; font-weight:800; color:var(--mira-teal);">SMS</div>
+        <div>
+          <div class="font-semibold" style="font-size:0.84rem;">Simulação de Máquina de Estados</div>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Simular transições FSM passo a passo — verificador: script de validação FSM</div>
+        </div>
+      </div>
+      <div class="gi flex gap-3 items-start col-span-2" data-aos="fade-up" data-aos-delay="380" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(180,100,255,0.15); font-size:0.72rem; font-weight:800; color:var(--mira-purple);">PR</div>
+        <div>
+          <div class="font-semibold" style="font-size:0.84rem;">Reordenação de Parágrafos</div>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Restaurar ordem correta de parágrafos embaralhados — verificador: Kendall's Tau (ordem prevista vs. correta)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 6 · LONGWEAVE — O Teto de 54%
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">LongWeave · Resultados</div>
+      <h2 class="text-3xl font-black mb-1">O <span style="color:var(--mira-error);">Teto de Vidro</span> dos Modelos Atuais</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">23 LLMs avaliados — nem os melhores passam de 55% no LongWeave</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-error);">54.56%</div>
+        <div class="stat-lbl">teto do DeepSeek-R1<br>(melhor modelo testado)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-warning);">23</div>
+        <div class="stat-lbl">LLMs avaliados<br>incluindo GPT-4o, Gemini</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">64K</div>
+        <div class="stat-lbl">tokens de entrada<br>suportados (máximo)</div>
+      </div>
+    </div>
+    <div class="space-y-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="flex justify-between mb-2">
+          <span style="font-size:0.82rem;">Saída 1K tokens</span>
+          <span style="font-size:0.82rem; color:var(--mira-success);">~54%</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.08); border-radius:0.5rem; height:0.45rem; overflow:hidden;">
+          <div style="width:54%; height:100%; background:var(--mira-success); border-radius:0.5rem;"></div>
+        </div>
+      </div>
+      <div class="gi">
+        <div class="flex justify-between mb-2">
+          <span style="font-size:0.82rem;">Saída 4K tokens</span>
+          <span style="font-size:0.82rem; color:var(--mira-warning);">~38%</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.08); border-radius:0.5rem; height:0.45rem; overflow:hidden;">
+          <div style="width:38%; height:100%; background:var(--mira-warning); border-radius:0.5rem;"></div>
+        </div>
+      </div>
+      <div class="gi">
+        <div class="flex justify-between mb-2">
+          <span style="font-size:0.82rem;">Saída 8K tokens</span>
+          <span style="font-size:0.82rem; color:var(--mira-error);">~22%</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.08); border-radius:0.5rem; height:0.45rem; overflow:hidden;">
+          <div style="width:22%; height:100%; background:var(--mira-error); border-radius:0.5rem;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="alert alert-r mt-5" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);">Expandir a janela de contexto para 1M tokens <strong style="color:var(--mira-error);">não resolve</strong> o problema: modelos falham na síntese de inputs longos em outputs longos coerentes.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 7 · SPARC-RAG — A Dupla Armadilha
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">SPARC-RAG · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">A <span style="color:var(--mira-error);">Dupla Armadilha</span> do Escalonamento</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Escalar RAG em profundidade OU largura, sem coordenação, piora os resultados</p>
+    </div>
+    <div class="grid grid-cols-1 gap-4 mb-6">
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error);">⚠ Contaminação de Contexto</div>
+        <p style="font-size:0.85rem; color:rgba(255,255,255,0.75);">Escalonamento sequencial (profundidade) acumula evidências indiscriminadamente. O contexto cresce, sobrecarrega a atenção do modelo e degrada a qualidade — mais iterações, resultados piores.</p>
+      </div>
+      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="font-bold mb-1" style="color:var(--mira-error);">⚠ Ineficiência de Escala</div>
+        <p style="font-size:0.85rem; color:rgba(255,255,255,0.75);">Escalonamento paralelo (largura) produz ramos redundantes e usa agregação simples (votação majoritária) — sem síntese real de evidências complementares entre ramos.</p>
+      </div>
+    </div>
+    <div class="alert alert-p" data-aos="fade-up" data-aos-delay="260" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.88rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-purple);">SPARC-RAG</strong> coordena profundidade <em>e</em> largura com um mecanismo unificado de gerenciamento de contexto — controlando explicitamente quando expandir, quando parar e como consolidar evidências.</p>
+    </div>
+    <div class="flex gap-2 flex-wrap mt-5" data-aos="fade-up" data-aos-delay="320" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-p">USC · Capital One</span>
+      <span class="tag t-y">arXiv Jan 2026</span>
+      <span class="tag t-b">Multi-hop QA</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 8 · METÁFORA 2 — O Maestro e a Orquestra
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · SPARC-RAG</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-purple);">O Maestro e a Orquestra</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Uma orquestra sinfônica tem duas dimensões de riqueza musical: a <em>profundidade</em> (o maestro revisita e aprofunda um trecho musical passagem por passagem) e a <em>largura</em> (vários instrumentos tocam harmonias diferentes simultaneamente). Sem coordenação, o resultado é cacofonia. O maestro sabe exatamente quando cada instrumento entra, qual nota sustenta e quando parar.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="color:var(--mira-blue); font-size:0.88rem;">Profundidade Sequencial</div>
+        <p style="font-size:0.78rem; color:rgba(255,255,255,0.55);">= o maestro aprofunda a mesma música, iteração após iteração</p>
+      </div>
+      <div class="gi text-center" style="border-color:rgba(180,100,255,0.25); background:rgba(180,100,255,0.05);">
+        <div class="font-bold mb-1" style="color:var(--mira-purple); font-size:0.88rem;">SPARC-RAG</div>
+        <p style="font-size:0.78rem; color:rgba(255,255,255,0.55);">= o maestro coordenando a sinfonia completa com controle de contexto</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="color:var(--mira-teal); font-size:0.88rem;">Largura Paralela</div>
+        <p style="font-size:0.78rem; color:rgba(255,255,255,0.55);">= vários instrumentos explorando harmonias complementares</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 9 · SPARC-RAG — Dois Eixos de Escala [D3]
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">SPARC-RAG · Arquitetura</div>
+      <h2 class="text-3xl font-black mb-1">Dois Eixos de <span style="color:var(--mira-purple);">Escala Controlada</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Profundidade Sequencial D × Largura Paralela W — coordenados com gerenciamento de contexto global</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-scale" style="height:200px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.85rem; color:var(--mira-blue);">Sequential Depth (D)</div>
+        <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Rodadas iterativas de raciocínio — cada rodada refina a resposta com base na evidência acumulada até o momento.</p>
+      </div>
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.85rem; color:var(--mira-teal);">Parallel Width (W)</div>
+        <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">W ramos paralelos com sub-queries distintas — cada ramo explora uma direção diferente de recuperação de evidências.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 10 · SPARC-RAG — Os 3 Agentes [D3]
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">SPARC-RAG · Agentes</div>
+      <h2 class="text-3xl font-black mb-1">Três <span style="color:var(--mira-purple);">Agentes Colaborativos</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Cada agente controla uma dimensão crítica do escalonamento</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-agents" style="height:220px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-blue);">Query Rewriter</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.6);">Gera W sub-queries complementares em uma única inferência — exploração máxima de cobertura</p>
+      </div>
+      <div class="gi" style="border-color:rgba(180,100,255,0.25); background:rgba(180,100,255,0.04);">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-purple);">Context Manager</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.6);">Consolida evidências, seleciona o melhor ramo e mantém contexto global coeso sem ruído</p>
+      </div>
+      <div class="gi">
+        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-success);">Answer Evaluator</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.6);">Sinal CONTINUE ou STOP — evita iterações desnecessárias em casos simples</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 11 · SPARC-RAG — Protocolo em 3 Fases
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">SPARC-RAG · Execução</div>
+      <h2 class="text-3xl font-black mb-1">Protocolo de <span style="color:var(--mira-purple);">3 Fases</span> por Rodada</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Ciclo que se repete até o Answer Evaluator emitir STOP ou orçamento D_max ser atingido</p>
+    </div>
+    <div class="space-y-4">
+      <div class="flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,180,255,0.2); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">1</div>
+        <div class="gi flex-1">
+          <div class="font-bold mb-1" style="color:var(--mira-blue);">Distribuição Paralela</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.7);">Query Rewriter gera W queries complementares. Cada query spawna um ramo de execução independente. Maximiza cobertura de hipóteses.</p>
+        </div>
+      </div>
+      <div class="flex gap-4 items-start" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(180,100,255,0.2); color:var(--mira-purple); border:1px solid rgba(180,100,255,0.3);">2</div>
+        <div class="gi flex-1">
+          <div class="font-bold mb-1" style="color:var(--mira-purple);">Execução por Ramo (paralela)</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.7);">Cada ramo k executa atomicamente: Retrieve(q_k) → MemUpdate(m, r_k) → AnsGenerate → EvaluateAns. Contexto local por ramo — sem contaminação cruzada.</p>
+        </div>
+      </div>
+      <div class="flex gap-4 items-start" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0" style="background:rgba(77,255,180,0.2); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">3</div>
+        <div class="gi flex-1">
+          <div class="font-bold mb-1" style="color:var(--mira-success);">Agregação &amp; Controle</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.7);">Context Manager seleciona o melhor ramo k*, mescla evidências complementares e decide: se e_k* = STOP → retorna resposta. Senão, t ← t+1 e repete.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 12 · SPARC-RAG — Resultados
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">SPARC-RAG · Resultados</div>
+      <h2 class="text-3xl font-black mb-1"><span style="color:var(--mira-success);">+6.2 F1</span> com Custo de Inferência Menor</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Avaliado em 5 benchmarks QA — single-hop e multi-hop</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">+6.2</div>
+        <div class="stat-lbl">média F1 vs. baselines<br>em 5 benchmarks</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">↓</div>
+        <div class="stat-lbl">custo de inferência<br>abaixo de métodos solo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">2</div>
+        <div class="stat-lbl">backbones testados<br>Qwen2.5-7B · Qwen3-32B</div>
+      </div>
+    </div>
+    <div class="overflow-x-auto" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <table>
+        <thead>
+          <tr><th>Benchmark</th><th>Tipo</th><th>Salto</th><th>Ganho F1</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Natural Questions (NQ)</td><td>Single-hop QA</td><td>1</td><td style="color:var(--mira-success);">+4.1</td></tr>
+          <tr><td>HotpotQA</td><td>Multi-hop QA</td><td>2</td><td style="color:var(--mira-success);">+5.8</td></tr>
+          <tr><td>2WikiMultiHopQA</td><td>Multi-hop QA</td><td>2</td><td style="color:var(--mira-success);">+7.0</td></tr>
+          <tr><td>Bamboogle</td><td>Multi-hop QA</td><td>2–3</td><td style="color:var(--mira-success);">+6.4</td></tr>
+          <tr><td>MuSiQue</td><td>Multi-hop QA</td><td>4</td><td style="color:var(--mira-success);">+7.7</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 13 · MACRAG — 3 Trade-offs do Contexto Longo
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">MacRAG · Motivação</div>
+      <h2 class="text-3xl font-black mb-1">Os <span style="color:var(--mira-purple);">Três Impasses</span> do Contexto Longo</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Cada decisão de design no RAG cria um conflito — MacRAG resolve os três ao mesmo tempo</p>
+    </div>
+    <div class="space-y-4 mb-6">
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,213,77,0.15); border:1px solid rgba(255,213,77,0.3);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mira-warning)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-warning);">Comprimento vs. Foco</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Contextos longos melhoram o recall mas obscurecem detalhes importantes. Contextos curtos focam, mas perdem evidências essenciais.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(77,180,255,0.15); border:1px solid rgba(77,180,255,0.3);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mira-blue)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div>
+          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-blue);">Chunking vs. Cobertura</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Chunks finos → alta precisão, mas fragmentam o conhecimento. Chunks grossos → preservam coerência, mas introduzem redundância.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,100,100,0.15); border:1px solid rgba(255,100,100,0.3);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mira-error)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-error);">Cobertura vs. Computação</div>
+          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Contexto mais amplo melhora o raciocínio multi-hop, mas aumenta o custo em tokens e latência — especialmente em pipelines iterativos.</p>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2 flex-wrap" data-aos="fade-up" data-aos-delay="320" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-p">POSCO HOLDINGS · UCSB · Google Cloud</span>
+      <span class="tag t-y">arXiv Mai 2025</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 14 · METÁFORA 3 — O Bibliotecário Hierárquico
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · MacRAG</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="flex gap-4 items-start">
+        <div class="metaphor-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div>
+          <div class="font-bold text-xl mb-2" style="color:var(--mira-purple);">O Bibliotecário Hierárquico</div>
+          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
+            Uma biblioteca tem três tipos de bibliotecários ruins: o que entrega o <em>livro inteiro</em> (informação demais, você se perde), o que entrega <em>uma única frase</em> (precisão máxima, contexto mínimo) e o que demora tanto para organizar os livros que o sistema fica lento. O <strong>bibliotecário hierárquico ideal</strong> já classificou os livros em capítulos, resumiu cada capítulo e indexou cada parágrafo. Quando você pergunta algo, ele entrega: o parágrafo exato + os parágrafos vizinhos + o resumo do capítulo — nada mais, nada menos.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-4 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-purple);">Documento</div>
+        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">livro completo</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-blue);">Chunk</div>
+        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">200–500 tokens</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-teal);">Resumo</div>
+        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">sumarizado LLM</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-success);">Slice</div>
+        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">50–200 tokens</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 15 · MACRAG — Hierarquia Top-Down [D3]
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-15">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">MacRAG · Fase 1 — Indexação</div>
+      <h2 class="text-3xl font-black mb-1">Hierarquia <span style="color:var(--mira-purple);">Top-Down</span> Offline</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Construção única em pré-processamento — sem overhead em tempo de consulta</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-hier" style="height:220px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-4 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.8rem; color:var(--mira-purple);">1. Documento</div>
+        <p style="font-size:0.73rem; color:rgba(255,255,255,0.55);">Corpus original D = {d₁...dN}</p>
+      </div>
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.8rem; color:var(--mira-blue);">2. Chunk</div>
+        <p style="font-size:0.73rem; color:rgba(255,255,255,0.55);">200–500 tokens, sobreposição 10–200 tokens</p>
+      </div>
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.8rem; color:var(--mira-teal);">3. Resumo</div>
+        <p style="font-size:0.73rem; color:rgba(255,255,255,0.55);">Sumarização abstrata por LLM — reduz ruído</p>
+      </div>
+      <div class="gi">
+        <div class="font-semibold mb-1" style="font-size:0.8rem; color:var(--mira-success);">4. Slice</div>
+        <p style="font-size:0.73rem; color:rgba(255,255,255,0.55);">50–200 tokens, embedding + vetor DB</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 16 · MACRAG — Recuperação Bottom-Up [D3]
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-16">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">MacRAG · Fase 2 — Recuperação</div>
+      <h2 class="text-3xl font-black mb-1">Recuperação <span style="color:var(--mira-purple);">Bottom-Up</span> em 5 Passos</h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Da granularidade mais fina (Slices) até o contexto fundido com vizinhos (Chunks mesclados)</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-retrieval" style="height:200px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-5 gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-success);">① Slice</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">top-k₁ slices mais relevantes</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-teal);">② Pai</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">mapear slices para chunks</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-blue);">③ Re-rank</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">cross-encoder (marco-miniLM)</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-warning);">④ Scale-up</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">top-k₂×α docs distintos</div>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold text-xs mb-1" style="color:var(--mira-purple);">⑤ Mescla</div>
+        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">h-hop vizinhos dentro doc</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 17 · MACRAG — Resultados
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-17">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">MacRAG · Resultados</div>
+      <h2 class="text-3xl font-black mb-1">Supera Baselines em <span style="color:var(--mira-purple);">3 Benchmarks</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Comparado vs. RAPTOR e LongRAG — com 3 LLMs diferentes</p>
+    </div>
+    <div class="overflow-x-auto mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <table>
+        <thead>
+          <tr><th>Benchmark</th><th>Baselines</th><th>MacRAG+GPT-4o</th><th>MacRAG+Gemini</th><th>MacRAG+Llama-3.1-8B</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HotpotQA</td><td>RAPTOR, LongRAG</td><td style="color:var(--mira-success);">✓ Superior</td><td style="color:var(--mira-success);">✓ Superior</td><td style="color:var(--mira-success);">✓ Superior</td></tr>
+          <tr><td>2WikiMultiHopQA</td><td>RAPTOR, LongRAG</td><td style="color:var(--mira-success);">✓ Superior</td><td style="color:var(--mira-success);">✓ Superior</td><td style="color:var(--mira-success);">✓ Superior</td></tr>
+          <tr><td>MuSiQue</td><td>RAPTOR, LongRAG</td><td style="color:var(--mira-success);">✓ Superior</td><td style="color:var(--mira-success);">✓ Superior</td><td style="color:var(--mira-success);">✓ Superior</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid grid-cols-3 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-purple);">k₁=100</div>
+        <div class="stat-lbl">slices iniciais recuperados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">k₂=7</div>
+        <div class="stat-lbl">chunks finais mesclados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-success);">7</div>
+        <div class="stat-lbl">métodos de geração testados</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 18 · MAPA COMPARATIVO [D3]
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-18">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 09 · Síntese</div>
+      <h2 class="text-3xl font-black mb-1">Três <span style="color:var(--mira-purple);">Perspectivas Complementares</span></h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Cada paper resolve um aspecto diferente da geração longa com RAG</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-compare" style="height:220px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="grid grid-cols-3 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-blue);">LongWeave</div>
+        <div class="tag t-b mx-auto mb-2" style="display:table;">Avaliar</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Como medir qualidade de geração longa de forma objetiva e verificável</p>
+      </div>
+      <div class="gi text-center" style="border-color:rgba(180,100,255,0.25); background:rgba(180,100,255,0.04);">
+        <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-purple);">SPARC-RAG</div>
+        <div class="tag t-p mx-auto mb-2" style="display:table;">Escalar</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Como coordenar profundidade e largura sem contaminar o contexto</p>
+      </div>
+      <div class="gi text-center">
+        <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-teal);">MacRAG</div>
+        <div class="tag t-t mx-auto mb-2" style="display:table;">Indexar</div>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Como indexar e recuperar em múltiplas escalas para contexto preciso</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 19 · SÍNTESE — 3 Lições do Módulo
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-19">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 09 · Aprendizados</div>
+      <h2 class="text-3xl font-black mb-6">Três <span style="color:var(--mira-purple);">Lições Essenciais</span></h2>
+    </div>
+    <div class="space-y-4">
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 text-lg font-black" style="width:2.5rem; height:2.5rem; background:rgba(77,180,255,0.15); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">①</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-blue);">Antes de melhorar, meça — com critérios verificáveis</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">LongWeave prova que benchmarks sintéticos e juízes-LLM subjetivos mascaram problemas reais. A avaliação objetiva (CoV-Eval) revela que até os melhores modelos falham sistematicamente em textos longos.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 text-lg font-black" style="width:2.5rem; height:2.5rem; background:rgba(180,100,255,0.15); color:var(--mira-purple); border:1px solid rgba(180,100,255,0.3);">②</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-purple);">Escalar profundidade E largura, com controle de contexto</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">SPARC-RAG mostra que escalar apenas em uma dimensão cria armadilhas. Coordenar sequencial e paralelo com um gerenciador de contexto explícito supera métodos especializados com menor custo.</p>
+        </div>
+      </div>
+      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="280" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+        <div class="tl-num flex-shrink-0 text-lg font-black" style="width:2.5rem; height:2.5rem; background:rgba(38,198,218,0.15); color:var(--mira-teal); border:1px solid rgba(38,198,218,0.3);">③</div>
+        <div>
+          <div class="font-bold mb-1" style="color:var(--mira-teal);">Granularidade de indexação define o teto da recuperação</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">MacRAG demonstra que construir uma hierarquia offline (Documento→Chunk→Resumo→Slice) e recuperar bottom-up entrega precisão E cobertura — os três trade-offs resolvidos de forma unificada.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 20 · PRÓXIMO MÓDULO
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide-20" style="background:radial-gradient(ellipse 60% 50% at 80% 50%, rgba(77,180,255,0.1) 0%, transparent 55%), var(--mira-bg);">
+  <div class="card" style="border-color:rgba(77,180,255,0.18);">
+    <div data-aos="fade-up" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="inline-flex items-center gap-2 mb-6" style="background:rgba(77,180,255,0.1); border:1px solid rgba(77,180,255,0.25); border-radius:2rem; padding:0.35rem 0.9rem; font-size:0.7rem; color:var(--mira-blue); font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">
+        A Seguir · Módulo 10
+      </div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem); font-weight:900; line-height:1.05; letter-spacing:-0.02em; margin-bottom:1rem;">
+        Banco Vetorial<br><span style="color:var(--mira-blue);">&amp; Índices</span>
+      </h2>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.95rem; margin-bottom:2rem;">Como armazenar, indexar e buscar embeddings em escala — estruturas de dados que tornam o RAG viável na produção.</p>
+    </div>
+    <hr class="div mb-6" />
+    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">5</div>
+        <div class="stat-lbl">artigos científicos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">ANNS</div>
+        <div class="stat-lbl">Approximate Nearest Neighbor</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--mira-blue);">Prod</div>
+        <div class="stat-lbl">uso em produção</div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-b">Índices HNSW · IVF · PQ</span>
+      <span class="tag t-b">Compressão de vetores</span>
+      <span class="tag t-b">Busca híbrida eficiente</span>
+      <span class="tag t-b">Atualização incremental</span>
+    </div>
+    <div class="mt-6" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <a href="../index.html" style="display:inline-flex; align-items:center; gap:0.5rem; color:var(--mira-blue); font-weight:600; font-size:0.9rem; text-decoration:none; border:1px solid rgba(77,180,255,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; background:rgba(77,180,255,0.08);">
+        ← Voltar ao Portal
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCRIPTS D3 — ANIMAÇÕES
+════════════════════════════════════ -->
+<script>
+/* ── ANIM-COV: Pipeline CoV-Eval ── */
+(function(){
+  window.__covGen = (window.__covGen||0)+1; var myG=window.__covGen;
+  var el = document.getElementById('anim-cov'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=180;
+  var nodes=[
+    {id:'material', label:'Material\nXraw', color:'#4DB4FF'},
+    {id:'constraint', label:'Restrição\nC', color:'#B464FF'},
+    {id:'model', label:'Geração\nLLM', color:'#FFD54D'},
+    {id:'verifier', label:'Verificador\nV', color:'#4DFFB4'},
+    {id:'score', label:'Pontuação\nS', color:'#FF904D'}
+  ];
+  var n=nodes.length, cx=W/(n+1), cy=H/2;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  /* links */
+  for(var i=0;i<n-1;i++){
+    var x1=cx*(i+1), x2=cx*(i+2);
+    svg.append('line').attr('x1',x1+28).attr('y1',cy).attr('x2',x2-28).attr('y2',cy)
+      .attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1.5)
+      .attr('marker-end','url(#arr)');
+  }
+  var defs=svg.append('defs');
+  defs.append('marker').attr('id','arr').attr('markerWidth',8).attr('markerHeight',8)
+    .attr('refX',6).attr('refY',3).attr('orient','auto')
+    .append('path').attr('d','M0,0 L0,6 L8,3 z').attr('fill','rgba(180,100,255,0.5)');
+  /* circles */
+  var gs=svg.selectAll('.nd').data(nodes).enter().append('g').attr('class','nd')
+    .attr('transform',function(d,i){ return 'translate('+(cx*(i+1))+','+cy+')'; });
+  gs.append('circle').attr('r',26).attr('fill',function(d){ return d.color+'22'; })
+    .attr('stroke',function(d){ return d.color; }).attr('stroke-width',1.5)
+    .attr('opacity',0).transition().duration(600).delay(function(d,i){ return i*200+600; }).attr('opacity',1);
+  gs.each(function(d){
+    var g=d3.select(this);
+    var lines=d.label.split('\n');
+    lines.forEach(function(l,i){
+      g.append('text').text(l)
+        .attr('x',0).attr('y',(i-0.3+(lines.length===1?0.3:0))*14)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill','rgba(255,255,255,0.9)').attr('font-size','10px').attr('font-weight','600')
+        .attr('opacity',0).transition().duration(400).delay(800+300).attr('opacity',1);
+    });
+  });
+  /* animated dots */
+  var dots=svg.selectAll('.dot').data(d3.range(n-1)).enter().append('circle')
+    .attr('class','dot').attr('r',4).attr('fill','var(--mira-purple)').attr('opacity',0);
+  function animDots(){
+    if(window.__covGen!==myG) return;
+    dots.each(function(i){
+      var x1=cx*(i+1)+28, x2=cx*(i+2)-28;
+      d3.select(this)
+        .attr('cx',x1).attr('cy',cy).attr('opacity',0.9)
+        .transition().duration(900).delay(i*250)
+        .attr('cx',x2).attr('opacity',0.9)
+        .transition().duration(200).attr('opacity',0)
+        .on('end',function(){ if(i===n-2 && window.__covGen===myG) setTimeout(animDots,600); });
+    });
+  }
+  setTimeout(animDots,1400);
+})();
+
+/* ── ANIM-SCALE: Profundidade × Largura ── */
+(function(){
+  window.__scaleGen=(window.__scaleGen||0)+1; var myG=window.__scaleGen;
+  var el=document.getElementById('anim-scale'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=200;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  var pd=30, cw=(W/2-pd*2)/3, ch=28, gap=6;
+  var dSteps=['T1','T2','T3','T4'], wSteps=['B1','B2','B3','B4'];
+  /* Labels */
+  svg.append('text').text('Profundidade Sequencial').attr('x',W/4).attr('y',18)
+    .attr('text-anchor','middle').attr('fill','var(--mira-blue)').attr('font-size','11px').attr('font-weight','700');
+  svg.append('text').text('Largura Paralela').attr('x',W*3/4).attr('y',18)
+    .attr('text-anchor','middle').attr('fill','var(--mira-teal)').attr('font-size','11px').attr('font-weight','700');
+  /* Separator */
+  svg.append('line').attr('x1',W/2).attr('y1',25).attr('x2',W/2).attr('y2',H-10)
+    .attr('stroke','rgba(255,255,255,0.1)').attr('stroke-dasharray','4,4');
+  /* Depth cells (vertical) */
+  var depthG=svg.append('g');
+  var depthRects=[];
+  dSteps.forEach(function(s,i){
+    var x=(W/4)-(cw/2), y=28+i*(ch+gap);
+    var r=depthG.append('rect').attr('x',x).attr('y',y).attr('width',cw*1.5).attr('height',ch)
+      .attr('rx',5).attr('fill','rgba(77,180,255,0.08)').attr('stroke','rgba(77,180,255,0.3)').attr('stroke-width',1);
+    depthG.append('text').text(s).attr('x',x+cw*0.75).attr('y',y+ch/2+1)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.6)').attr('font-size','10px').attr('font-weight','600');
+    depthRects.push(r);
+  });
+  /* Width cells (horizontal) */
+  var widthG=svg.append('g');
+  var widthRects=[];
+  wSteps.forEach(function(s,i){
+    var cx2=W/2+pd+(cw+gap)*i, y2=H/2-ch/2;
+    var r=widthG.append('rect').attr('x',cx2).attr('y',y2).attr('width',cw).attr('height',ch)
+      .attr('rx',5).attr('fill','rgba(38,198,218,0.08)').attr('stroke','rgba(38,198,218,0.3)').attr('stroke-width',1);
+    widthG.append('text').text(s).attr('x',cx2+cw/2).attr('y',y2+ch/2+1)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.6)').attr('font-size','10px').attr('font-weight','600');
+    widthRects.push(r);
+  });
+  var step=0;
+  function loop(){
+    if(window.__scaleGen!==myG) return;
+    /* reset */
+    depthRects.forEach(function(r){ r.attr('fill','rgba(77,180,255,0.08)'); });
+    widthRects.forEach(function(r){ r.attr('fill','rgba(38,198,218,0.08)'); });
+    /* animate depth */
+    depthRects.forEach(function(r,i){
+      r.transition().duration(300).delay(i*300)
+        .attr('fill','rgba(77,180,255,0.35)');
+    });
+    /* animate width */
+    widthRects.forEach(function(r,i){
+      r.transition().duration(300).delay(i*300)
+        .attr('fill','rgba(38,198,218,0.35)');
+    });
+    setTimeout(loop,3200);
+  }
+  setTimeout(loop,1200);
+})();
+
+/* ── ANIM-AGENTS: Os 3 Agentes ── */
+(function(){
+  window.__agentsGen=(window.__agentsGen||0)+1; var myG=window.__agentsGen;
+  var el=document.getElementById('anim-agents'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=220;
+  var cx=W/2, cy=H/2;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  /* center hub */
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',30)
+    .attr('fill','rgba(180,100,255,0.12)').attr('stroke','var(--mira-purple)').attr('stroke-width',1.5);
+  svg.append('text').text('Contexto').attr('x',cx).attr('y',cy-5)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','var(--mira-purple)').attr('font-size','9.5px').attr('font-weight','700');
+  svg.append('text').text('Global').attr('x',cx).attr('y',cy+8)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','var(--mira-purple)').attr('font-size','9.5px').attr('font-weight','700');
+  var agents=[
+    {label:'Query Rewriter',sub:'Gera W sub-queries',x:cx,y:22,color:'var(--mira-blue)'},
+    {label:'Answer Evaluator',sub:'STOP / CONTINUE',x:W*0.18,y:H-25,color:'var(--mira-success)'},
+    {label:'Context Manager',sub:'Consolida evidências',x:W*0.82,y:H-25,color:'var(--mira-warning)'}
+  ];
+  var paths=[];
+  agents.forEach(function(a){
+    var dx=a.x-cx, dy=a.y-cy, dist=Math.sqrt(dx*dx+dy*dy);
+    var ux=dx/dist, uy=dy/dist;
+    var p=svg.append('line')
+      .attr('x1',cx+ux*32).attr('y1',cy+uy*32)
+      .attr('x2',a.x-ux*28).attr('y2',a.y-uy*28)
+      .attr('stroke',a.color).attr('stroke-width',1.5).attr('opacity',0.4)
+      .attr('stroke-dasharray','4,4');
+    paths.push({line:p, ax:a.x, ay:a.y, cx:cx+ux*32, cy:cy+uy*32, color:a.color});
+    svg.append('circle').attr('cx',a.x).attr('cy',a.y).attr('r',28)
+      .attr('fill','rgba(255,255,255,0.04)').attr('stroke',a.color).attr('stroke-width',1.5)
+      .attr('opacity',0)
+      .transition().duration(500).delay(agents.indexOf(a)*200+800).attr('opacity',1);
+    svg.append('text').text(a.label).attr('x',a.x).attr('y',a.y-6)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill',a.color).attr('font-size','9px').attr('font-weight','700')
+      .attr('opacity',0).transition().duration(400).delay(agents.indexOf(a)*200+1000).attr('opacity',1);
+    svg.append('text').text(a.sub).attr('x',a.x).attr('y',a.y+7)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.5)').attr('font-size','8px')
+      .attr('opacity',0).transition().duration(400).delay(agents.indexOf(a)*200+1100).attr('opacity',1);
+  });
+  /* animated dots on paths */
+  var dots=[];
+  paths.forEach(function(p){
+    var d=svg.append('circle').attr('r',4).attr('fill',p.color).attr('opacity',0);
+    dots.push({dot:d,path:p,t:0});
+  });
+  var offset=0;
+  function loop(){
+    if(window.__agentsGen!==myG) return;
+    dots.forEach(function(item,i){
+      var t=(offset+i*0.33)%1;
+      var px=item.path.cx+(item.path.ax-item.path.cx)*t;
+      var py=item.path.cy+(item.path.ay-item.path.cy)*t;
+      item.dot.attr('cx',px).attr('cy',py).attr('opacity',0.9);
+    });
+    offset=(offset+0.008)%1;
+    if(window.__agentsGen===myG) requestAnimationFrame(loop);
+  }
+  setTimeout(loop,1400);
+})();
+
+/* ── ANIM-HIER: Hierarquia Top-Down MacRAG ── */
+(function(){
+  window.__hierGen=(window.__hierGen||0)+1; var myG=window.__hierGen;
+  var el=document.getElementById('anim-hier'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=220;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  var levels=[
+    {nodes:[{label:'Documento',w:120}], color:'var(--mira-purple)', y:20},
+    {nodes:[{label:'Chunk 1'},{label:'Chunk 2'},{label:'Chunk 3'}], color:'var(--mira-blue)', y:70},
+    {nodes:[{label:'Resumo 1'},{label:'Resumo 2'},{label:'Resumo 3'}], color:'var(--mira-teal)', y:120},
+    {nodes:[{label:'Slice 1'},{label:'Slice 2'},{label:'Slice 3'},{label:'Slice 4'},{label:'Slice 5'},{label:'Slice 6'}], color:'var(--mira-success)', y:170}
+  ];
+  var nodeHeight=26, allGroups=[];
+  levels.forEach(function(lv, li){
+    var n=lv.nodes.length;
+    var spacing=W/(n+1);
+    var g=svg.append('g').attr('opacity',0);
+    allGroups.push(g);
+    lv.nodes.forEach(function(nd,ni){
+      var nx=spacing*(ni+1), nw=nd.w||Math.min(80, spacing*0.8);
+      /* lines to parent level */
+      if(li>0){
+        var pLevel=levels[li-1];
+        var pn=pLevel.nodes.length, pSpacing=W/(pn+1);
+        var parentIdx=Math.floor(ni/(n/pn));
+        parentIdx=Math.min(parentIdx,pn-1);
+        var px=pSpacing*(parentIdx+1);
+        g.append('line')
+          .attr('x1',px).attr('y1',lv.y-nodeHeight/2-6)
+          .attr('x2',nx).attr('y2',lv.y-nodeHeight/2+2)
+          .attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1);
+      }
+      g.append('rect').attr('x',nx-nw/2).attr('y',lv.y-nodeHeight/2)
+        .attr('width',nw).attr('height',nodeHeight).attr('rx',6)
+        .attr('fill',lv.color+'22').attr('stroke',lv.color).attr('stroke-width',1.2);
+      g.append('text').text(nd.label).attr('x',nx).attr('y',lv.y)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill','rgba(255,255,255,0.85)').attr('font-size','10px').attr('font-weight','600');
+    });
+  });
+  function showLevels(){
+    if(window.__hierGen!==myG) return;
+    allGroups.forEach(function(g){ g.attr('opacity',0); });
+    allGroups.forEach(function(g,i){
+      g.transition().duration(400).delay(i*450+400).attr('opacity',1);
+    });
+    setTimeout(function(){
+      if(window.__hierGen!==myG) return;
+      allGroups.forEach(function(g){
+        g.transition().duration(600).delay(0).attr('opacity',0);
+      });
+      setTimeout(showLevels, 800);
+    }, 3600);
+  }
+  setTimeout(showLevels,1200);
+})();
+
+/* ── ANIM-RETRIEVAL: Bottom-Up 5 Passos ── */
+(function(){
+  window.__retGen=(window.__retGen||0)+1; var myG=window.__retGen;
+  var el=document.getElementById('anim-retrieval'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=200;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  var steps=[
+    {label:'① Slices',sub:'top-k₁',color:'var(--mira-success)',y:H-22},
+    {label:'② Pai',sub:'mapeamento',color:'var(--mira-teal)',y:H-60},
+    {label:'③ Re-rank',sub:'cross-enc.',color:'var(--mira-blue)',y:H-98},
+    {label:'④ Scale-up',sub:'k₂×α docs',color:'var(--mira-warning)',y:H-136},
+    {label:'⑤ Mescla',sub:'h-hop',color:'var(--mira-purple)',y:H-174}
+  ];
+  var rects=[];
+  steps.forEach(function(s,i){
+    var bw=W*0.55, bx=(W-bw)/2;
+    svg.append('text').text(s.label+' — '+s.sub).attr('x',bx-8).attr('y',s.y+13)
+      .attr('text-anchor','end').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.55)').attr('font-size','9.5px').attr('font-weight','600');
+    var r=svg.append('rect').attr('x',bx).attr('y',s.y).attr('width',bw).attr('height',22)
+      .attr('rx',5).attr('fill',s.color+'18').attr('stroke',s.color).attr('stroke-width',1.2).attr('opacity',0.4);
+    rects.push({r:r, color:s.color});
+  });
+  /* query indicator */
+  var qx=(W-W*0.55)/2+W*0.55/2;
+  svg.append('circle').attr('cx',qx).attr('cy',H-12).attr('r',8)
+    .attr('fill','var(--mira-primary)').attr('stroke','var(--mira-primary)').attr('stroke-width',2);
+  svg.append('text').text('Q').attr('x',qx).attr('y',H-12)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('fill','#000').attr('font-size','9px').attr('font-weight','900');
+  var bubble=svg.append('circle').attr('r',5).attr('fill','var(--mira-primary)').attr('opacity',0);
+  function animUp(){
+    if(window.__retGen!==myG) return;
+    rects.forEach(function(item){ item.r.attr('fill',item.color+'18'); });
+    var step=0;
+    function nextStep(){
+      if(window.__retGen!==myG) return;
+      if(step>=rects.length){ setTimeout(animUp,600); return; }
+      rects[step].r.attr('fill',rects[step].color+'55');
+      var yTarget=steps[step].y+11;
+      var yStart=H-5;
+      bubble.attr('cy',yStart).attr('opacity',0.9)
+        .transition().duration(400)
+        .attr('cy',yTarget).attr('cx',qx)
+        .on('end',function(){
+          step++;
+          setTimeout(nextStep,200);
+        });
+    }
+    setTimeout(nextStep,300);
+  }
+  setTimeout(animUp,1200);
+})();
+
+/* ── ANIM-COMPARE: Mapa Comparativo ── */
+(function(){
+  window.__compGen=(window.__compGen||0)+1; var myG=window.__compGen;
+  var el=document.getElementById('anim-compare'); if(!el) return;
+  el.innerHTML='';
+  var W=el.clientWidth||700, H=220;
+  var cx=W/2, cy=H/2;
+  var svg=d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+  var papers=[
+    {label:'LongWeave',role:'Avaliar',x:cx,y:28,color:'var(--mira-blue)'},
+    {label:'SPARC-RAG',role:'Escalar',x:cx*0.32,y:H-30,color:'var(--mira-purple)'},
+    {label:'MacRAG',role:'Indexar',x:cx*1.68,y:H-30,color:'var(--mira-teal)'}
+  ];
+  /* center */
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',32)
+    .attr('fill','rgba(180,100,255,0.1)').attr('stroke','rgba(180,100,255,0.35)').attr('stroke-width',1.5);
+  svg.append('text').text('Geração').attr('x',cx).attr('y',cy-6)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,0.7)').attr('font-size','9.5px').attr('font-weight','700');
+  svg.append('text').text('Longa').attr('x',cx).attr('y',cy+7)
+    .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,0.7)').attr('font-size','9.5px').attr('font-weight','700');
+  papers.forEach(function(p,i){
+    /* line to center */
+    svg.append('line').attr('x1',p.x).attr('y1',p.y).attr('x2',cx).attr('y2',cy)
+      .attr('stroke',p.color).attr('stroke-width',1.2).attr('opacity',0.3).attr('stroke-dasharray','5,4');
+    /* circle */
+    svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',30)
+      .attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.5)
+      .attr('opacity',0).transition().duration(500).delay(i*200+600).attr('opacity',1);
+    /* role badge */
+    svg.append('rect').attr('x',p.x-22).attr('y',p.y-10)
+      .attr('width',44).attr('height',16).attr('rx',8)
+      .attr('fill',p.color+'33').attr('stroke',p.color).attr('stroke-width',0.8)
+      .attr('opacity',0).transition().duration(400).delay(i*200+900).attr('opacity',1);
+    svg.append('text').text(p.role).attr('x',p.x).attr('y',p.y-1)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill',p.color).attr('font-size','9.5px').attr('font-weight','800')
+      .attr('opacity',0).transition().duration(400).delay(i*200+950).attr('opacity',1);
+    svg.append('text').text(p.label).attr('x',p.x).attr('y',p.y+13)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','rgba(255,255,255,0.7)').attr('font-size','9px').attr('font-weight','600')
+      .attr('opacity',0).transition().duration(400).delay(i*200+1000).attr('opacity',1);
+  });
+  /* pulse animation */
+  function pulse(){
+    if(window.__compGen!==myG) return;
+    papers.forEach(function(p,i){
+      var r=svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',30)
+        .attr('fill','none').attr('stroke',p.color).attr('stroke-width',2).attr('opacity',0.7);
+      r.transition().duration(1200).delay(i*150)
+        .attr('r',46).attr('opacity',0).remove();
+    });
+    setTimeout(pulse,2200);
+  }
+  setTimeout(pulse,1400);
+})();
+</script>
+
+<script>
+  /* AOS */
+  AOS.init({ duration: 700, once: true, offset: 55 });
+
+  /* Lucide icons */
+  lucide.createIcons();
+
+  /* Progress bar */
+  window.addEventListener('scroll', function(){
+    var scrollTop=window.scrollY||document.documentElement.scrollTop;
+    var docH=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+    var pct=docH>0?Math.round(scrollTop/docH*100):0;
+    document.getElementById('progress-bar').style.width=pct+'%';
+    var btn=document.getElementById('back-btn');
+    if(scrollTop>320) btn.classList.add('visible'); else btn.classList.remove('visible');
+  });
+
+  /* Keyboard navigation */
+  var slides=document.querySelectorAll('.slide');
+  var curSlide=0;
+  function goSlide(dir){
+    curSlide=Math.max(0,Math.min(slides.length-1,curSlide+dir));
+    slides[curSlide].scrollIntoView({behavior:'smooth'});
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='PageDown') goSlide(1);
+    if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='PageUp') goSlide(-1);
+  });
+</script>
+</body>
+</html>
