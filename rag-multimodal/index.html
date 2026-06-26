@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Multimodal — Módulo 15 | RAG Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+:root {
+  --mira-bg: #000000;
+  --mira-primary: #FF904D;
+  --mira-success: #4DFFB4;
+  --mira-warning: #FFD54D;
+  --mira-error: #FF6464;
+  --mira-blue: #4DB4FF;
+  --mira-purple: #B464FF;
+  --mira-teal: #26C6DA;
+  --mira-text: #E8E8E8;
+  --mira-muted: #888888;
+  --mira-card: rgba(255,255,255,0.04);
+  --mira-border: rgba(255,255,255,0.08);
+  --accent: var(--mira-purple);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--mira-bg);color:var(--mira-text);font-family:'Inter',sans-serif;overflow-x:hidden}
+.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 24px;position:relative}
+.inner{width:100%;max-width:860px}
+.tag{display:inline-flex;align-items:center;gap:6px;background:rgba(180,100,255,0.12);border:1px solid rgba(180,100,255,0.3);color:var(--mira-purple);padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px}
+h1.hero{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;line-height:1.1;letter-spacing:-.02em;margin-bottom:20px}
+h2.title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;line-height:1.2;margin-bottom:16px}
+.accent{color:var(--mira-purple)}
+.lead{font-size:1.08rem;color:var(--mira-muted);line-height:1.7;margin-bottom:26px}
+.card{background:var(--mira-card);border:1px solid var(--mira-border);border-radius:16px;padding:24px 28px;margin-bottom:18px;backdrop-filter:blur(10px)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.g2,.g3{grid-template-columns:1fr}}
+.cell{background:rgba(255,255,255,0.03);border:1px solid var(--mira-border);border-radius:12px;padding:18px 20px}
+.num{font-size:1.9rem;font-weight:900;color:var(--accent);line-height:1;margin-bottom:6px}
+.cell h3{font-size:.92rem;font-weight:700;margin-bottom:6px}
+.cell p{font-size:.82rem;color:var(--mira-muted);line-height:1.5}
+.metaphor{background:rgba(180,100,255,0.07);border:1px solid rgba(180,100,255,0.2);border-left:4px solid var(--mira-purple);border-radius:12px;padding:22px 26px;margin-bottom:22px}
+.mlabel{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-purple);margin-bottom:10px}
+.metaphor p{font-size:.97rem;line-height:1.7;color:#d0c0f0}
+.anim-box{width:100%;border:1px solid var(--mira-border);border-radius:12px;overflow:hidden;background:rgba(0,0,0,0.4);margin-bottom:14px}
+ul.li{list-style:none;padding:0}
+ul.li li{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.92rem;line-height:1.5}
+ul.li li:last-child{border-bottom:none}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0}
+.pills{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.pill{background:rgba(180,100,255,0.1);border:1px solid rgba(180,100,255,0.25);border-radius:10px;padding:10px 18px;text-align:center}
+.pill .pv{font-size:1.5rem;font-weight:900;color:var(--accent)}
+.pill .pl{font-size:.68rem;color:var(--mira-muted);text-transform:uppercase;letter-spacing:.05em}
+.pbadge{display:inline-flex;align-items:center;background:rgba(180,100,255,0.08);border:1px solid rgba(180,100,255,0.2);border-radius:6px;padding:3px 10px;font-size:.7rem;color:var(--mira-purple);font-weight:600;margin-bottom:10px}
+.formula{background:rgba(0,0,0,0.6);border:1px solid rgba(180,100,255,0.2);border-radius:8px;padding:14px 20px;font-family:'Courier New',monospace;font-size:.95rem;color:var(--mira-purple);text-align:center;margin:14px 0}
+/* capa */
+.capa-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 70% 60% at 50% 40%,rgba(180,100,255,0.14) 0%,transparent 70%);pointer-events:none}
+.capa-c{position:relative;z-index:1;text-align:center}
+.mbadge{display:inline-block;padding:5px 16px;background:rgba(180,100,255,0.15);border:1px solid rgba(180,100,255,0.4);border-radius:30px;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mira-purple);margin-bottom:26px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:26px}
+.chip{padding:4px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;font-size:.69rem;color:var(--mira-muted)}
+/* nav */
+.progress-bar{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.06);z-index:1000}
+.progress-fill{height:100%;background:var(--mira-purple);width:0%;transition:width .2s}
+.nav-btn{position:fixed;bottom:30px;right:30px;z-index:1000;width:46px;height:46px;border-radius:50%;background:var(--mira-purple);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(180,100,255,0.4);transition:transform .2s,opacity .3s;opacity:0}
+.nav-btn.show{opacity:1}
+.nav-btn:hover{transform:scale(1.1)}
+.nav-btn svg{width:18px;height:18px;stroke:#000}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+<button class="nav-btn" id="nav-btn" onclick="goNext()">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+</button>
+
+<!-- ═══ SLIDE 01 — CAPA ═══ -->
+<section class="slide" id="s01">
+  <div class="capa-bg"></div>
+  <div class="inner capa-c">
+    <div class="mbadge">Módulo 15 · RAG Studio</div>
+    <h1 class="hero" data-aos="fade-up">RAG<br><span class="accent">Multimodal</span></h1>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Quando texto não é suficiente: VLMs, grafos de conhecimento e<br>
+      inferência bayesiana para documentos ricos em visão.
+    </p>
+    <div class="pills" data-aos="fade-up" data-aos-delay="200" style="justify-content:center">
+      <div class="pill"><div class="pv">7</div><div class="pl">artigos</div></div>
+      <div class="pill"><div class="pv">6</div><div class="pl">animações D3</div></div>
+      <div class="pill"><div class="pv">2025–26</div><div class="pl">ICLR · arXiv</div></div>
+    </div>
+    <div class="chips" data-aos="fade-up" data-aos-delay="300">
+      <span class="chip">ColPali (ICLR 2025)</span>
+      <span class="chip">VisRAG (ICLR 2025)</span>
+      <span class="chip">EVisRAG 2.0</span>
+      <span class="chip">MAHA</span>
+      <span class="chip">BayesRAG</span>
+      <span class="chip">MG²-RAG</span>
+      <span class="chip">DVI</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 02 — O PROBLEMA ═══ -->
+<section class="slide" id="s02">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">O Problema</div>
+    <h2 class="title" data-aos="fade-up">Documentos São Mais<br>que <span class="accent">Texto</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Manuais técnicos, relatórios científicos, documentos jurídicos — todos combinam texto, tabelas, gráficos, layout e diagramas. Sistemas RAG baseados apenas em texto descartam metade da informação.
+    </p>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">OCR</div>
+        <h3>Fonte de Erros</h3>
+        <p>Parsers introduzem ruído, perdem layout e ignoram figuras — degradando retrieval e geração.</p>
+      </div>
+      <div class="cell">
+        <div class="num">30%</div>
+        <h3>Informação Visual</h3>
+        <p>Em média, 30% da informação de documentos técnicos está em elementos não textuais.</p>
+      </div>
+      <div class="cell">
+        <div class="num">VLM</div>
+        <h3>A Solução</h3>
+        <p>Vision-Language Models lêem documentos como imagens, preservando toda informação visual.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="300">
+      <ul class="li">
+        <li><span class="dot"></span>Sistemas TextRAG descartam layout, figuras, tabelas visuais e equações durante o parsing</li>
+        <li><span class="dot"></span>O parsing quebra a topologia semântica do documento — texto e imagem da mesma página são separados</li>
+        <li><span class="dot"></span>Documentos de engenharia, medicina e direito dependem crucialmente de informação visual</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 03 — METÁFORA: FOTÓGRAFO VS. TRANSCRITOR ═══ -->
+<section class="slide" id="s03">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · ColPali</div>
+    <h2 class="title" data-aos="fade-up"><span class="accent">Fotógrafo</span> vs. Transcritor</h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>
+        Imagine dois assistentes catalogando livros ilustrados técnicos. O <strong style="color:var(--mira-error)">Transcritor</strong> copia apenas as palavras, ignorando imagens, gráficos e o layout visual das páginas. Depois tenta responder "qual diagrama mostra o circuito X?" — e não consegue, porque descartou tudo que não era texto.
+        <br><br>
+        O <strong style="color:var(--mira-purple)">Fotógrafo</strong> simplesmente tira uma foto de cada página inteira. Na hora de responder, ele consulta as fotos e enxerga exatamente o que estava lá — texto, figuras e layout integrados.
+        <br><br>
+        <strong style="color:var(--mira-purple)">ColPali é o Fotógrafo.</strong> Em vez de OCR (7,22 segundos por página), ele usa um VLM que captura a página como imagem (0,39 segundos) e gera embeddings multi-vetor que preservam toda riqueza visual.
+      </p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell" style="border-color:rgba(255,100,100,0.3)">
+        <h3 style="color:var(--mira-error)">TextRAG (Transcritor)</h3>
+        <ul class="li">
+          <li><span class="dot" style="background:var(--mira-error)"></span>OCR + Layout Detection: 7,22s/página</li>
+          <li><span class="dot" style="background:var(--mira-error)"></span>Perde figuras, tabelas, diagramas</li>
+          <li><span class="dot" style="background:var(--mira-error)"></span>NDCG@5: 0,66</li>
+        </ul>
+      </div>
+      <div class="cell" style="border-color:rgba(180,100,255,0.3)">
+        <h3 style="color:var(--mira-purple)">ColPali (Fotógrafo)</h3>
+        <ul class="li">
+          <li><span class="dot"></span>Vision LLM direto: 0,39s/página (19× mais rápido)</li>
+          <li><span class="dot"></span>Preserva toda informação visual completa</li>
+          <li><span class="dot"></span>NDCG@5: 0,81 (+22,7%)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 04 — COLPALI (D3) ═══ -->
+<section class="slide" id="s04">
+  <div class="inner">
+    <div class="pbadge">ColPali · ICLR 2025 · Illuin Technology / CentraleSupélec</div>
+    <h2 class="title" data-aos="fade-up">ColPali: Retrieval em<br><span class="accent">Espaço Visual</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Late interaction via ColBERT aplicada a patches de imagem. PaliGemma-3B gera embeddings multi-vetor diretamente das páginas — sem OCR, sem layout detection, sem chunking.
+    </p>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="150" style="height:220px">
+      <div id="anim-colpali" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">0,81</div>
+        <h3>NDCG@5 no ViDoRe</h3>
+        <p>Supera todo SOTA em retrieval visual — sistemas que demoram 18× mais para indexar.</p>
+      </div>
+      <div class="cell">
+        <div class="num">19×</div>
+        <h3>Indexação Mais Rápida</h3>
+        <p>0,39s/página (ColPali) vs. 7,22s/página (pipeline padrão com OCR + layout detection).</p>
+      </div>
+      <div class="cell">
+        <div class="num">30ms</div>
+        <h3>Latência de Query</h3>
+        <p>MaxSim sobre patches visuais em tempo real — comparável a sistemas textuais existentes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 05 — VIDORE ═══ -->
+<section class="slide" id="s05">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Benchmark · Contribuição</div>
+    <h2 class="title" data-aos="fade-up">ViDoRe: O Benchmark que<br><span class="accent">Revelou a Lacuna</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Nenhum benchmark avaliava retrieval em cenários práticos — multidomain, multilingual, documentos visualmente ricos. ColPali introduz o <strong>Visual Document Retrieval Benchmark</strong> com 3 propriedades essenciais.
+    </p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <div class="g2">
+        <div>
+          <h3 style="margin-bottom:12px;color:var(--mira-purple)">3 Propriedades Exigidas</h3>
+          <ul class="li">
+            <li><span class="dot"></span><strong>R1:</strong> Forte desempenho de retrieval (NDCG)</li>
+            <li><span class="dot"></span><strong>R2:</strong> Baixa latência de query online</li>
+            <li><span class="dot"></span><strong>R3:</strong> Alta taxa de indexação offline</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin-bottom:12px;color:var(--mira-purple)">Domínios Cobertos</h3>
+          <ul class="li">
+            <li><span class="dot"></span>Documentos científicos e acadêmicos</li>
+            <li><span class="dot"></span>Relatórios corporativos e financeiros</li>
+            <li><span class="dot"></span>Materiais médicos e jurídicos</li>
+            <li><span class="dot"></span>Documentos de engenharia</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="300">
+      <div class="mlabel">Insight chave</div>
+      <p>Sistemas TextRAG que parecem bons em benchmarks textuais clássicos (Wikipedia) falham drasticamente em documentos visuais reais. ViDoRe expõe essa lacuna pela primeira vez de forma sistemática e multidomain.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 06 — METÁFORA: VER COM OS PRÓPRIOS OLHOS ═══ -->
+<section class="slide" id="s06">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · VisRAG</div>
+    <h2 class="title" data-aos="fade-up">Ver com os<br><span class="accent">Próprios Olhos</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>
+        Você precisa encontrar uma especificação técnica num catálogo de peças. O sistema TextRAG contrata um digitador para transcrever cada página — mas o digitador não sabe desenhar, então perde todas as figuras técnicas e os números de parte que aparecem em imagens. Quando você pergunta "qual é o torque máximo da peça 47B?", o sistema não tem resposta porque o dado estava numa tabela visual.
+        <br><br>
+        <strong style="color:var(--mira-purple)">VisRAG não contrata o digitador.</strong> Ele entrega a página inteira — como imagem — diretamente a um Vision-Language Model que lê texto, vê figuras e interpreta tabelas de uma só vez, exatamente como você faria ao folhear o catálogo pessoalmente.
+        <br><br>
+        Resultado: <strong style="color:var(--mira-success)">20–40% de ganho de desempenho end-to-end</strong> sobre TextRAG.
+      </p>
+    </div>
+    <div class="pills" data-aos="fade-up" data-aos-delay="200">
+      <div class="pill"><div class="pv">+40%</div><div class="pl">Ganho (MiniCPM-V)</div></div>
+      <div class="pill"><div class="pv">+20%</div><div class="pl">Ganho (GPT-4o)</div></div>
+      <div class="pill"><div class="pv">0</div><div class="pl">Chamadas de OCR</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 07 — VISRAG (D3) ═══ -->
+<section class="slide" id="s07">
+  <div class="inner">
+    <div class="pbadge">VisRAG · ICLR 2025 · Tsinghua / ModelBest</div>
+    <h2 class="title" data-aos="fade-up">VisRAG: Pipeline<br><span class="accent">Sem Parsing</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      O documento entra como imagem no retriever (VisRAG-Ret) e no gerador (VisRAG-Gen). A informação nunca é convertida para texto — eliminando qualquer perda causada pelo processo de parsing.
+    </p>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="150" style="height:210px">
+      <div id="anim-visrag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-purple)">VisRAG-Ret</h3>
+        <p>Bi-encoder VLM. Query em texto, documento em imagem. Weighted mean pooling sobre tokens visuais finais para embedding denso.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-purple)">VisRAG-Gen</h3>
+        <p>Gerador VLM multi-imagem. Concatenação de páginas ou seleção ponderada para VLMs com entrada de imagem única.</p>
+      </div>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="280" style="padding:14px 22px">
+      <p style="font-size:.88rem;color:var(--mira-muted)">
+        <strong style="color:var(--mira-text)">Precisão final (MiniCPM-V):</strong> TextRAG 37,97% → VisRAG <strong style="color:var(--mira-purple)">53,32%</strong> &nbsp;|&nbsp;
+        <strong style="color:var(--mira-text)">GPT-4o:</strong> 43,54% → <strong style="color:var(--mira-purple)">52,44%</strong>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 08 — METÁFORA: DETETIVE ═══ -->
+<section class="slide" id="s08">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · EVisRAG</div>
+    <h2 class="title" data-aos="fade-up">O Detetive que<br><span class="accent">Registra Evidências</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>
+        Um detetive inexperiente percorre a cena do crime olhando tudo de uma vez — depois confunde o que viu em qual cômodo e chega a conclusões erradas. O <strong style="color:var(--mira-purple)">detetive experiente</strong> carrega um caderno: ao entrar em cada cômodo, ele anota "<em>Cômodo 1: faca com sangue, janela arrombada, suspeito entrou às 22h.</em>" Só depois de registrar cada cômodo, ele abre o caderno e raciocina sobre o conjunto de evidências.
+        <br><br>
+        <strong style="color:var(--mira-purple)">EVisRAG é esse detetive experiente.</strong> Para cada imagem recuperada, o modelo observa e registra uma evidência textual explícita. Só então raciocina sobre o conjunto de evidências para derivar a resposta — em vez de processar múltiplas imagens simultaneamente, o que causa confusão e erros de grounding.
+      </p>
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="padding:4px 12px;background:rgba(180,100,255,0.15);border-radius:20px;font-size:.8rem;color:var(--mira-purple)">1. Recuperar imagens</span>
+        <span style="color:var(--mira-muted)">→</span>
+        <span style="padding:4px 12px;background:rgba(180,100,255,0.15);border-radius:20px;font-size:.8rem;color:var(--mira-purple)">2. Observar imagem</span>
+        <span style="color:var(--mira-muted)">→</span>
+        <span style="padding:4px 12px;background:rgba(180,100,255,0.15);border-radius:20px;font-size:.8rem;color:var(--mira-purple)">3. Registrar evidência</span>
+        <span style="color:var(--mira-muted)">→</span>
+        <span style="padding:4px 12px;background:rgba(180,100,255,0.15);border-radius:20px;font-size:.8rem;color:var(--mira-purple)">4. Agregar</span>
+        <span style="color:var(--mira-muted)">→</span>
+        <span style="padding:4px 12px;background:rgba(77,255,180,0.15);border-radius:20px;font-size:.8rem;color:var(--mira-success)">5. Resposta</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 09 — EVISRAG (D3) ═══ -->
+<section class="slide" id="s09">
+  <div class="inner">
+    <div class="pbadge">EVisRAG / VisRAG 2.0 · Out 2025 · Peking / Tsinghua</div>
+    <h2 class="title" data-aos="fade-up">EVisRAG: Raciocínio<br><span class="accent">Guiado por Evidências</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Evidence-guided Visual RAG. Treina VLMs com RS-GRPO (Reward-Scoped Group Relative Policy Optimization) para perceber e localizar evidências com precisão em múltiplas imagens.
+    </p>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="150" style="height:180px">
+      <div id="anim-evisrag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">+27%</div>
+        <h3>Melhoria Média</h3>
+        <p>Sobre backbone VLM base em benchmarks de VQA visual com múltiplas imagens recuperadas.</p>
+      </div>
+      <div class="cell">
+        <div class="num">RS-GRPO</div>
+        <h3>Recompensas por Escopo</h3>
+        <p>Recompensas de granularidade fina vinculadas a tokens específicos — percepção e raciocínio treinados conjuntamente.</p>
+      </div>
+      <div class="cell">
+        <div class="num">3</div>
+        <h3>Tipos de Recompensa</h3>
+        <p>Observação (percepção), evidência (fato) e resposta (correção) — crédito granular por etapa.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 10 — RS-GRPO ═══ -->
+<section class="slide" id="s10">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Técnica · Treinamento</div>
+    <h2 class="title" data-aos="fade-up">RS-GRPO: Recompensas por<br><span class="accent">Percepção Visual</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Métodos RL tradicionais misturam recompensas de percepção e raciocínio, dificultando a atribuição de crédito. RS-GRPO usa recompensas de escopo específico por token — otimizando cada habilidade separadamente.
+    </p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <div class="g3">
+        <div class="cell">
+          <h3 style="color:var(--mira-purple)">Recompensa de Observação</h3>
+          <p>Tokens &lt;observe&gt; recebem feedback sobre qualidade da percepção visual — está olhando para a imagem certa com o nível correto de detalhe?</p>
+        </div>
+        <div class="cell">
+          <h3 style="color:var(--mira-purple)">Recompensa de Evidência</h3>
+          <p>Tokens &lt;evidence&gt; recebem feedback sobre precisão factual — a evidência registrada está correta e relevante à query?</p>
+        </div>
+        <div class="cell">
+          <h3 style="color:var(--mira-success)">Recompensa de Resposta</h3>
+          <p>Token &lt;answer&gt; recebe recompensa de correção final — o raciocínio sobre evidências chegou à conclusão certa?</p>
+        </div>
+      </div>
+    </div>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="300">
+      <div class="mlabel">Por que isso importa</div>
+      <p>Misturar sinais de percepção e raciocínio é como dar ao detetive um bônus único por "resolver o caso" sem dizer se ele falhou na coleta de pistas ou na dedução. RS-GRPO dá feedback granular em cada etapa — o modelo aprende onde exatamente está errando.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 11 — METÁFORA: MAPA DE METRÔ ═══ -->
+<section class="slide" id="s11">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · MAHA / Grafo Multimodal</div>
+    <h2 class="title" data-aos="fade-up">O Mapa de Metrô<br><span class="accent">Multimodal</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>
+        Um mapa de metrô tem múltiplas linhas (modalidades) que se cruzam em estações de transferência. Se você quer ir de texto para imagem, existe uma estação que conecta as duas linhas. Sem esse mapa, cada linha existe isolada — você pode percorrer a linha textual o quanto quiser, mas nunca chegar a uma estação visual.
+        <br><br>
+        <strong style="color:var(--mira-purple)">MAHA constrói o mapa de metrô multimodal.</strong> O Knowledge Graph é a rede de estações — cada nó representa uma entidade (texto, imagem, tabela, equação, gráfico) e cada aresta conecta entidades semanticamente relacionadas através de modalidades diferentes. A recuperação pode fazer transferências entre modalidades seguindo as arestas do grafo, algo impossível com retrieval puramente vetorial.
+      </p>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3>O Problema Resolvido</h3>
+        <p>Um gráfico que explica uma tabela que descreve uma equação — MAHA captura essas relações cross-modais que sistemas textuais ignoram completamente, pois tratam texto e imagem como canais independentes.</p>
+      </div>
+      <div class="cell">
+        <div class="num" style="font-size:1.4rem">ROUGE-L</div>
+        <h3>0,486 no MAHA</h3>
+        <p>Cobertura completa de modalidades no benchmark, superando todos os métodos baseline avaliados.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 12 — MAHA ═══ -->
+<section class="slide" id="s12">
+  <div class="inner">
+    <div class="pbadge">MAHA · Out 2025 · NITK Karnataka</div>
+    <h2 class="title" data-aos="fade-up">MAHA: Grafo Consciente<br>de <span class="accent">Modalidade</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Modality-Aware Hybrid retrieval Architecture. Combina recuperação vetorial densa com travessia de grafo de conhecimento multimodal — nós codificam entidades cross-modais, arestas capturam relações semânticas e estruturais.
+    </p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <div class="g2">
+        <div>
+          <h3 style="color:var(--mira-purple);margin-bottom:12px">5 Limitações Endereçadas</h3>
+          <ul class="li">
+            <li><span class="dot"></span>Alinhamento cross-modal insuficiente em sistemas textuais</li>
+            <li><span class="dot"></span>Raciocínio estruturado limitado entre modalidades</li>
+            <li><span class="dot"></span>Processos de retrieval estáticos e modality-agnostic</li>
+            <li><span class="dot"></span>Falta de estratégias para texto + imagens + tabelas + equações</li>
+            <li><span class="dot"></span>KG superficial — raciocínio cross-modal fraco</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="color:var(--mira-purple);margin-bottom:12px">Arquitetura MAHA</h3>
+          <ul class="li">
+            <li><span class="dot"></span>Dense vector retrieval (FAISS + SBERT)</li>
+            <li><span class="dot"></span>Structured graph traversal sobre KG multimodal</li>
+            <li><span class="dot"></span>Hybrid BM25 + semântico para precisão e recall</li>
+            <li><span class="dot"></span>Knowledge graph com nós cross-modais e arestas semânticas</li>
+            <li><span class="dot"></span>ROUGE-L 0,486 com cobertura completa de modalidade</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 13 — METÁFORA: JÚRI BAYESIANO ═══ -->
+<section class="slide" id="s13">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · BayesRAG</div>
+    <h2 class="title" data-aos="fade-up">O Júri que Exige<br><span class="accent">Testemunhas Concordantes</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>
+        Um júri recebe depoimentos de múltiplas testemunhas. Duas testemunhas com histórias divergentes — mesmo que individualmente convincentes — geram dúvida razoável. O júri só condena com convicção quando <strong style="color:var(--mira-purple)">as histórias se corroboram mutuamente</strong>.
+        <br><br>
+        <strong style="color:var(--mira-purple)">BayesRAG é esse júri criterioso.</strong> Sistemas RAG tradicionais pegam texto e imagem com maiores scores individuais — mas esquecem de verificar se eles contam a mesma história. Se um texto fala sobre "Apple Inc." mas a imagem recuperada mostra uma maçã, ambos podem ter score alto individualmente, mas a combinação é contraditória. BayesRAG usa inferência bayesiana: só eleva a confiança quando texto E imagem se corroboram semanticamente.
+      </p>
+    </div>
+    <div class="formula" data-aos="fade-up" data-aos-delay="200">
+      P(E|Q) ∝ P(Q|E) · P(E) &nbsp;&nbsp;→&nbsp;&nbsp; Likelihood × Consistência Prior
+    </div>
+    <div class="card" data-aos="fade-up" data-aos-delay="280" style="padding:14px 22px">
+      <p style="font-size:.88rem;color:var(--mira-muted)"><strong style="color:var(--mira-text)">E = (texto, imagem, screenshot)</strong> — evidência multimodal válida somente quando internamente consistente, independente da query.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 14 — BAYESRAG (D3) ═══ -->
+<section class="slide" id="s14">
+  <div class="inner">
+    <div class="pbadge">BayesRAG · Jan 2026 · USTC / Unisound / CAS</div>
+    <h2 class="title" data-aos="fade-up">BayesRAG: Fusão<br><span class="accent">Probabilística</span> de Evidências</h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Reconceptualiza recuperação multimodal como processo de fusão bayesiana de evidências. Usa Dempster-Shafer Theory para modelar consistência semântica cross-modal, eliminando conflitos que confundem o gerador.
+    </p>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="150" style="height:210px">
+      <div id="anim-bayesrag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-purple)">Prior P(E)</h3>
+        <p>Probabilidade de que texto + imagem sejam unidade coerente no documento — independente da query. Modelado pela topologia do KG.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-purple)">Likelihood P(Q|E)</h3>
+        <p>Quão provável é que a evidência E gere a query Q — modelado via similaridade de embedding com Dempster-Shafer.</p>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-success)">Posterior P(E|Q)</h3>
+        <p>Confiança final na evidência — alta apenas quando semanticamente relevante E internamente consistente entre modalidades.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 15 — METÁFORA: ENCICLOPÉDIA ═══ -->
+<section class="slide" id="s15">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · MG²-RAG</div>
+    <h2 class="title" data-aos="fade-up">A Enciclopédia em<br><span class="accent">Múltiplas Granularidades</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>
+        Uma enciclopédia bem organizada tem <strong style="color:var(--mira-purple)">múltiplos níveis</strong>: o volume (tema geral), o capítulo (subtema), a seção (conceito), o parágrafo (detalhe) e a figura (evidência visual). Quando você busca "fotossíntese", o índice hierárquico te leva ao nível correto — não precisa ler o volume inteiro nem descer até cada palavra.
+        <br><br>
+        <strong style="color:var(--mira-purple)">MG²-RAG constrói essa enciclopédia multimodal.</strong> O grafo tem nós em múltiplas granularidades — entidades textuais fundidas com objetos visuais em nós unificados que preservam evidência atômica. A recuperação propaga relevância pelo grafo em múltiplos níveis de detalhe, permitindo raciocínio multi-hop sem o pipeline caro de extração MLLM-driven dos sistemas anteriores.
+      </p>
+    </div>
+    <div class="pills" data-aos="fade-up" data-aos-delay="200">
+      <div class="pill"><div class="pv">43,3×</div><div class="pl">Construção mais rápida</div></div>
+      <div class="pill"><div class="pv">23,9×</div><div class="pl">Custo menor</div></div>
+      <div class="pill"><div class="pv">SOTA</div><div class="pl">em 4 benchmarks</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 16 — MG²-RAG (D3) ═══ -->
+<section class="slide" id="s16">
+  <div class="inner">
+    <div class="pbadge">MG²-RAG · Abr 2026 · HIT Shenzhen / Hangzhou Dianzi</div>
+    <h2 class="title" data-aos="fade-up">MG²-RAG: Grafo<br><span class="accent">Multi-Granularidade</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Multi-Granularity Graph RAG. Constrói KG multimodal hierárquico com parsing textual leve + entity-driven visual grounding — sem a cara extração de triplets por MLLM dos sistemas anteriores.
+    </p>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="150" style="height:200px">
+      <div id="anim-mg2rag" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <h3 style="color:var(--mira-purple)">3 Contribuições</h3>
+        <ul class="li" style="margin-top:8px">
+          <li><span class="dot"></span>KG multimodal leve (sem triplet extraction por MLLM)</li>
+          <li><span class="dot"></span>Fusão de nós preservando modalidade em granularidade atômica</li>
+          <li><span class="dot"></span>Retrieval multi-granularidade com propagação por grafo</li>
+        </ul>
+      </div>
+      <div class="cell">
+        <h3 style="color:var(--mira-purple)">4 Tarefas Validadas</h3>
+        <ul class="li" style="margin-top:8px">
+          <li><span class="dot"></span>Retrieval multimodal</li>
+          <li><span class="dot"></span>VQA baseado em conhecimento</li>
+          <li><span class="dot"></span>Raciocínio multi-hop cross-modal</li>
+          <li><span class="dot"></span>Classificação multimodal</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 17 — METÁFORA: ÍNDICE DO LIVRO ═══ -->
+<section class="slide" id="s17">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Metáfora · DVI</div>
+    <h2 class="title" data-aos="fade-up">O Índice do Livro<br>vs. <span class="accent">Ler o Livro Todo</span></h2>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="100">
+      <div class="mlabel">Metáfora do Cotidiano</div>
+      <p>
+        Você recebe uma enciclopédia técnica de 3.000 páginas. O sistema <strong style="color:var(--mira-error)">Pre-Ingestion (PI)</strong> contrata um especialista para ler e resumir cada página <em>antes mesmo de saber o que você vai perguntar</em>. Problema: o especialista não pode adivinhar quais detalhes técnicos serão importantes, então escreve resumos genéricos que omitem especificações críticas — e quando há 20 pontes com desenhos estruturalmente similares, os resumos ficam tão parecidos que o sistema não consegue distinguir entre eles.
+        <br><br>
+        <strong style="color:var(--mira-purple)">DVI usa o índice.</strong> Na indexação, apenas a estrutura do documento (sumário, numeração de figuras, títulos) é usada para construir um índice hierárquico — <em>zero chamadas de VLM</em>. Quando você pergunta algo específico, o índice localiza as páginas certas; só então o VLM é chamado para analisar as imagens originais com sua pergunta específica em mãos.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 18 — DVI ═══ -->
+<section class="slide" id="s18">
+  <div class="inner">
+    <div class="pbadge">DVI · Index Light, Reason Deep · OpsMate AI</div>
+    <h2 class="title" data-aos="fade-up">DVI: Indexar Leve,<br><span class="accent">Raciocinar Profundo</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Deferred Visual Ingestion. Zero chamadas VLM no pré-processamento. HDNC constrói índice hierárquico a partir da estrutura do documento — compreensão visual fica reservada para a fase de inferência.
+    </p>
+    <div class="g2" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell" style="border-color:rgba(255,100,100,0.3)">
+        <h3 style="color:var(--mira-error)">Pre-Ingestion (PI) — Fracassa</h3>
+        <ul class="li">
+          <li><span class="dot" style="background:var(--mira-error)"></span>VLM em cada página na indexação</li>
+          <li><span class="dot" style="background:var(--mira-error)"></span>Descrições cegas omitem detalhes críticos</li>
+          <li><span class="dot" style="background:var(--mira-error)"></span>Docs similares → vetores indistinguíveis</li>
+          <li><span class="dot" style="background:var(--mira-error)"></span>Bridge Dataset: 24,3% QA accuracy</li>
+          <li><span class="dot" style="background:var(--mira-error)"></span>CircuitVQA: ImgR@3 apenas 0,7%</li>
+        </ul>
+      </div>
+      <div class="cell" style="border-color:rgba(180,100,255,0.3)">
+        <h3 style="color:var(--mira-purple)">DVI — Supera PI</h3>
+        <ul class="li">
+          <li><span class="dot"></span>Zero VLM no pré-processamento</li>
+          <li><span class="dot"></span>Índice estrutural automático via HDNC</li>
+          <li><span class="dot"></span>BM25 para localização → VLM só na inferência</li>
+          <li><span class="dot"></span>Bridge Dataset: <strong>65,6% QA accuracy (+41,3pp)</strong></li>
+          <li><span class="dot"></span>CircuitVQA: ImgR@3 <strong>31,2% (+30,5pp)</strong></li>
+        </ul>
+      </div>
+    </div>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="280">
+      <div class="mlabel">Princípio fundamental</div>
+      <p><strong style="color:var(--mira-purple)">"Index for locating, not understanding."</strong> — análogo à avaliação preguiçosa em ciência da computação: o sistema só compreende quando a pergunta específica é feita, não antes.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 19 — HDNC ═══ -->
+<section class="slide" id="s19">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Algoritmo · DVI</div>
+    <h2 class="title" data-aos="fade-up">HDNC: Índice<br><span class="accent">Hierárquico Automático</span></h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="100">
+      Hierarchical Drawing Number Clustering. Explora a estrutura inerente dos sistemas de numeração de desenhos de engenharia para construir categorias hierárquicas automaticamente — zero chamadas de API, zero custo de VLM.
+    </p>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <div class="g2">
+        <div>
+          <h3 style="color:var(--mira-purple);margin-bottom:12px">Por que funciona?</h3>
+          <p style="font-size:.88rem;line-height:1.6;color:var(--mira-muted)">
+            Sistemas de numeração de engenharia têm hierarquia implícita: "47-B-SE-014" indica ponte 47, tipo estrutural B, planta sudeste, detalhe 014. HDNC extrai essa semântica rica sem precisar de IA — apenas parsing de strings e clustering hierárquico.
+          </p>
+        </div>
+        <div>
+          <h3 style="color:var(--mira-purple);margin-bottom:12px">Resultados Práticos</h3>
+          <ul class="li">
+            <li><span class="dot"></span>+27,5pp de melhoria de retrieval vs baseline</li>
+            <li><span class="dot"></span>Supera metadata manualmente extraído por VLMs</li>
+            <li><span class="dot"></span>Gargalo está em retrieval, não em compreensão</li>
+            <li><span class="dot"></span>ColPali (SOTA visual) atingiu apenas 20,1% PageR@3 no Bridge</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="300">
+      <div class="mlabel">Insight fundamental</div>
+      <p>O fracasso do ColPali (SOTA de retrieval visual em ViDoRe) em documentos de engenharia demonstra que a falha é <strong style="color:var(--mira-purple)">estrutural</strong>, não de capacidade do modelo — homogeneidade de documentos torna embedding ineficaz, independentemente do modelo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 20 — RESULTADOS COMPARATIVOS ═══ -->
+<section class="slide" id="s20">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Resultados · 2025–2026</div>
+    <h2 class="title" data-aos="fade-up">Estado da Arte em<br><span class="accent">RAG Multimodal</span></h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="100">
+      <table style="width:100%;border-collapse:collapse;font-size:.87rem">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(180,100,255,0.3)">
+            <th style="text-align:left;padding:10px 8px;color:var(--mira-purple)">Sistema</th>
+            <th style="text-align:left;padding:10px 8px;color:var(--mira-purple)">Abordagem Principal</th>
+            <th style="text-align:center;padding:10px 8px;color:var(--mira-purple)">Resultado Chave</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+            <td style="padding:10px 8px;font-weight:600">ColPali</td>
+            <td style="padding:10px 8px;color:var(--mira-muted)">VLM page embedding + late interaction</td>
+            <td style="padding:10px 8px;text-align:center;color:var(--mira-success)">NDCG@5 0,81 (+22,7%)</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+            <td style="padding:10px 8px;font-weight:600">VisRAG</td>
+            <td style="padding:10px 8px;color:var(--mira-muted)">VLM retriever + gerador sem parsing</td>
+            <td style="padding:10px 8px;text-align:center;color:var(--mira-success)">+40% end-to-end (MiniCPM-V)</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+            <td style="padding:10px 8px;font-weight:600">EVisRAG</td>
+            <td style="padding:10px 8px;color:var(--mira-muted)">Evidência guiada + RS-GRPO multi-image</td>
+            <td style="padding:10px 8px;text-align:center;color:var(--mira-success)">+27% VQA visual</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+            <td style="padding:10px 8px;font-weight:600">MAHA</td>
+            <td style="padding:10px 8px;color:var(--mira-muted)">KG consciente de modalidade + hybrid</td>
+            <td style="padding:10px 8px;text-align:center;color:var(--mira-success)">ROUGE-L 0,486</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+            <td style="padding:10px 8px;font-weight:600">BayesRAG</td>
+            <td style="padding:10px 8px;color:var(--mira-muted)">Dempster-Shafer evidence fusion</td>
+            <td style="padding:10px 8px;text-align:center;color:var(--mira-success)">SOTA multi-modal benchmarks</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+            <td style="padding:10px 8px;font-weight:600">MG²-RAG</td>
+            <td style="padding:10px 8px;color:var(--mira-muted)">Grafo multi-granularidade leve</td>
+            <td style="padding:10px 8px;text-align:center;color:var(--mira-success)">43,3× + custo 23,9×</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 8px;font-weight:600">DVI</td>
+            <td style="padding:10px 8px;color:var(--mira-muted)">Ingestion visual adiada + HDNC</td>
+            <td style="padding:10px 8px;text-align:center;color:var(--mira-success)">+41,3pp Bridge QA</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 21 — PRINCÍPIOS ═══ -->
+<section class="slide" id="s21">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Síntese · Módulo 15</div>
+    <h2 class="title" data-aos="fade-up">Princípios para RAG<br><span class="accent">Multimodal de Produção</span></h2>
+    <div class="g2" data-aos="fade-up" data-aos-delay="100">
+      <div class="cell" style="border-color:rgba(180,100,255,0.3)">
+        <h3 style="color:var(--mira-purple)">1. Preserve o Visual</h3>
+        <p>Nunca converta imagem para texto antes do retrieval — você perde informação irrecuperável. Use VLMs que lêem páginas como imagens (ColPali, VisRAG).</p>
+      </div>
+      <div class="cell" style="border-color:rgba(180,100,255,0.3)">
+        <h3 style="color:var(--mira-purple)">2. Raciocine com Evidências</h3>
+        <p>Em cenários multi-imagem, registre evidências imagem a imagem antes de sintetizar — não processe tudo de uma vez (EVisRAG, RS-GRPO).</p>
+      </div>
+      <div class="cell" style="border-color:rgba(180,100,255,0.3)">
+        <h3 style="color:var(--mira-purple)">3. Conecte Modalidades</h3>
+        <p>Texto e imagem do mesmo contexto são testemunhas que se corroboram — use grafos ou inferência bayesiana para modelar consistência (MAHA, BayesRAG, MG²-RAG).</p>
+      </div>
+      <div class="cell" style="border-color:rgba(180,100,255,0.3)">
+        <h3 style="color:var(--mira-purple)">4. Indexe para Localizar</h3>
+        <p>Em documentos técnicos homogêneos, embedding pode falhar sistematicamente. Índices estruturais (DVI/HDNC) superam VLMs caros na fase de retrieval.</p>
+      </div>
+    </div>
+    <div class="metaphor" data-aos="fade-up" data-aos-delay="200">
+      <div class="mlabel">Tensão fundamental do módulo</div>
+      <p>Quanto mais fielmente preservamos informação visual, mais caro fica o sistema. A fronteira de 2025–26 está em fazer isso de forma <em>eficiente</em>: ColPali indexa 19× mais rápido, MG²-RAG constrói 43× mais barato, DVI zera o custo de pré-processamento.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 22 — PANORAMA (D3) ═══ -->
+<section class="slide" id="s22">
+  <div class="inner">
+    <div class="tag" data-aos="fade-right">Paisagem · 7 Artigos</div>
+    <h2 class="title" data-aos="fade-up">Panorama do<br><span class="accent">RAG Multimodal</span></h2>
+    <div class="anim-box" data-aos="fade-up" data-aos-delay="100" style="height:340px">
+      <div id="anim-compare15" style="width:100%;height:100%"></div>
+    </div>
+    <div class="g3" data-aos="fade-up" data-aos-delay="200">
+      <div class="cell">
+        <div class="num">7</div>
+        <h3>Artigos · 2025–26</h3>
+        <p>ICLR 2025, arXiv Out 2025 – Abr 2026 — fronteira ativa de RAG multimodal</p>
+      </div>
+      <div class="cell">
+        <div class="num">5</div>
+        <h3>Metáforas</h3>
+        <p>Fotógrafo, Ver com Próprios Olhos, Detetive, Mapa de Metrô, Júri Bayesiano, Enciclopédia, Índice do Livro</p>
+      </div>
+      <div class="cell">
+        <div class="num">+41pp</div>
+        <h3>Melhor Resultado</h3>
+        <p>DVI sobre Pre-Ingestion em documentos de engenharia (Bridge 1.323 perguntas)</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ═══ NAVEGAÇÃO ═══
+var slides = document.querySelectorAll('.slide');
+var prog = document.getElementById('prog');
+var navBtn = document.getElementById('nav-btn');
+var curSlide = 0;
+window.addEventListener('scroll', function(){
+  var total = document.body.scrollHeight - window.innerHeight;
+  prog.style.width = (total > 0 ? (window.scrollY/total)*100 : 0) + '%';
+  navBtn.classList.toggle('show', window.scrollY > 300);
+});
+function goNext(){
+  curSlide = Math.min(curSlide+1, slides.length-1);
+  slides[curSlide].scrollIntoView({behavior:'smooth'});
+}
+document.addEventListener('keydown', function(e){
+  if(['ArrowRight','ArrowDown','PageDown'].includes(e.key)){
+    curSlide = Math.min(curSlide+1, slides.length-1);
+    slides[curSlide].scrollIntoView({behavior:'smooth'});
+  } else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){
+    curSlide = Math.max(curSlide-1, 0);
+    slides[curSlide].scrollIntoView({behavior:'smooth'});
+  }
+});
+
+// ═══ AOS ═══
+AOS.init({duration:700, once:true, offset:55});
+if(typeof lucide!=='undefined') lucide.createIcons();
+
+// ═══════════════════════════════════════════════
+// D3 — anim-colpali: barras NDCG@5 + velocidade
+// ═══════════════════════════════════════════════
+(function(){
+  window.__colpaliGen = (window.__colpaliGen||0)+1;
+  var myG = window.__colpaliGen;
+  var el = document.getElementById('anim-colpali');
+  if(!el) return;
+  el.innerHTML='';
+
+  var W = el.offsetWidth||600, H = 220;
+  var svg = d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var defs = svg.append('defs');
+  var g1 = defs.append('linearGradient').attr('id','gcol').attr('x1','0').attr('x2','1');
+  g1.append('stop').attr('offset','0%').attr('stop-color','#B464FF').attr('stop-opacity',0.9);
+  g1.append('stop').attr('offset','100%').attr('stop-color','#D890FF').attr('stop-opacity',0.7);
+  var g2 = defs.append('linearGradient').attr('id','gstd').attr('x1','0').attr('x2','1');
+  g2.append('stop').attr('offset','0%').attr('stop-color','#FF6464').attr('stop-opacity',0.9);
+  g2.append('stop').attr('offset','100%').attr('stop-color','#FF9090').attr('stop-opacity',0.6);
+
+  var data = [
+    {label:'TextRAG', sub:'(Padrão)', val:0.66, fill:'url(#gstd)', tc:'#FF6464', speed:'7,22s/pg'},
+    {label:'ColPali', sub:'ICLR 2025', val:0.81, fill:'url(#gcol)', tc:'#B464FF', speed:'0,39s/pg'}
+  ];
+
+  var ml=130, mr=100, mt=36, mb=44;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var gv = svg.append('g').attr('transform','translate('+ml+','+mt+')');
+  var xSc = d3.scaleLinear().domain([0,1]).range([0,pw]);
+  var bH = ph*0.28, sp = ph*0.22;
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',20)
+    .attr('text-anchor','middle').style('fill','#888').style('font-size','11px')
+    .text('NDCG@5 — Retrieval Visual (ViDoRe Benchmark)');
+
+  var barRefs = [];
+  data.forEach(function(d,i){
+    var y = i*(bH+sp)+sp*0.4;
+    gv.append('text').attr('x',-10).attr('y',y+bH/2+4)
+      .attr('text-anchor','end').style('fill',d.tc).style('font-size','12px').style('font-weight','700').text(d.label);
+    gv.append('text').attr('x',-10).attr('y',y+bH/2+17)
+      .attr('text-anchor','end').style('fill','#666').style('font-size','10px').text(d.sub);
+
+    gv.append('rect').attr('x',0).attr('y',y).attr('width',pw).attr('height',bH)
+      .attr('rx',6).style('fill','rgba(255,255,255,0.03)');
+
+    var bar = gv.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',bH)
+      .attr('rx',6).style('fill',d.fill);
+    barRefs.push(bar);
+    bar.transition().delay(400+i*220).duration(900).attr('width',xSc(d.val));
+
+    gv.append('text').attr('x',xSc(d.val)+7).attr('y',y+bH/2+5)
+      .style('fill',d.tc).style('font-size','14px').style('font-weight','900')
+      .style('opacity',0).transition().delay(1400+i*220).duration(300).style('opacity',1)
+      .text(d.val.toFixed(2));
+
+    gv.append('text').attr('x',pw).attr('y',y+bH-5)
+      .attr('text-anchor','end').style('fill','rgba(255,255,255,0.35)').style('font-size','10px')
+      .style('opacity',0).transition().delay(1700).duration(400).style('opacity',1)
+      .text('Indexação: '+d.speed);
+  });
+
+  [0.25,0.5,0.75,1.0].forEach(function(v){
+    gv.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.06)').style('stroke-dasharray','3,4');
+    gv.append('text').attr('x',xSc(v)).attr('y',ph+16)
+      .attr('text-anchor','middle').style('fill','#555').style('font-size','10px').text(v.toFixed(2));
+  });
+
+  // loop: pulse
+  var pTick = 0;
+  function pulse(){
+    if(window.__colpaliGen!==myG) return;
+    barRefs[pTick%2].transition().duration(600).style('opacity',0.7)
+      .transition().duration(600).style('opacity',1.0)
+      .on('end',function(){ pTick++; setTimeout(pulse,1800); });
+  }
+  setTimeout(pulse,2400);
+})();
+
+// ═══════════════════════════════════════════════
+// D3 — anim-visrag: dois pipelines animados
+// ═══════════════════════════════════════════════
+(function(){
+  window.__visragGen = (window.__visragGen||0)+1;
+  var myG = window.__visragGen;
+  var el = document.getElementById('anim-visrag');
+  if(!el) return;
+  el.innerHTML='';
+
+  var W = el.offsetWidth||600, H = 210;
+  var svg = d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var pipelines = [
+    {label:'TextRAG', y:60, color:'#FF6464',
+     steps:['Documento','OCR / Parse','Chunking','Embed','Retrieve','Gerar']},
+    {label:'VisRAG', y:155, color:'#B464FF',
+     steps:['Documento','Imagem','VLM-Embed','Retrieve','VLM-Gen']}
+  ];
+
+  var lx = 14, rpad = 10;
+  var usableW = W - lx - rpad;
+
+  var packets = [];
+
+  pipelines.forEach(function(p, pi){
+    var n = p.steps.length;
+    var sw = usableW / n;
+    var bW = Math.min(74, sw-8);
+
+    svg.append('text').attr('x',lx).attr('y',p.y-28)
+      .style('fill',p.color).style('font-size','11px').style('font-weight','700').text(p.label);
+
+    p.steps.forEach(function(step,si){
+      var cx = lx + sw*si + sw/2;
+      svg.append('rect').attr('x',cx-bW/2).attr('y',p.y-14).attr('width',bW).attr('height',28)
+        .attr('rx',5).style('fill','rgba(255,255,255,0.04)').style('stroke','rgba(255,255,255,0.1)')
+        .style('opacity',0).transition().delay(200+pi*300+si*90).duration(350).style('opacity',1);
+      svg.append('text').attr('x',cx).attr('y',p.y+3)
+        .attr('text-anchor','middle').style('fill',si===0?'rgba(255,255,255,0.6)':p.color)
+        .style('font-size','9.5px').style('font-weight',si===0?'400':'600')
+        .style('opacity',0).transition().delay(300+pi*300+si*90).duration(300).style('opacity',1)
+        .text(step);
+      if(si<n-1){
+        svg.append('text').attr('x',cx+sw/2).attr('y',p.y+4)
+          .attr('text-anchor','middle').style('fill','rgba(255,255,255,0.22)').style('font-size','14px')
+          .style('opacity',0).transition().delay(380+pi*300+si*90).duration(200).style('opacity',1)
+          .text('→');
+      }
+    });
+
+    // moving packet
+    var pkt = svg.append('circle').attr('cx', lx+sw*0.5).attr('cy',p.y-1)
+      .attr('r',5).style('fill',p.color).style('opacity',0);
+    packets.push({pkt:pkt, steps:p.steps, lx:lx, sw:sw, n:n, y:p.y, color:p.color});
+  });
+
+  function movePkt(info, step){
+    if(window.__visragGen!==myG) return;
+    var cx = info.lx + info.sw*step + info.sw/2;
+    info.pkt.style('opacity',1).transition().duration(380).attr('cx',cx)
+      .on('end', function(){
+        if(step < info.n-1){
+          setTimeout(function(){ movePkt(info, step+1); }, 120);
+        } else {
+          info.pkt.transition().duration(250).style('opacity',0)
+            .on('end',function(){ setTimeout(function(){ movePkt(info,0); },700); });
+        }
+      });
+  }
+
+  setTimeout(function(){ movePkt(packets[0],0); }, 1000);
+  setTimeout(function(){ movePkt(packets[1],0); }, 1600);
+
+  // separator
+  svg.append('line').attr('x1',10).attr('x2',W-10).attr('y1',105).attr('y2',105)
+    .style('stroke','rgba(255,255,255,0.06)').style('stroke-dasharray','4,5');
+})();
+
+// ═══════════════════════════════════════════════
+// D3 — anim-evisrag: pipeline observe→evidence→reason
+// ═══════════════════════════════════════════════
+(function(){
+  window.__evisragGen = (window.__evisragGen||0)+1;
+  var myG = window.__evisragGen;
+  var el = document.getElementById('anim-evisrag');
+  if(!el) return;
+  el.innerHTML='';
+
+  var W = el.offsetWidth||600, H = 180;
+  var svg = d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var steps = [
+    {label:'Recuperar\nimagens', color:'#B464FF'},
+    {label:'Observar\nimagem', color:'#B464FF'},
+    {label:'Registrar\nevidência', color:'#C87AFF'},
+    {label:'Agregar\nevidências', color:'#C87AFF'},
+    {label:'Raciocinar\n→ Resposta', color:'#4DFFB4'}
+  ];
+
+  var n = steps.length;
+  var sw = W/n;
+  var cy = H/2;
+  var boxRefs = [];
+
+  steps.forEach(function(s,i){
+    var cx = sw*i+sw/2;
+    var bW = Math.min(86, sw-12);
+    var box = svg.append('rect').attr('x',cx-bW/2).attr('y',cy-32).attr('width',bW).attr('height',56)
+      .attr('rx',8).style('fill','rgba(180,100,255,0.08)').style('stroke','rgba(180,100,255,0.2)')
+      .style('stroke-width',1.5).style('opacity',0);
+    boxRefs.push({el:box, cx:cx});
+    box.transition().delay(300+i*160).duration(450).style('opacity',1);
+
+    var lines = s.label.split('\n');
+    svg.append('text').attr('x',cx).attr('y',cy-8)
+      .attr('text-anchor','middle').style('fill',s.color).style('font-size','10px').style('font-weight','700')
+      .style('opacity',0).transition().delay(460+i*160).duration(300).style('opacity',1)
+      .text(lines[0]);
+    svg.append('text').attr('x',cx).attr('y',cy+7)
+      .attr('text-anchor','middle').style('fill',s.color).style('font-size','10px').style('font-weight',i===n-1?'700':'400')
+      .style('opacity',0).transition().delay(500+i*160).duration(300).style('opacity',1)
+      .text(lines[1]);
+
+    if(i<n-1){
+      svg.append('text').attr('x',cx+sw/2).attr('y',cy+6)
+        .attr('text-anchor','middle').style('fill','rgba(255,255,255,0.25)').style('font-size','18px')
+        .style('opacity',0).transition().delay(640+i*160).duration(200).style('opacity',1).text('→');
+    }
+  });
+
+  svg.append('text').attr('x',W/2).attr('y',H-8)
+    .attr('text-anchor','middle').style('fill','rgba(77,255,180,0.65)').style('font-size','10.5px').style('font-weight','700')
+    .style('opacity',0).transition().delay(1600).duration(500).style('opacity',1)
+    .text('+27% de melhoria média sobre backbone VLM em benchmarks multi-imagem');
+
+  // loop: highlight active step sequentially
+  var active = 0;
+  function highlightStep(){
+    if(window.__evisragGen!==myG) return;
+    boxRefs.forEach(function(b,i){
+      b.el.style('stroke', i===active ? 'rgba(180,100,255,0.8)' : 'rgba(180,100,255,0.2)')
+        .style('stroke-width', i===active ? 2.2 : 1.5)
+        .style('fill', i===active ? 'rgba(180,100,255,0.18)' : 'rgba(180,100,255,0.08)');
+    });
+    active = (active+1)%n;
+    setTimeout(highlightStep, 550);
+  }
+  setTimeout(highlightStep, 1800);
+})();
+
+// ═══════════════════════════════════════════════
+// D3 — anim-bayesrag: sources → fusion → posterior
+// ═══════════════════════════════════════════════
+(function(){
+  window.__bayesGen = (window.__bayesGen||0)+1;
+  var myG = window.__bayesGen;
+  var el = document.getElementById('anim-bayesrag');
+  if(!el) return;
+  el.innerHTML='';
+
+  var W = el.offsetWidth||600, H = 210;
+  var svg = d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var sources = [
+    {label:'Texto', color:'#4DB4FF', cy:48},
+    {label:'Imagem', color:'#B464FF', cy:105},
+    {label:'Screenshot', color:'#26C6DA', cy:162}
+  ];
+  var srcX = W*0.14, fusX = W*0.50, postX = W*0.83;
+  var fusY = H/2;
+
+  // sources
+  sources.forEach(function(s,i){
+    svg.append('circle').attr('cx',srcX).attr('cy',s.cy).attr('r',26)
+      .style('fill','rgba(255,255,255,0.04)').style('stroke',s.color).style('stroke-width',1.5)
+      .style('opacity',0).transition().delay(200+i*140).duration(400).style('opacity',1);
+    svg.append('text').attr('x',srcX).attr('y',s.cy+5).attr('text-anchor','middle')
+      .style('fill',s.color).style('font-size','11px').style('font-weight','700')
+      .style('opacity',0).transition().delay(380+i*140).duration(300).style('opacity',1).text(s.label);
+
+    // arrows to fusion
+    svg.append('line').attr('x1',srcX+28).attr('y1',s.cy).attr('x2',fusX-40).attr('y2',fusY)
+      .style('stroke',s.color).style('stroke-width',1.5).style('stroke-dasharray','4,3')
+      .style('opacity',0).transition().delay(580+i*140).duration(400).style('opacity',0.55);
+  });
+
+  // fusion box
+  var fusBox = svg.append('rect').attr('x',fusX-42).attr('y',fusY-30).attr('width',84).attr('height',60)
+    .attr('rx',10).style('fill','rgba(180,100,255,0.12)').style('stroke','rgba(180,100,255,0.45)')
+    .style('stroke-width',1.8).style('opacity',0);
+  fusBox.transition().delay(920).duration(500).style('opacity',1);
+  svg.append('text').attr('x',fusX).attr('y',fusY-8).attr('text-anchor','middle')
+    .style('fill','#B464FF').style('font-size','10.5px').style('font-weight','700')
+    .style('opacity',0).transition().delay(1100).duration(300).style('opacity',1).text('Fusão');
+  svg.append('text').attr('x',fusX).attr('y',fusY+8).attr('text-anchor','middle')
+    .style('fill','#B464FF').style('font-size','10.5px')
+    .style('opacity',0).transition().delay(1100).duration(300).style('opacity',1).text('Bayesiana');
+  svg.append('text').attr('x',fusX).attr('y',fusY+22).attr('text-anchor','middle')
+    .style('fill','rgba(180,100,255,0.55)').style('font-size','9px')
+    .style('opacity',0).transition().delay(1200).duration(300).style('opacity',1).text('D-S Theory');
+
+  // arrow to posterior
+  svg.append('line').attr('x1',fusX+42).attr('y1',fusY).attr('x2',postX-38).attr('y2',fusY)
+    .style('stroke','rgba(77,255,180,0.65)').style('stroke-width',2)
+    .style('opacity',0).transition().delay(1420).duration(400).style('opacity',1);
+
+  // posterior circle
+  svg.append('circle').attr('cx',postX).attr('cy',fusY).attr('r',36)
+    .style('fill','rgba(77,255,180,0.1)').style('stroke','#4DFFB4').style('stroke-width',2)
+    .style('opacity',0).transition().delay(1620).duration(600).style('opacity',1);
+  svg.append('text').attr('x',postX).attr('y',fusY-10).attr('text-anchor','middle')
+    .style('fill','#4DFFB4').style('font-size','10px').style('font-weight','700')
+    .style('opacity',0).transition().delay(1850).duration(300).style('opacity',1).text('Posterior');
+  svg.append('text').attr('x',postX).attr('y',fusY+6).attr('text-anchor','middle')
+    .style('fill','#4DFFB4').style('font-size','10px')
+    .style('opacity',0).transition().delay(1850).duration(300).style('opacity',1).text('P(E|Q)');
+  svg.append('text').attr('x',postX).attr('y',fusY+20).attr('text-anchor','middle')
+    .style('fill','rgba(77,255,180,0.55)').style('font-size','9px')
+    .style('opacity',0).transition().delay(1950).duration(300).style('opacity',1).text('Confiança Final');
+
+  // loop: pulse fusion box
+  function pulseFusion(){
+    if(window.__bayesGen!==myG) return;
+    fusBox.transition().duration(700).style('stroke-width',2.8)
+      .transition().duration(700).style('stroke-width',1.8)
+      .on('end',function(){ setTimeout(pulseFusion,1400); });
+  }
+  setTimeout(pulseFusion,2800);
+})();
+
+// ═══════════════════════════════════════════════
+// D3 — anim-mg2rag: barras de speedup
+// ═══════════════════════════════════════════════
+(function(){
+  window.__mg2Gen = (window.__mg2Gen||0)+1;
+  var myG = window.__mg2Gen;
+  var el = document.getElementById('anim-mg2rag');
+  if(!el) return;
+  el.innerHTML='';
+
+  var W = el.offsetWidth||600, H = 200;
+  var svg = d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var defs = svg.append('defs');
+  var ga = defs.append('linearGradient').attr('id','gmg1').attr('x1','0').attr('x2','1');
+  ga.append('stop').attr('offset','0%').attr('stop-color','#B464FF').attr('stop-opacity',0.9);
+  ga.append('stop').attr('offset','100%').attr('stop-color','#D890FF').attr('stop-opacity',0.7);
+  var gb = defs.append('linearGradient').attr('id','gmg2').attr('x1','0').attr('x2','1');
+  gb.append('stop').attr('offset','0%').attr('stop-color','#4DFFB4').attr('stop-opacity',0.9);
+  gb.append('stop').attr('offset','100%').attr('stop-color','#90FFD0').attr('stop-opacity',0.7);
+
+  var data = [
+    {label:'Velocidade de Construção', val:43.3, max:50, fill:'url(#gmg1)', tc:'#B464FF', suffix:'× mais rápido'},
+    {label:'Redução de Custo',         val:23.9, max:50, fill:'url(#gmg2)', tc:'#4DFFB4', suffix:'× mais barato'}
+  ];
+
+  var ml=200, mr=90, mt=32, mb=32;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var gv = svg.append('g').attr('transform','translate('+ml+','+mt+')');
+  var bH=ph*0.28, sp=ph*0.22;
+
+  svg.append('text').attr('x',ml+pw/2).attr('y',18).attr('text-anchor','middle')
+    .style('fill','#888').style('font-size','11px')
+    .text('MG²-RAG vs. métodos graph-based existentes');
+
+  var barArr = [];
+  data.forEach(function(d,i){
+    var y = i*(bH+sp)+sp*0.4;
+    var xSc = d3.scaleLinear().domain([0,d.max]).range([0,pw]);
+    gv.append('text').attr('x',-10).attr('y',y+bH/2+5)
+      .attr('text-anchor','end').style('fill','rgba(255,255,255,0.8)').style('font-size','11.5px').style('font-weight','600')
+      .text(d.label);
+    gv.append('rect').attr('x',0).attr('y',y).attr('width',pw).attr('height',bH)
+      .attr('rx',6).style('fill','rgba(255,255,255,0.03)');
+    var bar = gv.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',bH)
+      .attr('rx',6).style('fill',d.fill);
+    barArr.push({bar:bar, xSc:xSc, val:d.val});
+    bar.transition().delay(400+i*260).duration(1000).attr('width',xSc(d.val));
+    gv.append('text').attr('x',xSc(d.val)+7).attr('y',y+bH/2+6)
+      .style('fill',d.tc).style('font-size','14px').style('font-weight','900')
+      .style('opacity',0).transition().delay(1450+i*260).duration(300).style('opacity',1)
+      .text(d.val+'×');
+    gv.append('text').attr('x',pw).attr('y',y+bH-5)
+      .attr('text-anchor','end').style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px')
+      .style('opacity',0).transition().delay(1750).duration(400).style('opacity',1)
+      .text(d.suffix);
+    // x ticks
+    [10,20,30,40,50].forEach(function(v){
+      if(i===0){
+        gv.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+          .style('stroke','rgba(255,255,255,0.05)').style('stroke-dasharray','3,4');
+        gv.append('text').attr('x',xSc(v)).attr('y',ph+16)
+          .attr('text-anchor','middle').style('fill','#555').style('font-size','10px').text(v+'×');
+      }
+    });
+  });
+
+  gv.append('text').attr('x',2).attr('y',-6).style('fill','rgba(255,255,255,0.28)')
+    .style('font-size','9px').text('baseline →');
+
+  // loop: refill animation
+  function refill(){
+    if(window.__mg2Gen!==myG) return;
+    barArr.forEach(function(b,i){
+      b.bar.transition().delay(i*200).duration(700).attr('width',0)
+        .transition().duration(900).attr('width', b.xSc(b.val))
+        .on('end', function(){ if(i===barArr.length-1) setTimeout(refill, 1800); });
+    });
+  }
+  setTimeout(refill, 3000);
+})();
+
+// ═══════════════════════════════════════════════
+// D3 — anim-compare15: scatter 7 artigos
+// ═══════════════════════════════════════════════
+(function(){
+  window.__cmp15Gen = (window.__cmp15Gen||0)+1;
+  var myG = window.__cmp15Gen;
+  var el = document.getElementById('anim-compare15');
+  if(!el) return;
+  el.innerHTML='';
+
+  var W = el.offsetWidth||600, H = 340;
+  var svg = d3.select(el).append('svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('width','100%').style('height','100%');
+
+  var papers = [
+    {name:'ColPali', sub:'ICLR 2025', vf:0.93, mh:0.52, r:13, c:'#B464FF'},
+    {name:'VisRAG', sub:'ICLR 2025', vf:0.88, mh:0.61, r:12, c:'#D890FF'},
+    {name:'EVisRAG', sub:'Out 2025', vf:0.84, mh:0.82, r:12, c:'#4DB4FF'},
+    {name:'MAHA', sub:'Out 2025', vf:0.68, mh:0.76, r:11, c:'#26C6DA'},
+    {name:'BayesRAG', sub:'Jan 2026', vf:0.72, mh:0.85, r:11, c:'#4DFFB4'},
+    {name:'MG²-RAG', sub:'Abr 2026', vf:0.78, mh:0.91, r:12, c:'#FFD54D'},
+    {name:'DVI', sub:'2025', vf:0.42, mh:0.72, r:10, c:'#FF904D'}
+  ];
+
+  var ml=52, mr=148, mt=38, mb=46;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  var gv = svg.append('g').attr('transform','translate('+ml+','+mt+')');
+
+  var xSc = d3.scaleLinear().domain([0.3,1.0]).range([0,pw]);
+  var ySc = d3.scaleLinear().domain([0.4,1.0]).range([ph,0]);
+
+  // grid
+  [0.4,0.5,0.6,0.7,0.8,0.9,1.0].forEach(function(v){
+    gv.append('line').attr('x1',0).attr('x2',pw).attr('y1',ySc(v)).attr('y2',ySc(v))
+      .style('stroke','rgba(255,255,255,0.05)');
+    gv.append('text').attr('x',-5).attr('y',ySc(v)+4).attr('text-anchor','end')
+      .style('fill','#555').style('font-size','9px').text(v.toFixed(1));
+  });
+  [0.4,0.5,0.6,0.7,0.8,0.9,1.0].forEach(function(v){
+    gv.append('line').attr('x1',xSc(v)).attr('x2',xSc(v)).attr('y1',0).attr('y2',ph)
+      .style('stroke','rgba(255,255,255,0.05)');
+    gv.append('text').attr('x',xSc(v)).attr('y',ph+16).attr('text-anchor','middle')
+      .style('fill','#555').style('font-size','9px').text(v.toFixed(1));
+  });
+
+  // axes
+  gv.append('line').attr('x1',0).attr('x2',pw).attr('y1',ph).attr('y2',ph)
+    .style('stroke','rgba(255,255,255,0.14)');
+  gv.append('line').attr('x1',0).attr('x2',0).attr('y1',0).attr('y2',ph)
+    .style('stroke','rgba(255,255,255,0.14)');
+
+  // axis labels
+  svg.append('text').attr('x',ml+pw/2).attr('y',H-6).attr('text-anchor','middle')
+    .style('fill','#888').style('font-size','11px').text('Fidelidade Visual →');
+  svg.append('text').attr('transform','rotate(-90)').attr('x',-(mt+ph/2)).attr('y',14)
+    .attr('text-anchor','middle').style('fill','#888').style('font-size','11px').text('Raciocínio Multi-hop →');
+
+  var circleRefs = [];
+  papers.forEach(function(p,i){
+    var cx = xSc(p.vf), cy = ySc(p.mh);
+    var circ = gv.append('circle').attr('cx',cx).attr('cy',cy).attr('r',0)
+      .style('fill','rgba(0,0,0,0.35)').style('stroke',p.c).style('stroke-width',2);
+    circleRefs.push(circ);
+    circ.transition().delay(300+i*120).duration(500).attr('r',p.r);
+
+    // label
+    var lx = cx+p.r+7, anchor='start';
+    if(p.vf>0.75){ lx=cx-p.r-7; anchor='end'; }
+    gv.append('text').attr('x',lx).attr('y',cy-2).attr('text-anchor',anchor)
+      .style('fill',p.c).style('font-size','10px').style('font-weight','700')
+      .style('opacity',0).transition().delay(700+i*120).duration(300).style('opacity',1).text(p.name);
+    gv.append('text').attr('x',lx).attr('y',cy+11).attr('text-anchor',anchor)
+      .style('fill','rgba(255,255,255,0.38)').style('font-size','9px')
+      .style('opacity',0).transition().delay(800+i*120).duration(300).style('opacity',1).text(p.sub);
+  });
+
+  // loop: random glow
+  function glow(){
+    if(window.__cmp15Gen!==myG) return;
+    var idx = Math.floor(Math.random()*circleRefs.length);
+    circleRefs[idx].transition().duration(500).style('stroke-width',3.5).attr('r',function(){
+      return +this.getAttribute('r')+3;
+    }).transition().duration(500).style('stroke-width',2).attr('r',function(){
+      return +this.getAttribute('r')-3;
+    }).on('end',function(){ setTimeout(glow,400); });
+  }
+  setTimeout(glow,2200);
+})();
+</script>
+</body>
+</html>
