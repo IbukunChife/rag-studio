@@ -1,1057 +1,602 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Montagem de Contexto em RAG — Módulo 06</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<style>
-:root{
-  --mira-bg:#000000;
-  --mira-primary:#FF904D;
-  --mira-success:#4DFFB4;
-  --mira-warning:#FFD54D;
-  --mira-error:#FF6464;
-  --mira-blue:#4DB4FF;
-  --mira-purple:#B464FF;
-  --mira-teal:#26C6DA;
-  --mira-surface:rgba(255,255,255,0.04);
-  --mira-border:rgba(255,255,255,0.08);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflow-x:hidden}
-#progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--mira-primary),var(--mira-success),var(--mira-blue));z-index:1000;transition:width .2s}
-.deck-header{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;text-align:center}
-.header-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4;z-index:0}
-.header-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.6) 0%,rgba(0,0,0,.25) 50%,rgba(0,0,0,.85) 100%);z-index:1}
-.header-content{position:relative;z-index:2;max-width:920px;padding:2rem}
-.header-badge{display:inline-block;background:rgba(255,144,77,.15);border:1px solid rgba(255,144,77,.35);color:var(--mira-primary);font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:.35rem 1rem;border-radius:999px;margin-bottom:1.5rem}
-.header-title{font-size:clamp(2.4rem,5.5vw,4.2rem);font-weight:900;line-height:1.08;margin-bottom:1rem;background:linear-gradient(135deg,#fff 30%,var(--mira-primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header-subtitle{font-size:1.1rem;color:rgba(255,255,255,.65);margin-bottom:2.5rem;max-width:680px;margin-left:auto;margin-right:auto;line-height:1.6}
-.header-stats{display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem}
-.hstat-num{font-size:2.2rem;font-weight:900;color:var(--mira-primary)}
-.hstat-label{font-size:.72rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.1em;margin-top:2px}
-.btn-start{background:var(--mira-primary);color:#000;font-weight:800;font-size:.95rem;padding:.8rem 2.2rem;border-radius:999px;border:none;cursor:pointer;transition:transform .2s,box-shadow .2s}
-.btn-start:hover{transform:scale(1.05);box-shadow:0 0 28px rgba(255,144,77,.55)}
-.section{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:4rem 1.5rem}
-.card{max-width:880px;width:100%;background:var(--mira-surface);border:1px solid var(--mira-border);border-radius:1.5rem;padding:2.5rem;backdrop-filter:blur(14px)}
-.chapter-strip{font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:1.2rem}
-.block-header{display:inline-flex;align-items:center;gap:.6rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:.35rem 1rem;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.2rem}
-.metaphor-card{border-radius:1.5rem;padding:2.5rem;position:relative;overflow:hidden}
-.metaphor-card.primary{background:linear-gradient(135deg,rgba(255,144,77,.1),rgba(255,144,77,.04));border:1px solid rgba(255,144,77,.2)}
-.metaphor-card.success{background:linear-gradient(135deg,rgba(77,255,180,.09),rgba(77,255,180,.03));border:1px solid rgba(77,255,180,.18)}
-.metaphor-card.blue{background:linear-gradient(135deg,rgba(77,180,255,.1),rgba(77,180,255,.03));border:1px solid rgba(77,180,255,.18)}
-.metaphor-card.warning{background:linear-gradient(135deg,rgba(255,213,77,.09),rgba(255,213,77,.03));border:1px solid rgba(255,213,77,.18)}
-.metaphor-card.purple{background:linear-gradient(135deg,rgba(180,100,255,.1),rgba(180,100,255,.03));border:1px solid rgba(180,100,255,.18)}
-.metaphor-card.teal{background:linear-gradient(135deg,rgba(38,198,218,.09),rgba(38,198,218,.03));border:1px solid rgba(38,198,218,.18)}
-.metaphor-card.error{background:linear-gradient(135deg,rgba(255,100,100,.1),rgba(255,100,100,.03));border:1px solid rgba(255,100,100,.18)}
-.metaphor-icon{font-size:3.5rem;margin-bottom:1rem;display:block}
-.metaphor-title{font-size:1.6rem;font-weight:900;margin-bottom:.6rem}
-.metaphor-scenario{font-size:1rem;color:rgba(255,255,255,.7);line-height:1.65;margin-bottom:1.2rem}
-.metaphor-bridge{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:.85rem;padding:1rem 1.2rem;font-size:.88rem;color:rgba(255,255,255,.75);line-height:1.55}
-.metaphor-bridge strong{color:#fff}
-.anim-box{width:100%;height:300px;position:relative;margin-top:1.2rem}
-.anim-box svg text{font-family:'Inter',sans-serif}
-.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.2rem}
-.pro-box{background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.85rem;padding:1rem}
-.con-box{background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.18);border-radius:.85rem;padding:1rem}
-.pc-label{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.6rem}
-.pro-box .pc-label{color:var(--mira-success)}
-.con-box .pc-label{color:var(--mira-error)}
-.pc-item{font-size:.83rem;color:rgba(255,255,255,.72);line-height:1.5;padding:.25rem 0;display:flex;gap:.5rem;align-items:flex-start}
-.pc-item::before{content:'•';flex-shrink:0;margin-top:1px}
-.pro-box .pc-item::before{color:var(--mira-success)}
-.con-box .pc-item::before{color:var(--mira-error)}
-.result-bar{display:flex;align-items:center;gap:.8rem;margin-top:.65rem}
-.rb-label{font-size:.78rem;color:rgba(255,255,255,.5);min-width:180px;flex-shrink:0}
-.rb-track{flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden}
-.rb-fill{height:100%;border-radius:999px}
-.rb-val{font-size:.8rem;font-weight:700;min-width:52px;text-align:right;flex-shrink:0}
-.conv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem;margin-top:1.3rem}
-.conv-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:.85rem;padding:1rem;text-align:center}
-.conv-icon-wrap{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .6rem}
-.conv-title{font-size:.84rem;font-weight:700;margin-bottom:.3rem}
-.conv-desc{font-size:.73rem;color:rgba(255,255,255,.5);line-height:1.4}
-.tag{font-size:.72rem;padding:.25rem .7rem;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.65)}
-#next-card{position:fixed;bottom:2rem;right:2rem;background:var(--mira-primary);color:#000;border:none;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:900;opacity:0;transition:opacity .3s,transform .2s;box-shadow:0 4px 20px rgba(255,144,77,.4)}
-#next-card.visible{opacity:1}
-#next-card:hover{transform:scale(1.1)}
-.deck-footer{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center;background:linear-gradient(to top,rgba(255,144,77,.06),transparent)}
-.footer-title{font-size:2rem;font-weight:900;margin-bottom:.7rem}
-.footer-sub{color:rgba(255,255,255,.5);font-size:.95rem;max-width:520px;margin:0 auto}
-@media(max-width:640px){
-  .pros-cons,.conv-grid{grid-template-columns:1fr}
-  .header-stats{gap:1.5rem}
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Módulo 06 · Montagem de Contexto — RAG Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root{--mira-primary:#FF904D;--mira-bg:#000000;--mira-success:#4DFFB4;--mira-warning:#FFD54D;--mira-error:#FF6464;--mira-blue:#4DB4FF;--mira-purple:#B464FF;--mira-teal:#26C6DA;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflow-x:hidden}
+    #progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--mira-primary);z-index:9999;width:0%;transition:width 0.2s ease}
+    #back-btn{position:fixed;bottom:2rem;right:2rem;width:3rem;height:3rem;border-radius:50%;background:var(--mira-primary);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;z-index:100;box-shadow:0 4px 24px rgba(255,144,77,0.45)}
+    #back-btn.visible{opacity:1}
+    .slide{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:4rem 1.5rem;position:relative}
+    .slide-hero{background:radial-gradient(ellipse 65% 55% at 50% 40%,rgba(255,144,77,0.1) 0%,transparent 60%),var(--mira-bg)}
+    .card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:1.5rem;backdrop-filter:blur(10px);max-width:900px;width:100%;padding:2.75rem}
+    .module-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,144,77,0.12);border:1px solid rgba(255,144,77,0.3);color:var(--mira-primary);border-radius:2rem;padding:0.4rem 1rem;font-size:0.76rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase}
+    .hero-title{font-size:clamp(2.8rem,7vw,5rem);font-weight:900;line-height:1.0;letter-spacing:-0.03em}
+    .hero-accent{color:var(--mira-primary)}
+    .sec-label{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,144,77,0.1);border:1px solid rgba(255,144,77,0.25);border-radius:2rem;padding:0.3rem 0.9rem;font-size:0.7rem;color:var(--mira-primary);font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
+    .metaphor-box{background:rgba(255,144,77,0.05);border:1px solid rgba(255,144,77,0.18);border-radius:1rem;padding:1.5rem}
+    .metaphor-icon{width:3.5rem;height:3.5rem;border-radius:50%;background:rgba(255,144,77,0.14);border:1px solid rgba(255,144,77,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.4rem}
+    .stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:1rem;padding:1.5rem;text-align:center}
+    .stat-num{font-size:2.6rem;font-weight:900;line-height:1}
+    .stat-lbl{font-size:0.74rem;color:rgba(255,255,255,0.45);margin-top:0.4rem;font-weight:500}
+    .gi{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:1.2rem}
+    .tag{display:inline-flex;align-items:center;gap:0.3rem;padding:0.22rem 0.65rem;border-radius:1rem;font-size:0.7rem;font-weight:600}
+    .t-p{background:rgba(255,144,77,0.15);color:var(--mira-primary);border:1px solid rgba(255,144,77,0.3)}
+    .t-b{background:rgba(77,180,255,0.15);color:var(--mira-blue);border:1px solid rgba(77,180,255,0.3)}
+    .t-g{background:rgba(77,255,180,0.15);color:var(--mira-success);border:1px solid rgba(77,255,180,0.3)}
+    .t-y{background:rgba(255,213,77,0.15);color:var(--mira-warning);border:1px solid rgba(255,213,77,0.3)}
+    .t-pr{background:rgba(180,100,255,0.15);color:var(--mira-purple);border:1px solid rgba(180,100,255,0.3)}
+    .t-r{background:rgba(255,100,100,0.15);color:var(--mira-error);border:1px solid rgba(255,100,100,0.3)}
+    .d3-wrap{width:100%;border-radius:1rem;overflow:hidden;background:rgba(255,255,255,0.02)}
+    table{width:100%;border-collapse:collapse}
+    th{background:rgba(255,144,77,0.1);color:var(--mira-primary);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:0.7rem 1rem;text-align:left}
+    td{padding:0.65rem 1rem;font-size:0.83rem;border-bottom:1px solid rgba(255,255,255,0.05);color:rgba(255,255,255,0.8)}
+    tr:last-child td{border-bottom:none}
+    .alert-p{background:rgba(255,144,77,0.07);border:1px solid rgba(255,144,77,0.2);border-left:4px solid var(--mira-primary);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-b{background:rgba(77,180,255,0.07);border:1px solid rgba(77,180,255,0.2);border-left:4px solid var(--mira-blue);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-y{background:rgba(255,213,77,0.07);border:1px solid rgba(255,213,77,0.2);border-left:4px solid var(--mira-warning);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-g{background:rgba(77,255,180,0.07);border:1px solid rgba(77,255,180,0.2);border-left:4px solid var(--mira-success);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .accent-bar{width:2.5rem;height:3px;background:var(--mira-primary);border-radius:2px}
+    hr.div{border:none;border-top:1px solid rgba(255,255,255,0.07)}
+    .dec-node{background:rgba(255,255,255,0.04);border:1px solid rgba(255,144,77,0.2);border-radius:0.75rem;padding:0.9rem 1.2rem;font-size:0.83rem}
+    .dec-node.answer{background:rgba(255,144,77,0.07);border-color:rgba(255,144,77,0.3);color:var(--mira-primary);font-weight:700}
+    .dec-connector{text-align:center;color:rgba(255,255,255,0.3);font-size:0.75rem;padding:0.2rem 0}
+  </style>
 </head>
 <body>
+
 <div id="progress-bar"></div>
+<button id="back-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+</button>
 
-<!-- ═══ HEADER ═══ -->
-<header class="deck-header" id="slide-0">
-  <video class="header-video" autoplay loop muted playsinline>
-    <source src="header-bg.mp4" type="video/mp4">
-  </video>
-  <div class="header-overlay"></div>
-  <div class="header-content">
-    <div class="header-badge">Módulo 06 · Montagem de Contexto</div>
-    <h1 class="header-title">O Contexto<br>Perfeito</h1>
-    <p class="header-subtitle">Quanto recuperar, em que ordem dispor e quais evidências escolher — 3 papers que resolvem os problemas mais silenciosos do RAG.</p>
-    <div class="header-stats">
-      <div class="hstat"><div class="hstat-num">23</div><div class="hstat-label">Slides</div></div>
-      <div class="hstat"><div class="hstat-num">3</div><div class="hstat-label">Papers</div></div>
-      <div class="hstat"><div class="hstat-num">3</div><div class="hstat-label">Blocos</div></div>
-      <div class="hstat"><div class="hstat-num">9</div><div class="hstat-label">Anim. D3</div></div>
+<!-- SLIDE 1 · CAPA -->
+<div class="slide slide-hero" id="slide-1">
+  <div class="card" style="border-color:rgba(255,144,77,0.22);max-width:960px">
+    <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="module-badge mb-6">Módulo 06 · RAG Studio</div>
+      <h1 class="hero-title mb-4">Montagem de<br><span class="hero-accent">Contexto</span></h1>
+      <p style="color:rgba(255,255,255,0.5);font-size:1rem" class="mb-8">Quanto recuperar, em que ordem dispor e quais evidências escolher — 3 papers que resolvem os problemas mais silenciosos do RAG</p>
     </div>
-    <button class="btn-start" onclick="document.getElementById('slide-1').scrollIntoView({behavior:'smooth'})">Começar jornada</button>
-  </div>
-</header>
-
-<!-- ═══════════════════════════════════════════════════════
-     BLOCO 0 · O PROBLEMA DA MONTAGEM
-═══════════════════════════════════════════════════════ -->
-
-<!-- S1 · METÁFORA: O JÚRI -->
-<section class="section" id="slide-1">
-  <div style="max-width:880px;width:100%" data-aos="fade-up">
-    <div class="block-header"><span style="color:var(--mira-primary)">●</span> Bloco 0 · O Problema da Montagem</div>
-    <div class="metaphor-card primary">
-      <span class="metaphor-icon">⚖️</span>
-      <h3 class="metaphor-title">O Júri que Esquece o Meio</h3>
-      <p class="metaphor-scenario">Num tribunal, o júri presta mais atenção ao <strong style="color:var(--mira-primary)">primeiro depoimento</strong> (impressão inicial) e ao <strong style="color:var(--mira-primary)">último</strong> (memória recente). O testemunho que veio no meio da tarde — mesmo sendo o mais importante — é o que o júri mais tende a esquecer. O advogado experiente sabe disso: ele coloca as provas mais cruciais no início ou no final, nunca enterradas no meio. O LLM é exatamente esse júri.</p>
-      <div class="metaphor-bridge">
-        <strong>No RAG (3 papers · IRIT + Seoul NatU + UIUC, 2025-2026):</strong> o LLM sofre do efeito "lost in the middle" — ignora docs relevantes posicionados no centro do contexto. Mas este não é o único problema: também recebe distractors (documentos enganosamente similares) e evidências triviais demais que ensinam atalhos em vez de raciocínio. Montar o contexto certo é uma ciência.
-      </div>
+    <hr class="div mb-8" />
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-primary)">+10%</div><div class="stat-lbl">BAR-RAG sobre baselines · 4 benchmarks</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-primary)">+72%</div><div class="stat-lbl">RoToR em Lost-in-the-Middle benchmark</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-primary)">75%</div><div class="stat-lbl">LLM prefere posição 1 em listwise — viés posicional</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-primary)">3</div><div class="stat-lbl">dimensões: Quanto? Onde? Qual? — cada uma é um paper</div></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-p">Dynamic Context Selection · IRIT 2025</span>
+      <span class="tag t-b">RoToR · Seoul NatU 2025</span>
+      <span class="tag t-y">BAR-RAG · UIUC+HKUST 2026</span>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S2 · D3: LOST IN THE MIDDLE -->
-<section class="section" id="slide-2">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 0 · O Problema — Posição Importa</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Lost in the Middle: O LLM Ignora o Centro</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Quando o documento relevante está no meio do contexto, a performance cai drasticamente — independentemente do modelo</p>
-    <div class="anim-box" id="anim-litm" style="height:260px"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.85rem;margin-top:1rem">
-      <div style="background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.85rem;padding:.9rem;text-align:center">
-        <div style="font-size:1.4rem;font-weight:900;color:var(--mira-success)">↑ Alto</div>
-        <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.3rem">Doc relevante no início</div>
-      </div>
-      <div style="background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.18);border-radius:.85rem;padding:.9rem;text-align:center">
-        <div style="font-size:1.4rem;font-weight:900;color:var(--mira-error)">↓ Baixo</div>
-        <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.3rem">Doc relevante no meio</div>
-      </div>
-      <div style="background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.85rem;padding:.9rem;text-align:center">
-        <div style="font-size:1.4rem;font-weight:900;color:var(--mira-success)">↑ Alto</div>
-        <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.3rem">Doc relevante no fim</div>
-      </div>
+<!-- SLIDE 2 · O PROBLEMA — 3 FALHAS SILENCIOSAS -->
+<div class="slide" id="slide-2">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">O Problema Central</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">3 Falhas <span style="color:var(--mira-primary)">Silenciosas</span> na Montagem do Contexto</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">O top-k fixo resolve o acesso à informação — mas cria três novos problemas que degradam a qualidade silenciosamente</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(255,144,77,.05);border:1px solid rgba(255,144,77,.15);border-radius:0.85rem;padding:1.1rem"><div style="width:38px;height:38px;background:rgba(255,144,77,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;color:var(--mira-primary)">1</div><div><div style="font-size:.95rem;font-weight:700;margin-bottom:.22rem;color:var(--mira-primary)">Quanto recuperar? — O Problema dos Distractors</div><div style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.5">k fixo inclui documentos semanticamente similares mas irrelevantes. Quanto maior o k, mais distractors entram e confundem o gerador. EM cai linearmente com cada distractor adicionado.</div></div></div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(77,180,255,.05);border:1px solid rgba(77,180,255,.15);border-radius:0.85rem;padding:1.1rem"><div style="width:38px;height:38px;background:rgba(77,180,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;color:var(--mira-blue)">2</div><div><div style="font-size:.95rem;font-weight:700;margin-bottom:.22rem;color:var(--mira-blue)">Em que ordem dispor? — O Viés Posicional</div><div style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.5">LLMs são sensíveis à ordem dos docs no contexto: priorizam início e fim, ignoram o meio. LLM-as-a-judge prefere a posição 1 em 75% dos casos, independente do conteúdo.</div></div></div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(255,213,77,.05);border:1px solid rgba(255,213,77,.15);border-radius:0.85rem;padding:1.1rem"><div style="width:38px;height:38px;background:rgba(255,213,77,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;color:var(--mira-warning)">3</div><div><div style="font-size:.95rem;font-weight:700;margin-bottom:.22rem;color:var(--mira-warning)">Quais evidências? — O Shortcut Learning</div><div style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.5">Rerankers maximizam relevância → selecionam evidências triviais (resposta explícita). O LLM copia sem raciocinar. Em deploy com evidências parciais, o modelo falha.</div></div></div>
+    </div>
+    <div class="alert-p" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-primary)">Os 3 problemas são independentes mas se amplificam:</strong> k excessivo cria mais distractors; mais distractors piora o viés posicional (doc relevante vai para o meio); evidências triviais impedem que o modelo aprenda a raciocinar. 3 papers de 2025-2026 resolvem cada dimensão.</p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S3 · OS 3 PROBLEMAS -->
-<section class="section" id="slide-3">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 0 · Panorama dos 3 Problemas</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.5rem">3 Falhas Silenciosas na Montagem do Contexto</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.3rem">O top-k fixo resolve o acesso à informação — mas cria três novos problemas que degradam a qualidade silenciosamente</p>
-    <div style="display:flex;flex-direction:column;gap:.75rem">
-      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(255,144,77,.05);border:1px solid rgba(255,144,77,.15);border-radius:.85rem;padding:1.1rem">
-        <div style="width:38px;height:38px;background:rgba(255,144,77,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;color:var(--mira-primary)">1</div>
-        <div><div style="font-size:.95rem;font-weight:700;margin-bottom:.22rem;color:var(--mira-primary)">Quanto recuperar? — O Problema dos Distractors</div><div style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.5">k fixo inclui documentos semanticamente similares mas irrelevantes (distractors). Quanto maior o k, mais distractors entram e confundem o gerador. Paper 01 (IRIT, Dez 2025).</div></div>
+<!-- SLIDE 3 · METÁFORA 1 — O JÚRI -->
+<div class="slide" id="slide-3">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora Central · Lost-in-the-Middle</div>
+    </div>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">⚖️</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-primary)">O Júri que Esquece o Meio</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Num tribunal, o júri presta mais atenção ao <strong style="color:var(--mira-primary)">primeiro depoimento</strong> (impressão inicial) e ao <strong style="color:var(--mira-primary)">último</strong> (memória recente). O testemunho que veio no meio da tarde — mesmo sendo o mais importante — é o que o júri mais tende a esquecer. O advogado experiente sabe disso: ele coloca as provas mais cruciais no início ou no final, nunca enterradas no meio. <strong style="color:var(--mira-primary)">O LLM é exatamente esse júri:</strong> causal attention favorece tokens iniciais (mais atenção acumulada) e finais (efeito de memória recente). Docs relevantes no meio do contexto têm EM score 2× menor.</p>
+        </div>
       </div>
-      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(77,180,255,.05);border:1px solid rgba(77,180,255,.15);border-radius:.85rem;padding:1.1rem">
-        <div style="width:38px;height:38px;background:rgba(77,180,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;color:var(--mira-blue)">2</div>
-        <div><div style="font-size:.95rem;font-weight:700;margin-bottom:.22rem;color:var(--mira-blue)">Em que ordem dispor? — O Problema do Viés Posicional</div><div style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.5">LLMs são sensíveis à ordem dos docs no contexto: priorizam início e fim, ignoram o meio. Embaralhar docs muda a resposta. Paper 02 (Seoul NatU, Jun 2025).</div></div>
-      </div>
-      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(255,100,100,.05);border:1px solid rgba(255,100,100,.15);border-radius:.85rem;padding:1.1rem">
-        <div style="width:38px;height:38px;background:rgba(255,100,100,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;color:var(--mira-error)">3</div>
-        <div><div style="font-size:.95rem;font-weight:700;margin-bottom:.22rem;color:var(--mira-error)">Quais evidências? — O Problema do Shortcut Learning</div><div style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.5">Rerankers maximizam relevância → selecionam evidências triviais que revelam a resposta diretamente, sem exigir raciocínio real do LLM. Paper 03 (UIUC+HKUST, Fev 2026).</div></div>
-      </div>
+    </div>
+    <div class="d3-wrap" id="anim-litm" style="height:260px" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+  </div>
+</div>
+
+<!-- SLIDE 4 · D3 CONCEITUAL ÚNICO — Efeito Cascata -->
+<div class="slide" id="slide-4">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Animação Conceitual · O Problema na Íntegra</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">O <span style="color:var(--mira-error)">Efeito Cascata</span> da Montagem de Contexto</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Cada problema amplifica o seguinte: k excessivo → distractors → doc relevante vai para o meio → LLM ignora → modelo aprende atalhos. Os 3 papers cortam a cascata em pontos diferentes.</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-cascade" style="height:230px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="border-color:rgba(255,144,77,0.25)"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-primary);margin-bottom:0.3rem">Dynamic k — Corta em 1</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.5">Prediz o k ótimo por query antes do retrieval — impede que distractors entrem desde o início.</p></div>
+      <div class="gi" style="border-color:rgba(77,180,255,0.25)"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-blue);margin-bottom:0.3rem">RoToR — Corta em 2</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.5">Torna o processamento do LLM invariante à posição — elimina o viés mesmo com distractors presentes.</p></div>
+      <div class="gi" style="border-color:rgba(255,213,77,0.25)"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-warning);margin-bottom:0.3rem">BAR-RAG — Corta em 3</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.5">Seleciona evidências na Goldilocks Zone — impede que o modelo aprenda atalhos mesmo com docs relevantes presentes.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════════════
-     BLOCO 1 · DYNAMIC CONTEXT SELECTION (Paper 01)
-═══════════════════════════════════════════════════════ -->
-
-<!-- S4 · METÁFORA: O GARÇOM -->
-<section class="section" id="slide-4">
-  <div style="max-width:880px;width:100%" data-aos="fade-up">
-    <div class="block-header"><span style="color:var(--mira-primary)">■</span> Bloco 1 · Dynamic Context Selection (Paper 01)</div>
-    <div class="metaphor-card primary">
-      <span class="metaphor-icon">🍽️</span>
-      <h3 class="metaphor-title">O Garçom que Sabe Quanto Servir</h3>
-      <p class="metaphor-scenario">Um garçom experiente não traz sempre 5 pratos para qualquer cliente. Para a criança que quer apenas um sorvete, um prato basta. Para o grupo de 4 que pediu um menu degustação, são 7 pratos. Trazer 5 pratos para a criança confunde — ela não consegue encontrar o sorvete no meio de tudo. <strong style="color:var(--mira-primary)">A quantidade certa depende da complexidade do pedido.</strong></p>
-      <div class="metaphor-bridge">
-        <strong>Dynamic Context Selection (Iratni et al., IRIT Toulouse, Dez 2025):</strong> o top-k fixo é o garçom que sempre traz 5 pratos. Este paper propõe um classificador que prediz o k ótimo por query — perguntas simples recebem poucos documentos, perguntas multi-hop recebem mais. Resultado: menos distractors, melhor desempenho.
+<!-- SLIDE 5 · METÁFORA 2 — O GARÇOM (Dynamic k) -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · Dynamic Context Selection (IRIT 2025)</div>
+    </div>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">🍽️</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-primary)">O Garçom que Sabe Quanto Servir</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Um garçom experiente não traz sempre 5 pratos para qualquer cliente. Para a criança que quer apenas um sorvete, um prato basta. Para o grupo de 4 que pediu um menu degustação, são 7 pratos. Trazer 5 pratos para a criança confunde — ela não consegue encontrar o sorvete no meio de tudo. <strong style="color:var(--mira-primary)">A quantidade certa depende da complexidade do pedido.</strong> O Dynamic Context Selection é esse garçom: um classificador leve que prediz o k ótimo por query sem retreinar o LLM principal. Queries 2-hop precisam de 2 docs; 3-hop de 3; 4-hop de 4 — nunca mais, nunca menos.</p>
+        </div>
       </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="d3-wrap" id="anim-fixvsdyn" style="height:240px"></div>
+      <div class="d3-wrap" id="anim-distractors" style="height:240px"></div>
+    </div>
+    <div class="alert-p mt-4" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-primary)">MuSiQue-Ans (22k queries):</strong> com k=5 fixo, queries 2-hop recebem 3 distractors desnecessários. O classificador adaptativo acerta o k para cada query — precision e recall melhoram simultaneamente.</p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S5 · D3: FIXED-K VS DYNAMIC-K -->
-<section class="section" id="slide-5">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 1 · Dynamic Context — Fixed-k vs. Adaptive-k</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Fixed-k vs. Dynamic k: O Custo do Tamanho Fixo</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Com k fixo, ou documentos essenciais ficam de fora (k pequeno) ou distractors entram (k grande)</p>
-    <div class="anim-box" id="anim-fixvsdyn" style="height:270px"></div>
-    <div style="background:rgba(255,144,77,.07);border:1px solid rgba(255,144,77,.18);border-radius:.85rem;padding:1rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
-      <strong style="color:var(--mira-primary)">MuSiQue-Ans (22k queries):</strong> queries 2-hop precisam de 2 docs; 3-hop de 3; 4-hop de 4. Com k=5 fixo, perguntas simples recebem 3 distractors desnecessários. O classificador adaptativo acerta o k para cada query.
+<!-- SLIDE 6 · POSIÇÃO D3 -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Dynamic Context Selection · Viés Posicional</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">A Posição do Doc Relevante <span style="color:var(--mira-primary)">Muda Tudo</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Mesmo com o doc certo recuperado, colocá-lo no meio do contexto reduz o EM score em 2× — RQ2 confirmada experimentalmente</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-position" style="height:260px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="alert-b" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-blue)">Conclusão:</strong> colocar o doc relevante no início ou no fim do contexto melhora consistentemente a performance — mesmo com distractors presentes (condições 1d e 2d). Dynamic k + ordem otimizada = dois ganhos complementares.</p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S6 · D3: IMPACTO DOS DISTRACTORS -->
-<section class="section" id="slide-6">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 1 · Dynamic Context — Distractors</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Cada Distractor Custa Pontos de EM Score</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">O impacto é sistemático: quanto mais distractors, pior a geração — especialmente em multi-hop</p>
-    <div class="anim-box" id="anim-distractors" style="height:270px"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-top:1rem">
-      <div style="background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.18);border-radius:.85rem;padding:.9rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-error);text-transform:uppercase;margin-bottom:.4rem">Distractor = Ruído Semântico</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">Parece relevante (alta similaridade de embedding) mas não contém a informação necessária. Confunde o LLM com conteúdo próximo mas incorreto.</div>
+<!-- SLIDE 7 · METÁFORA 3 — O BARALHO (RoToR) -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · RoToR (Seoul NatU 2025)</div>
+    </div>
+    <div class="metaphor-box mb-5" style="border-color:rgba(77,180,255,0.18)" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon" style="background:rgba(77,180,255,0.14);border-color:rgba(77,180,255,0.3)">🎲</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-blue)">O Baralho que Confunde o Cérebro</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Imagine uma prova de múltipla escolha onde a ordem das alternativas muda a resposta que você escolhe — não porque você não sabe a matéria, mas porque <strong style="color:var(--mira-blue)">seu cérebro tem viés pela primeira opção</strong>. Embaralhe as alternativas e você pode errar uma questão que saberia responder. O LLM é ainda mais extremo: em cenários listwise (como reranking), ele prefere a posição 1 em até <strong style="color:var(--mira-blue)">75% dos casos</strong>, independente do conteúdo. O <strong style="color:var(--mira-blue)">RoToR</strong> elimina isso com uma solução elegante: IDs posicionais circulares globais — um único ordenamento que não muda por query, onde cada doc "parece" estar próximo do início para o modelo. Zero custo adicional, zero retreinamento.</p>
+        </div>
       </div>
-      <div style="background:rgba(255,144,77,.07);border:1px solid rgba(255,144,77,.18);border-radius:.85rem;padding:.9rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-primary);text-transform:uppercase;margin-bottom:.4rem">Precision-Recall Trade-off</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">Aumentar k melhora o recall (não perde docs relevantes) mas piora a precisão (mais distractors). O classificador resolve os dois ao mesmo tempo.</div>
-      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">+72%</div><div class="stat-lbl">Lost-in-the-Middle benchmark vs. causal LM padrão</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">SOTA</div><div class="stat-lbl">Knowledge Graph QA — Selective Routing</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">75%</div><div class="stat-lbl">baseline posição 1 preferida em listwise (sem RoToR)</div></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S7 · D3: EFEITO POSICIONAL -->
-<section class="section" id="slide-7">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 1 · Dynamic Context — Posição dos Docs</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">A Posição do Doc Relevante Muda Tudo</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Mesmo com o doc certo recuperado, colocá-lo no meio do contexto reduz o EM score significativamente</p>
-    <div class="anim-box" id="anim-position" style="height:260px"></div>
-    <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.85rem;padding:1rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
-      <strong style="color:var(--mira-blue)">RQ2 confirmada experimentalmente:</strong> colocar o doc relevante no início ou no fim do contexto melhora consistentemente a performance em relação ao centro — mesmo com distractors presentes (condições 1d e 2d).
+<!-- SLIDE 8 · RoToR D3 -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">RoToR · Seoul National University + Channel Corp. 2025</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Um Único Ordenamento <span style="color:var(--mira-blue)">Circular Global</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">PCW isola docs (perde cross-attention) · PINE reordena por query O(n²) (instável) · RoToR: circular global, estável, zero custo extra</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-rotor" style="height:280px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-blue);margin-bottom:0.3rem">Selective Routing: o Melhor dos Dois Mundos</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.6);line-height:1.5">Inputs listwise (reranking, múltipla escolha) → RoToR. Inputs sequenciais (narrativa, raciocínio encadeado) → causal LM padrão. Roteamento automático pela estrutura da query.</p></div>
+      <div class="gi"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-blue);margin-bottom:0.3rem">Por Que Circular Funciona?</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.6);line-height:1.5">IDs posicionais A→B→C→D→E→A em anel — cada segmento "parece" próximo do início. Único pass de inferência, sem recomputação por query. Estável e sem train-test mismatch.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S8 · CLASSIFICADOR DE CONTEXTO -->
-<section class="section" id="slide-8">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 1 · Dynamic Context — Solução</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">O Classificador que Prediz o k Ótimo</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">Um modelo leve que analisa a query e prediz quantos documentos ela realmente precisa — sem retreinar o LLM principal</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.85rem;margin-bottom:1.2rem">
-      <div style="background:rgba(255,144,77,.07);border:1px solid rgba(255,144,77,.18);border-radius:.9rem;padding:1rem;text-align:center">
-        <div style="font-size:1.5rem;margin-bottom:.4rem">🔍</div>
-        <div style="font-size:.85rem;font-weight:700;color:var(--mira-primary);margin-bottom:.3rem">Input: Query</div>
-        <div style="font-size:.75rem;color:rgba(255,255,255,.5);line-height:1.4">O classificador recebe a query e analisa sua complexidade estrutural</div>
+<!-- SLIDE 9 · O DEBATE -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Tensão Conceitual · O Debate</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Corrigir a <span style="color:var(--mira-primary)">Entrada</span> vs. Corrigir o <span style="color:var(--mira-blue)">Processamento</span></h2>
+      <div class="accent-bar mb-5"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="background:rgba(255,144,77,0.06);border:1px solid rgba(255,144,77,0.2);border-radius:1rem;padding:1.4rem">
+        <div style="font-weight:700;margin-bottom:0.5rem;color:var(--mira-primary);font-size:0.9rem">🍽️ Dynamic k — Corrigir a Entrada</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.55">Tese: o problema raiz é o k fixo que injeta ruído antes do LLM. Se a entrada for limpa (k* ótimo, sem distractors), o viés posicional fica menos grave — porque o doc relevante tem maior probabilidade de estar em posição primária naturalmente. A solução certa é upstream: não lixo não entra.</p>
+        <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(255,144,77,0.1);border-radius:0.5rem;font-size:0.75rem;color:var(--mira-primary)">Módulo leve · plug-and-play · sem retreinar o LLM</div>
       </div>
-      <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.9rem;padding:1rem;text-align:center">
-        <div style="font-size:1.5rem;margin-bottom:.4rem">🧠</div>
-        <div style="font-size:.85rem;font-weight:700;color:var(--mira-blue);margin-bottom:.3rem">Processo: Classificação</div>
-        <div style="font-size:.75rem;color:rgba(255,255,255,.5);line-height:1.4">Prediz o número de hops necessários: 1-hop (simples), 2-hop, 3-hop ou 4-hop (complexo)</div>
-      </div>
-      <div style="background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.9rem;padding:1rem;text-align:center">
-        <div style="font-size:1.5rem;margin-bottom:.4rem">📄</div>
-        <div style="font-size:.85rem;font-weight:700;color:var(--mira-success);margin-bottom:.3rem">Output: k Ótimo</div>
-        <div style="font-size:.75rem;color:rgba(255,255,255,.5);line-height:1.4">O RAG recupera exatamente k* documentos — nem mais, nem menos</div>
+      <div style="background:rgba(77,180,255,0.06);border:1px solid rgba(77,180,255,0.2);border-radius:1rem;padding:1.4rem">
+        <div style="font-weight:700;margin-bottom:0.5rem;color:var(--mira-blue);font-size:0.9rem">🎲 RoToR — Corrigir o Processamento</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.55">Tese: o problema raiz é o LLM em si — decoder-only com causal attention é estruturalmente sensível à posição. Mesmo com k* perfeito, qualquer embaralhamento muda a resposta. A correção certa é dentro do modelo: tornar o processamento invariante à ordem sem retreinamento.</p>
+        <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(77,180,255,0.1);border-radius:0.5rem;font-size:0.75rem;color:var(--mira-blue)">Zero custo extra · circular IDs · estável · zero retrein.</div>
       </div>
     </div>
-    <div class="pros-cons">
-      <div class="pro-box">
-        <div class="pc-label">Vantagens</div>
-        <div class="pc-item">Sem retreinar o LLM — módulo leve e plugável</div>
-        <div class="pc-item">Reduz distractors sistematicamente</div>
-        <div class="pc-item">Melhora 2-hop, 3-hop e 4-hop consistentemente</div>
-      </div>
-      <div class="con-box">
-        <div class="pc-label">Limitações</div>
-        <div class="pc-item">Requer dados de treinamento para o classificador</div>
-        <div class="pc-item">Não resolve o problema da ordem dos docs</div>
-        <div class="pc-item">k ótimo ainda pode variar por domínio</div>
-      </div>
+    <div class="alert-g" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-success)">Síntese:</strong> Dynamic k e RoToR atacam camadas diferentes da mesma cascata — por isso são complementares, não concorrentes. Dynamic k reduz ruído antes do LLM; RoToR corrige o viés posicional dentro do processamento. BAR-RAG fecha o triângulo: garante que as evidências selecionadas exijam raciocínio real. Os 3 em sequência eliminam as 3 falhas silenciosas.</p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════════════
-     BLOCO 2 · RoToR: ORDER-INVARIANT RAG (Paper 02)
-═══════════════════════════════════════════════════════ -->
-
-<!-- S9 · METÁFORA: O BARALHO -->
-<section class="section" id="slide-9">
-  <div style="max-width:880px;width:100%" data-aos="fade-up">
-    <div class="block-header"><span style="color:var(--mira-blue)">■</span> Bloco 2 · RoToR: Order-Invariant RAG (Paper 02)</div>
-    <div class="metaphor-card blue">
-      <span class="metaphor-icon">🎲</span>
-      <h3 class="metaphor-title">O Baralho que Confunde o Cérebro</h3>
-      <p class="metaphor-scenario">Imagine uma prova de múltipla escolha onde a ordem das alternativas muda a resposta que você escolhe — não porque você não sabe a matéria, mas porque <strong style="color:var(--mira-blue)">seu cérebro tem viés pela primeira opção</strong>. Embaralhe as alternativas e você pode errar uma questão que saberia responder. Isso é irracional, mas humano. O LLM é ainda mais extremo: em cenários listwise (como reranking), ele prefere a posição 1 em até <strong style="color:var(--mira-blue)">75% dos casos</strong>, independente do conteúdo.</p>
-      <div class="metaphor-bridge">
-        <strong>RoToR (Yoon et al., Seoul National University + Channel Corp., Jun 2025):</strong> propõe tornar o LLM genuinamente invariante à ordem, sem precisar retreinar do zero. A solução é elegante: atribuir IDs posicionais circulares globais — um único ordenamento que não muda por query, eliminando instabilidade computacional.
+<!-- SLIDE 10 · METÁFORA 4 — CACHINHOS DOURADOS (BAR-RAG) -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · BAR-RAG (UIUC + HKUST 2026)</div>
+    </div>
+    <div class="metaphor-box mb-5" style="border-color:rgba(255,213,77,0.18)" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon" style="background:rgba(255,213,77,0.14);border-color:rgba(255,213,77,0.3)">🐻</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-warning)">A Sopa da Cachinhos Dourados</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Na história, Cachinhos prova três sopas: uma <strong style="color:var(--mira-error)">muito quente</strong> (trivial — evidência fácil demais, o LLM copia a resposta sem raciocinar), uma <strong style="color:rgba(150,150,150,0.8)">muito fria</strong> (impossível — evidência difícil demais, o LLM nunca acerta, nenhum sinal de reward), e uma <strong style="color:var(--mira-warning)">no ponto certo</strong> — desafiadora o suficiente para exigir raciocínio real, solucionável o suficiente para dar sinal de aprendizado. O reranker ideal encontra exatamente essa sopa. O <strong style="color:var(--mira-warning)">BAR-RAG</strong> redefine o reranker como seletor da Zona de Goldilocks: ĝ(S) ≈ 0.5 — onde o modelo acerta metade das vezes em treino, mas aprende raciocínio real.</p>
+        </div>
       </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning)">+10.3%</div><div class="stat-lbl">ganho médio sobre RAG baseline em 4 benchmarks</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning)">ĝ≈0.5</div><div class="stat-lbl">Goldilocks Zone — dificuldade ótima das evidências</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning)">2</div><div class="stat-lbl">stages RL — Stage 1: seletor · Stage 2: gerador</div></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S10 · O PROBLEMA DA ORDEM -->
-<section class="section" id="slide-10">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 2 · RoToR — O Problema</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Por Que a Ordem dos Docs Muda a Resposta?</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">Dois efeitos documentados que tornam os LLMs sensíveis à posição dos segmentos no input</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
-      <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.2);border-radius:.9rem;padding:1.1rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-blue);text-transform:uppercase;margin-bottom:.5rem">Viés Posicional Absoluto</div>
-        <div style="font-size:.84rem;font-weight:700;margin-bottom:.4rem">Preferência pelo início e fim</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.62);line-height:1.45;margin-bottom:.5rem">LLMs decoder-only usam causal attention — tokens iniciais têm mais atenção acumulada ao longo das camadas. O fim também é favorecido por efeito de memória recente.</div>
-        <div style="font-size:.75rem;color:var(--mira-blue)">Evidência: MMLU com alternativas reordenadas → ranking muda 8 posições</div>
-      </div>
-      <div style="background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.2);border-radius:.9rem;padding:1.1rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-error);text-transform:uppercase;margin-bottom:.5rem">Lost-in-the-Middle</div>
-        <div style="font-size:.84rem;font-weight:700;margin-bottom:.4rem">Conteúdo central ignorado</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.62);line-height:1.45;margin-bottom:.5rem">Em contextos longos, passagens relevantes posicionadas no meio recebem menos atenção. O modelo "esquece" o que está enterrado entre outros documentos.</div>
-        <div style="font-size:.75rem;color:var(--mira-error)">Evidência: LLM-as-a-judge prefere primeira resposta em 75% dos casos</div>
-      </div>
+<!-- SLIDE 11 · Goldilocks Zone D3 -->
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">BAR-RAG · UIUC + HKUST + WashU + Texas A&M 2026</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">A Zona de Goldilocks: <span style="color:var(--mira-warning)">ĝ(S) ≈ 0.5</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Evidência no ponto certo de dificuldade — nem trivial (shortcut), nem impossível (sem reward); o reranker como Boundary-Aware Selector</p>
     </div>
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:.85rem;padding:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
-      <strong>O problema no RAG:</strong> o reranker recupera os docs na ordem de relevância, mas o LLM interpreta como se a posição 1 fosse a mais confiável. Resultado: a qualidade da resposta depende de onde o doc relevante caiu na lista — não só de quão relevante ele é.
+    <div class="d3-wrap mb-5" id="anim-goldilocks" style="height:270px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="d3-wrap" id="anim-barrag" style="height:200px"></div>
+      <div class="d3-wrap" id="anim-barresults" style="height:200px"></div>
+    </div>
+    <div class="alert-y mt-4" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-warning)">+10.3% sem aumentar Recall:</strong> BAR-RAG melhora QA Accuracy mesmo mantendo o Recall constante — prova que o problema estava na seleção de evidências, não na recuperação. TriviaQA: 55→65% · PopQA: 32→46% · HotpotQA: 28→39% · 2Wiki: 20→32%.</p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S11 · PCW E PINE: LIMITAÇÕES -->
-<section class="section" id="slide-11">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 2 · RoToR — Abordagens Anteriores</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">PCW e PINE: Por Que Não Funcionam Bem</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">As duas abordagens anteriores de order-invariance têm falhas estruturais que limitam sua adoção prática</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-      <div style="background:rgba(255,213,77,.07);border:1px solid rgba(255,213,77,.18);border-radius:1rem;padding:1.2rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-warning);text-transform:uppercase;margin-bottom:.5rem">PCW — Parallel Context Windows</div>
-        <div style="font-size:.84rem;font-weight:700;margin-bottom:.5rem">Processamento Paralelo Isolado</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:.7rem">Cada segmento é processado isoladamente — sem cross-segment attention. Elimina o viés posicional, mas ao mesmo tempo elimina a compreensão contextualizada entre docs.</div>
-        <div style="font-size:.75rem;color:var(--mira-warning);font-weight:600">Problema: gargalo de informação → degeneração em ensemble</div>
-      </div>
-      <div style="background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.18);border-radius:1rem;padding:1.2rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-error);text-transform:uppercase;margin-bottom:.5rem">PINE — Pairwise Similarity Re-ordering</div>
-        <div style="font-size:.84rem;font-weight:700;margin-bottom:.5rem">Re-ordenação por Similaridade</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:.7rem">Recomputa os IDs posicionais por query usando atenção Q-K. Funciona bem mas tem custo O(n²) por query — numericamente instável, frequentemente inconsistente.</div>
-        <div style="font-size:.75rem;color:var(--mira-error);font-weight:600">Problema: train-test mismatch + custo quadrático</div>
-      </div>
+<!-- SLIDE 12 · QUANDO USAR -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Guia Prático · Quando Usar Cada Técnica</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Qual <span style="color:var(--mira-primary)">Sintoma</span> o Seu RAG Tem?</h2>
+      <div class="accent-bar mb-5"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="dec-node">📊 <strong>Meu RAG tem performance boa em queries simples mas ruim em multi-hop?</strong></div>
+      <div class="dec-connector">↓ sim (mix de 1-hop e 2-4 hop queries)</div>
+      <div class="dec-node answer">→ <strong>Dynamic Context Selection (IRIT 2025)</strong>: classificador prediz k* por query. Queries 2-hop → k*=2; 4-hop → k*=4. Reduz distractors sem retreinar o LLM. Dataset: MuSiQue-Ans 22k queries.</div>
+      <div class="dec-node">🎲 <strong>A performance muda quando embaralho a ordem dos docs recuperados?</strong></div>
+      <div class="dec-connector">↓ sim (output diferente com mesmos docs em ordem diferente)</div>
+      <div class="dec-node answer">→ <strong>RoToR (Seoul NatU 2025)</strong>: IDs posicionais circulares globais — invariância zero custo. Para listwise inputs. Selective Routing decide automaticamente quando usar. +72% LitM.</div>
+      <div class="dec-node">🎯 <strong>Meu retrieval tem alto recall mas a QA accuracy é baixa?</strong></div>
+      <div class="dec-connector">↓ sim (encontra os docs certos mas o LLM ainda erra perguntas de raciocínio)</div>
+      <div class="dec-node answer">→ <strong>BAR-RAG (UIUC 2026)</strong>: reranker como seletor de Goldilocks Zone. Stage 1 (RL GRPO) treina seletor para ĝ(S)≈0.5. Stage 2 fine-tune gerador na distribuição real. +10.3% médio.</div>
+      <div class="dec-node">🔗 <strong>Tenho os 3 problemas simultaneamente?</strong></div>
+      <div class="dec-connector">↓ sim (complexidade variável + sensibilidade a ordem + shortcut learning)</div>
+      <div class="dec-node answer">→ <strong>Aplicar em sequência:</strong> Dynamic k → RoToR → BAR-RAG. Cada paper corta um nó da cascata. Os 3 são complementares, não concorrentes.</div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S12 · D3: ROTOR — CIRCULAR ASSIGNMENT -->
-<section class="section" id="slide-12">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 2 · RoToR — A Solução</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">RoToR: Um Único Ordenamento Circular Global</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Em vez de recomputar a ordem por query, RoToR usa uma atribuição circular global — simples, estável e sem custo adicional</p>
-    <div class="anim-box" id="anim-rotor" style="height:280px"></div>
-    <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.85rem;padding:1rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
-      <strong style="color:var(--mira-blue)">Ideia central:</strong> A→B→O→K→G em ordem circular. Os segmentos recebem IDs posicionais em anel — cada um "parece" estar próximo do início para o modelo, sem manipulação por query. Um único pass, estável, sem custo extra.
+<!-- SLIDE 13 · Mapa Relacional D3 -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Síntese · 3 Papers</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">3 Perguntas para o <span style="color:var(--mira-primary)">Contexto Perfeito</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Quanto? (Dynamic k) × Onde? (RoToR) × Qual? (BAR-RAG) — cada dimensão é independente mas os 3 formam a montagem ideal</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-relmap" style="height:290px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="overflow-x:auto" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <table>
+        <thead><tr><th>Paper</th><th>Dimensão</th><th>Intervenção</th><th>Métrica</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:700;color:var(--mira-primary)">Dynamic k (IRIT 2025)</td><td>Quantidade</td><td>Classificador k* por query</td><td style="color:var(--mira-primary)">Reduz distractors · EM multi-hop</td></tr>
+          <tr><td style="font-weight:700;color:var(--mira-blue)">RoToR (Seoul NatU)</td><td>Ordem</td><td>IDs circulares globais</td><td style="color:var(--mira-blue)">+72% LitM · SOTA KGQA</td></tr>
+          <tr><td style="font-weight:700;color:var(--mira-warning)">BAR-RAG (UIUC)</td><td>Qualidade</td><td>Goldilocks Zone ĝ≈0.5</td><td style="color:var(--mira-warning)">+10.3% médio em 4 benchmarks</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
-</section>
+</div>
 
-<!-- S13 · SELECTIVE ROUTING + RESULTADOS RoToR -->
-<section class="section" id="slide-13">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 2 · RoToR — Selective Routing &amp; Resultados</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Selective Routing: O Melhor dos Dois Mundos</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">Nem toda query precisa de invariância — algumas precisam de ordem. Selective Routing decide automaticamente</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1.2rem">
-      <div style="background:rgba(77,180,255,.07);border:1px solid rgba(77,180,255,.18);border-radius:.9rem;padding:1rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-blue);text-transform:uppercase;margin-bottom:.4rem">Order-Invariant (RoToR)</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">Ativado quando o input é listwise (conjunto, ranking, alternativas) — a ordem não importa semanticamente</div>
-      </div>
-      <div style="background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.9rem;padding:1rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-success);text-transform:uppercase;margin-bottom:.4rem">Order-Sensitive (Causal LM)</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">Ativado quando a sequência importa (narrativa, raciocínio sequencial) — o modelo padrão performa melhor</div>
-      </div>
+<!-- SLIDE 14 · PRINCÍPIOS + FECHAMENTO 4 METÁFORAS -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 06 · Princípios Destilados</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:1.25rem">Os 4 Especialistas da <span style="color:var(--mira-primary)">Montagem Perfeita Coordenados</span></h2>
     </div>
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:.85rem;padding:1rem;margin-bottom:.9rem">
-      <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:.6rem">Resultados em 3 Benchmarks</div>
-      <div class="result-bar"><span class="rb-label">LitM (Lost in the Middle)</span><div class="rb-track"><div class="rb-fill" style="width:72%;background:var(--mira-blue)"></div></div><span class="rb-val" style="color:var(--mira-blue)">+72%↑</span></div>
-      <div class="result-bar"><span class="rb-label">KGQA (Knowledge Graph QA)</span><div class="rb-track"><div class="rb-fill" style="width:65%;background:var(--mira-blue)"></div></div><span class="rb-val" style="color:var(--mira-blue)">SOTA</span></div>
-      <div class="result-bar"><span class="rb-label">MMLU (Multiple Choice)</span><div class="rb-track"><div class="rb-fill" style="width:58%;background:var(--mira-blue)"></div></div><span class="rb-val" style="color:var(--mira-blue)">Robusto</span></div>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:1.7"><strong style="color:var(--mira-primary)">Lembram dos 4 especialistas?</strong> O Júri (lost-in-the-middle) revelou a falha fundamental: docs no centro do contexto são ignorados por design estrutural do decoder — causal attention não tem como não ter viés posicional. O Garçom (Dynamic k) aprendeu que trazer 5 pratos para uma criança é ruído, não serviço — k ótimo por query reduz o que o Júri precisa processar. O Baralho (RoToR) provou que a solução estrutural (IDs circulares) é mais elegante e eficiente que reordenar por query (PINE, O(n²)) — e zero custo. A Cachinhos (BAR-RAG) lembrou que treinar com sopas triviais cria modelos que copiam respostas, não que raciocinam — a dificuldade ótima das evidências não é a máxima, é a goldilocks. <strong style="color:var(--mira-primary)">Conclusão: contexto não é apenas o que você recuperou — é como você empacota, ordena e seleciona o que o LLM vai ver.</strong></p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.6rem" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-p" style="flex-shrink:0">P1</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>k Adaptativo, Não Fixo</strong> — a quantidade de docs deve ser calibrada pela complexidade da query. 1 doc para perguntas simples (1-hop), N para multi-hop. Cada distractor extra custa EM score.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-b" style="flex-shrink:0">P2</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Ordem Não Deve Importar</strong> — o sistema deve ser invariante à ordem dos docs recuperados. RoToR prova que IDs circulares globais resolvem sem custo adicional. A resposta não pode mudar se o reranker trocar posições.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-y" style="flex-shrink:0">P3</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Evidência Desafiadora, Não Trivial</strong> — selecionar a evidência certa significa encontrar o ponto de dificuldade ótimo (ĝ≈0.5). Alto recall não garante alta QA accuracy. BAR-RAG melhora 10.3% sem mudar o retrieval.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-g" style="flex-shrink:0">P4</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Treinar na Distribuição Real</strong> — o gerador deve ser exposto a evidências ruidosas e incompletas durante o treino, não só a evidências perfeitas de curadoria. BAR-RAG Stage 2 fecha esse train-test gap.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════════════
-     BLOCO 3 · BAR-RAG: GOLDILOCKS ZONE (Paper 03)
-═══════════════════════════════════════════════════════ -->
-
-<!-- S14 · METÁFORA: CACHINHOS DOURADOS -->
-<section class="section" id="slide-14">
-  <div style="max-width:880px;width:100%" data-aos="fade-up">
-    <div class="block-header"><span style="color:var(--mira-warning)">■</span> Bloco 3 · BAR-RAG: Goldilocks Zone (Paper 03)</div>
-    <div class="metaphor-card warning">
-      <span class="metaphor-icon">🐻</span>
-      <h3 class="metaphor-title">A Sopa da Cachinhos Dourados</h3>
-      <p class="metaphor-scenario">Na história, Cachinhos prova três sopas: uma <strong style="color:var(--mira-warning)">muito quente</strong> (impossível de beber — evidência muito difícil, o LLM não consegue responder), uma <strong style="color:var(--mira-warning)">muito fria</strong> (trivial — evidência fácil demais, o LLM decora a resposta sem raciocinar) e uma <strong style="color:var(--mira-warning)">no ponto certo</strong> — desafiadora o suficiente para exigir raciocínio real, mas solucionável com as ferramentas disponíveis. O reranker ideal encontra exatamente essa sopa.</p>
-      <div class="metaphor-bridge">
-        <strong>BAR-RAG (Sun et al., UIUC + HKUST + Texas A&amp;M, Fev 2026):</strong> redefine o reranker como um seletor de evidências que mira a "Goldilocks Zone" — conjuntos de evidências com probabilidade de acerto ĝ(S) ≈ 0.5. Nem triviais (shortcut learning), nem impossíveis (sem sinal de reward). +10.3% sobre baselines.
-      </div>
+<!-- SLIDE 15 · PRÓXIMO MÓDULO -->
+<div class="slide" id="slide-15" style="background:radial-gradient(ellipse 60% 50% at 80% 50%,rgba(180,100,255,0.09) 0%,transparent 55%),var(--mira-bg)">
+  <div class="card" style="border-color:rgba(180,100,255,0.18)">
+    <div data-aos="fade-up" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(180,100,255,0.1);border:1px solid rgba(180,100,255,0.25);border-radius:2rem;padding:0.35rem 0.9rem;font-size:0.7rem;color:var(--mira-purple);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1.5rem">A Seguir · Módulo 12</div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.05;margin-bottom:1rem"><span style="color:var(--mira-purple)">GraphRAG</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.95rem;margin-bottom:2rem">RAG sobre grafos de conhecimento — quando relações entre entidades importam mais que chunks de texto, e como grafos heterogêneos, hiperbólicos e de raciocínio ampliam o que o RAG pode responder.</p>
     </div>
-  </div>
-</section>
-
-<!-- S15 · O PROBLEMA DO RERANKER PADRÃO -->
-<section class="section" id="slide-15">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 3 · BAR-RAG — O Problema</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Por Que Alto Recall Não Garante Alta Acurácia?</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.2rem">O reranker padrão maximiza relevância — e ao fazer isso, cria dois modos de falha sistemáticos</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
-      <div style="background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.18);border-radius:.9rem;padding:1.1rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-error);text-transform:uppercase;margin-bottom:.4rem">Falha 1: Shortcut Learning</div>
-        <div style="font-size:.84rem;font-weight:700;margin-bottom:.4rem">Evidências Triviais</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.62);line-height:1.45">O reranker seleciona passages que contêm a resposta explicitamente — o LLM copia sem raciocinar. No deploy, quando o doc tem apenas evidências parciais, o modelo falha.</div>
-      </div>
-      <div style="background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.18);border-radius:.9rem;padding:1.1rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-error);text-transform:uppercase;margin-bottom:.4rem">Falha 2: Train-Test Gap</div>
-        <div style="font-size:.84rem;font-weight:700;margin-bottom:.4rem">Mismatch de Distribuição</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.62);line-height:1.45">Treinado com evidências perfeitas, o gerador enfrenta evidências ruidosas em produção. A distribuição de treino e deploy são completamente diferentes.</div>
-      </div>
+    <hr class="div mb-6" />
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-purple)">4+</div><div class="stat-lbl">artigos científicos</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-purple)">Graph</div><div class="stat-lbl">estruturas relacionais</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-purple)">HetG</div><div class="stat-lbl">grafos heterogêneos</div></div>
     </div>
-    <div style="background:rgba(255,213,77,.07);border:1px solid rgba(255,213,77,.18);border-radius:.85rem;padding:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
-      <strong style="color:var(--mira-warning)">Evidência empírica (Fig. 2 do paper):</strong> em TriviaQA, PopQA, HotpotQA e 2Wiki, aumentar Recall@5 para Recall@10 não melhora a QA Accuracy — o gap persiste. O problema não é encontrar os docs, é selecionar os certos.
-    </div>
+    <a href="../index.html" style="display:inline-flex;align-items:center;gap:0.5rem;color:var(--mira-primary);font-weight:600;font-size:0.9rem;text-decoration:none;border:1px solid rgba(255,144,77,0.3);border-radius:0.75rem;padding:0.6rem 1.2rem;background:rgba(255,144,77,0.08)">← Voltar ao Portal</a>
   </div>
-</section>
-
-<!-- S16 · D3: GOLDILOCKS ZONE -->
-<section class="section" id="slide-16">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 3 · BAR-RAG — A Zona de Goldilocks</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">A Zona de Goldilocks: ĝ(S) ≈ 0.5</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Evidências no ponto certo de dificuldade — desafiador o suficiente para exigir raciocínio, solucionável o suficiente para dar sinal de reward</p>
-    <div class="anim-box" id="anim-goldilocks" style="height:270px"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;margin-top:1rem">
-      <div style="background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.18);border-radius:.75rem;padding:.8rem;text-align:center">
-        <div style="font-size:.78rem;font-weight:700;color:var(--mira-error)">ĝ(S) ≈ 1</div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:.3rem">Trivial — o LLM acerta sempre. Shortcut learning. Sem sinal de melhora.</div>
-      </div>
-      <div style="background:rgba(255,213,77,.1);border:1px solid rgba(255,213,77,.3);border-radius:.75rem;padding:.8rem;text-align:center">
-        <div style="font-size:.78rem;font-weight:700;color:var(--mira-warning)">ĝ(S) ≈ 0.5</div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:.3rem">Goldilocks — desafiador mas solucionável. Maximiza aprendizado real.</div>
-      </div>
-      <div style="background:rgba(100,100,100,.07);border:1px solid rgba(100,100,100,.18);border-radius:.75rem;padding:.8rem;text-align:center">
-        <div style="font-size:.78rem;font-weight:700;color:rgba(255,255,255,.4)">ĝ(S) ≈ 0</div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:.3rem">Impossível — o LLM nunca acerta. Sem sinal de reward. Sem aprendizado.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- S17 · BAR-RAG PIPELINE D3 -->
-<section class="section" id="slide-17">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 3 · BAR-RAG — Pipeline de Treinamento</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">BAR-RAG: Dois Estágios de Treinamento com RL</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Stage 1 treina o seletor para mirar a Goldilocks Zone. Stage 2 adapta o gerador à distribuição real de evidências</p>
-    <div class="anim-box" id="anim-barrag" style="height:280px"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-top:1rem">
-      <div style="background:rgba(255,213,77,.07);border:1px solid rgba(255,213,77,.18);border-radius:.85rem;padding:.9rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-warning);text-transform:uppercase;margin-bottom:.4rem">Stage 1 — Seletor RL (GRPO)</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">4 rewards: Boundary R<sub>bdy</sub> (mira c=0.5) + Relevance R<sub>rel</sub> + Format R<sub>fmt</sub> + Count Penalty P<sub>cnt</sub>. Explora combinações de evidências, não documentos individuais.</div>
-      </div>
-      <div style="background:rgba(77,255,180,.07);border:1px solid rgba(77,255,180,.18);border-radius:.85rem;padding:.9rem">
-        <div style="font-size:.72rem;font-weight:700;color:var(--mira-success);text-transform:uppercase;margin-bottom:.4rem">Stage 2 — Gerador Fine-tuned</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.45">O gerador é fine-tuned sob a distribuição de evidências induzida pelo seletor — treinado a raciocinar com evidências realistas, não perfeitas. Fecha o train-test gap.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- S18 · RESULTADOS BAR-RAG D3 -->
-<section class="section" id="slide-18">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 3 · BAR-RAG — Resultados</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">+10.3% Médio: BAR-RAG Bate os Baselines</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Ganho consistente em 4 benchmarks — sem depender de recall mais alto, apenas selecionando melhor</p>
-    <div class="anim-box" id="anim-barresults" style="height:260px"></div>
-    <div style="background:rgba(255,213,77,.07);border:1px solid rgba(255,213,77,.18);border-radius:.85rem;padding:1rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
-      <strong style="color:var(--mira-warning)">Insight chave:</strong> BAR-RAG melhora QA Accuracy mesmo quando o Recall não muda — prova que o problema estava na seleção de evidências, não na recuperação. A dificuldade certa das evidências é o que importa.
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════
-     BLOCO 4 · SÍNTESE
-═══════════════════════════════════════════════════════ -->
-
-<!-- S19 · D3: MAPA RELACIONAL DOS 3 PAPERS -->
-<section class="section" id="slide-19">
-  <div class="card" data-aos="fade-up">
-    <div class="block-header"><span style="color:var(--mira-primary)">■</span> Bloco 4 · Síntese</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Como os 3 Papers Se Encaixam</h2>
-    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Cada paper resolve uma dimensão diferente do mesmo problema: montar o contexto perfeito</p>
-    <div class="anim-box" id="anim-relmap" style="height:290px"></div>
-  </div>
-</section>
-
-<!-- S20 · 4 PRINCÍPIOS DA MONTAGEM PERFEITA -->
-<section class="section" id="slide-20">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 4 · Síntese — O Que Aprendemos</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.5rem">4 Princípios da Montagem Perfeita de Contexto</h2>
-    <div class="conv-grid" style="grid-template-columns:1fr 1fr">
-      <div class="conv-item">
-        <div class="conv-icon-wrap" style="background:rgba(255,144,77,.12)"><i data-lucide="sliders" style="width:18px;height:18px;color:var(--mira-primary)"></i></div>
-        <div class="conv-title">k Adaptativo, Não Fixo</div>
-        <div class="conv-desc">A quantidade de docs deve ser calibrada pela complexidade da query — 1 doc para perguntas simples, N para multi-hop.</div>
-      </div>
-      <div class="conv-item">
-        <div class="conv-icon-wrap" style="background:rgba(77,180,255,.12)"><i data-lucide="rotate-cw" style="width:18px;height:18px;color:var(--mira-blue)"></i></div>
-        <div class="conv-title">Ordem Não Deve Importar</div>
-        <div class="conv-desc">O sistema deve ser invariante à ordem dos docs recuperados — a resposta não pode mudar se o reranker trocar posições.</div>
-      </div>
-      <div class="conv-item">
-        <div class="conv-icon-wrap" style="background:rgba(255,213,77,.12)"><i data-lucide="target" style="width:18px;height:18px;color:var(--mira-warning)"></i></div>
-        <div class="conv-title">Evidência Desafiadora, Não Trivial</div>
-        <div class="conv-desc">Selecionar a evidência certa significa encontrar o ponto de dificuldade ótimo — nem fácil demais, nem impossível.</div>
-      </div>
-      <div class="conv-item">
-        <div class="conv-icon-wrap" style="background:rgba(77,255,180,.12)"><i data-lucide="shield-check" style="width:18px;height:18px;color:var(--mira-success)"></i></div>
-        <div class="conv-title">Treinar na Distribuição Real</div>
-        <div class="conv-desc">O gerador deve ser exposto a evidências ruidosas e incompletas durante o treino — não só a evidências perfeitas de curadoria.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- S21 · GUIA DE DECISÃO -->
-<section class="section" id="slide-21">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 4 · Síntese — Quando Aplicar Cada Técnica</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.5rem">Qual Técnica Usar no Seu RAG?</h2>
-    <p style="color:rgba(255,255,255,.55);font-size:.85rem;margin-bottom:1.3rem">Os 3 problemas podem coexistir — cada técnica resolve um eixo diferente e são complementares</p>
-    <div style="display:flex;flex-direction:column;gap:.7rem">
-      <div style="display:flex;gap:1rem;align-items:center;background:rgba(255,144,77,.05);border:1px solid rgba(255,144,77,.15);border-radius:.85rem;padding:1rem">
-        <div style="width:42px;height:42px;background:rgba(255,144,77,.12);border-radius:.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="sliders" style="width:20px;height:20px;color:var(--mira-primary)"></i></div>
-        <div style="flex:1"><div style="font-size:.9rem;font-weight:700;color:var(--mira-primary)">Dynamic Context Selection</div><div style="font-size:.78rem;color:rgba(255,255,255,.55);margin-top:.2rem">Quando: queries de complexidade variável (mistura de 1-hop e multi-hop). Sintoma: performance boa em simples, ruim em multi-hop.</div></div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.3);text-align:right;flex-shrink:0">Paper 01<br>IRIT 2025</div>
-      </div>
-      <div style="display:flex;gap:1rem;align-items:center;background:rgba(77,180,255,.05);border:1px solid rgba(77,180,255,.15);border-radius:.85rem;padding:1rem">
-        <div style="width:42px;height:42px;background:rgba(77,180,255,.12);border-radius:.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="rotate-cw" style="width:20px;height:20px;color:var(--mira-blue)"></i></div>
-        <div style="flex:1"><div style="font-size:.9rem;font-weight:700;color:var(--mira-blue)">RoToR / Selective Routing</div><div style="font-size:.78rem;color:rgba(255,255,255,.55);margin-top:.2rem">Quando: reranking, LLM-as-a-judge, múltipla escolha. Sintoma: performance muda ao trocar a ordem dos docs recuperados.</div></div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.3);text-align:right;flex-shrink:0">Paper 02<br>Seoul NatU 2025</div>
-      </div>
-      <div style="display:flex;gap:1rem;align-items:center;background:rgba(255,213,77,.05);border:1px solid rgba(255,213,77,.15);border-radius:.85rem;padding:1rem">
-        <div style="width:42px;height:42px;background:rgba(255,213,77,.12);border-radius:.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="target" style="width:20px;height:20px;color:var(--mira-warning)"></i></div>
-        <div style="flex:1"><div style="font-size:.9rem;font-weight:700;color:var(--mira-warning)">BAR-RAG</div><div style="font-size:.78rem;color:rgba(255,255,255,.55);margin-top:.2rem">Quando: alta recall mas baixa QA accuracy. Sintoma: o reranker encontra os docs certos mas o LLM ainda erra as perguntas que exigem raciocínio.</div></div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.3);text-align:right;flex-shrink:0">Paper 03<br>UIUC 2026</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- S22 · OS 3 ARTIGOS -->
-<section class="section" id="slide-22">
-  <div class="card" data-aos="fade-up">
-    <div class="chapter-strip">Bloco 4 · Os 3 Artigos e Suas Contribuições</div>
-    <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.5rem">3 Artigos, 3 Dimensões da Montagem</h2>
-    <p style="color:rgba(255,255,255,.55);font-size:.88rem;margin-bottom:1.3rem">Cada paper ataca uma parte diferente do mesmo problema de engenharia de contexto</p>
-    <div style="display:flex;flex-direction:column;gap:.75rem">
-      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:.85rem;padding:1.1rem">
-        <div style="width:10px;height:10px;border-radius:50%;background:var(--mira-primary);margin-top:5px;flex-shrink:0"></div>
-        <div><div style="font-size:.9rem;font-weight:700;margin-bottom:.22rem">01 · Dynamic Context Selection for RAG</div><div style="font-size:.8rem;color:rgba(255,255,255,.55)">Iratni, Boughanem, Dkaki — IRIT Toulouse, Dez 2025. Classificador que prediz k ótimo por query. Analisa distractors e positional bias em MuSiQue-Ans (22k queries).</div></div>
-      </div>
-      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:.85rem;padding:1.1rem">
-        <div style="width:10px;height:10px;border-radius:50%;background:var(--mira-blue);margin-top:5px;flex-shrink:0"></div>
-        <div><div style="font-size:.9rem;font-weight:700;margin-bottom:.22rem">02 · RoToR: Towards More Reliable Responses for Order-Invariant Inputs</div><div style="font-size:.8rem;color:rgba(255,255,255,.55)">Yoon, Ahn, Lee, Jung, Jang, Hwang — Seoul NatU + Channel Corp., Jun 2025. Zero-shot order-invariance via circular positional assignment. Selective Routing para inputs mistos.</div></div>
-      </div>
-      <div style="display:flex;gap:1rem;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:.85rem;padding:1.1rem">
-        <div style="width:10px;height:10px;border-radius:50%;background:var(--mira-warning);margin-top:5px;flex-shrink:0"></div>
-        <div><div style="font-size:.9rem;font-weight:700;margin-bottom:.22rem">03 · Rethinking the Reranker: Boundary-Aware Evidence Selection (BAR-RAG)</div><div style="font-size:.8rem;color:rgba(255,255,255,.55)">Sun et al. — UIUC + HKUST + WashU + Texas A&amp;M, Fev 2026. Reranker como seletor de Goldilocks Zone. RL com GRPO. +10.3% sobre baselines em 4 benchmarks.</div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer class="deck-footer" id="slide-23">
-  <div data-aos="fade-up">
-    <div style="width:60px;height:60px;background:rgba(255,144,77,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem"><i data-lucide="layers" style="width:30px;height:30px;color:var(--mira-primary)"></i></div>
-    <h2 class="footer-title">Módulo 06 Completo</h2>
-    <p class="footer-sub">Do garçom que serve a dose certa, ao baralho que não confunde o cérebro, à sopa da Cachinhos — montar o contexto perfeito é uma ciência com três dimensões: quantidade, ordem e qualidade das evidências.</p>
-    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2rem">
-      <span class="tag" style="color:var(--mira-primary);border-color:rgba(255,144,77,.25)">Dynamic k · IRIT 2025</span>
-      <span class="tag" style="color:var(--mira-blue);border-color:rgba(77,180,255,.25)">RoToR · Seoul NatU 2025</span>
-      <span class="tag" style="color:var(--mira-warning);border-color:rgba(255,213,77,.25)">BAR-RAG · UIUC 2026</span>
-      <span class="tag" style="color:var(--mira-success);border-color:rgba(77,255,180,.25)">Goldilocks Zone</span>
-      <span class="tag" style="color:var(--mira-error);border-color:rgba(255,100,100,.25)">+10.3% QA Accuracy</span>
-    </div>
-  </div>
-</footer>
-
-<button id="next-card" onclick="nextSlide()"><i data-lucide="chevron-down" style="width:22px;height:22px"></i></button>
+</div>
 
 <script>
 AOS.init({duration:700,once:true,offset:55});
-lucide.createIcons();
+(function(){
+  var bar=document.getElementById('progress-bar'),btn=document.getElementById('back-btn');
+  window.addEventListener('scroll',function(){
+    bar.style.width=Math.min(100,(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100)+'%';
+    btn.classList.toggle('visible',window.scrollY>300);
+  });
+})();
 
-window.addEventListener('scroll',function(){
-  var pct=window.scrollY/(document.body.scrollHeight-window.innerHeight);
-  document.getElementById('progress-bar').style.width=(pct*100)+'%';
-  var btn=document.getElementById('next-card');
-  if(window.scrollY>280) btn.classList.add('visible'); else btn.classList.remove('visible');
-});
-var slides=Array.from(document.querySelectorAll('[id^="slide-"]'));
-function nextSlide(){
-  var cur=slides.findIndex(function(s){return s.getBoundingClientRect().top>-80;});
-  if(cur<slides.length-1) slides[cur+1].scrollIntoView({behavior:'smooth'});
-}
-document.addEventListener('keydown',function(e){
-  if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='PageDown') nextSlide();
-});
-
-// ═══════ ANIM 1 · LOST IN THE MIDDLE (S2) ═══════
+/* ═══ ANIM 1 — Lost in the Middle (S3) ═══ */
 (function(){
   window.__litmGen=(window.__litmGen||0)+1; var myG=window.__litmGen;
-  var el=document.getElementById('anim-litm'); if(!el)return;
-  var W=el.clientWidth||760,H=260;
-  var svg=d3.select('#anim-litm').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
-  var docs=[
-    {label:'Doc 1',pos:'Início',em:0.61,color:'#4DFFB4',rel:true},
-    {label:'Doc 2',pos:'Posição 2',em:0.45,color:'rgba(255,255,255,0.25)',rel:false},
-    {label:'Doc REL',pos:'Meio',em:0.28,color:'#FF6464',rel:true,highlight:true},
-    {label:'Doc 4',pos:'Posição 4',em:0.45,color:'rgba(255,255,255,0.25)',rel:false},
-    {label:'Doc 5',pos:'Fim',em:0.59,color:'#4DFFB4',rel:true}
-  ];
-  var bw=Math.min(W/6,90), gap=(W-bw*5)/6, barMaxH=H*0.55, baseY=H*0.85;
-  // X-axis label
-  svg.append('text').attr('x',W/2).attr('y',H*0.97).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.25)').attr('font-size',9).text('Posição do Documento Relevante no Contexto');
-  // Bars
-  docs.forEach(function(d,i){
-    var x=gap+(bw+gap)*i;
-    var bh=d.em*barMaxH;
-    var g=svg.append('g').attr('opacity',0);
-    // Bar
-    g.append('rect').attr('x',x).attr('y',baseY-bh).attr('width',bw).attr('height',bh).attr('rx',5).attr('fill',d.highlight?'rgba(255,100,100,0.3)':'rgba(255,255,255,0.07)').attr('stroke',d.color).attr('stroke-width',d.highlight?2:1.2).attr('stroke-opacity',d.highlight?1:0.4);
-    // EM value
-    g.append('text').attr('x',x+bw/2).attr('y',baseY-bh-6).attr('text-anchor','middle').attr('fill',d.color).attr('font-size',10).attr('font-weight',700).text(d.em.toFixed(2));
-    // Label
-    g.append('text').attr('x',x+bw/2).attr('y',baseY+14).attr('text-anchor','middle').attr('fill',d.highlight?'#FF6464':'rgba(255,255,255,0.45)').attr('font-size',d.highlight?10:8.5).attr('font-weight',d.highlight?700:400).text(d.label);
-    g.append('text').attr('x',x+bw/2).attr('y',baseY+26).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.25)').attr('font-size',7.5).text(d.pos);
-    g.transition().duration(400).delay(i*120).attr('opacity',1);
-    if(d.highlight){
-      // Annotation
-      svg.append('text').attr('x',x+bw/2).attr('y',H*0.08).attr('text-anchor','middle').attr('fill','#FF6464').attr('font-size',9).attr('font-weight',700).attr('opacity',0).text('⚠ Ignorado!').transition().duration(300).delay(700).attr('opacity',1);
-    }
-  });
-  // Perpetual: pulse the middle bar
-  function pulse(){
-    if(window.__litmGen!==myG) return;
-    var midX=gap+(bw+gap)*2;
-    var glow=svg.append('rect').attr('x',midX-3).attr('y',H*0.3).attr('width',bw+6).attr('height',H*0.55).attr('rx',7).attr('fill','none').attr('stroke','#FF6464').attr('stroke-width',2).attr('opacity',0.8);
-    glow.transition().duration(800).attr('opacity',0).attr('width',bw+20).attr('x',midX-10).remove();
-    setTimeout(pulse,2000);
-  }
+  var el=document.getElementById('anim-litm'); if(!el) return; el.innerHTML='';
+  var W=860,H=260;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var docs=[{label:'Doc 1',pos:'Início',em:0.61,color:'#4DFFB4',rel:true},{label:'Doc 2',pos:'Posição 2',em:0.45,color:'rgba(255,255,255,.3)',rel:false},{label:'Doc REL',pos:'Meio',em:0.28,color:'#FF6464',rel:true,highlight:true},{label:'Doc 4',pos:'Posição 4',em:0.45,color:'rgba(255,255,255,.3)',rel:false},{label:'Doc 5',pos:'Fim',em:0.59,color:'#4DFFB4',rel:true}];
+  var bw=Math.min(W/6,90),gap=(W-bw*5)/6,barMaxH=H*0.55,baseY=H*0.85;
+  svg.append('text').attr('x',W/2).attr('y',H*0.97).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',9).text('Posição do Documento Relevante no Contexto · EM Score');
+  docs.forEach(function(d,i){var x=gap+(bw+gap)*i; var bh=d.em*barMaxH; var g=svg.append('g').attr('opacity',0); g.append('rect').attr('x',x).attr('y',baseY-bh).attr('width',bw).attr('height',bh).attr('rx',5).attr('fill',d.highlight?'rgba(255,100,100,.3)':'rgba(255,255,255,.07)').attr('stroke',d.color).attr('stroke-width',d.highlight?2:1.2).attr('stroke-opacity',d.highlight?1:0.4); g.append('text').attr('x',x+bw/2).attr('y',baseY-bh-6).attr('text-anchor','middle').attr('fill',d.color).attr('font-size',10).attr('font-weight',700).text(d.em.toFixed(2)); g.append('text').attr('x',x+bw/2).attr('y',baseY+14).attr('text-anchor','middle').attr('fill',d.highlight?'#FF6464':'rgba(255,255,255,.45)').attr('font-size',d.highlight?10:8.5).attr('font-weight',d.highlight?700:400).text(d.label); g.append('text').attr('x',x+bw/2).attr('y',baseY+26).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.25)').attr('font-size',7.5).text(d.pos); g.transition().duration(400).delay(i*120).attr('opacity',1); if(d.highlight){svg.append('text').attr('x',x+bw/2).attr('y',H*0.08).attr('text-anchor','middle').attr('fill','#FF6464').attr('font-size',9).attr('font-weight',700).attr('opacity',0).text('⚠ Ignorado pelo LLM!').transition().duration(300).delay(700).attr('opacity',1);}});
+  function pulse(){if(window.__litmGen!==myG) return; var midX=gap+(bw+gap)*2; var glow=svg.append('rect').attr('x',midX-3).attr('y',H*0.3).attr('width',bw+6).attr('height',H*0.55).attr('rx',7).attr('fill','none').attr('stroke','#FF6464').attr('stroke-width',2).attr('opacity',0.8); glow.transition().duration(800).attr('opacity',0).attr('width',bw+20).attr('x',midX-10).remove(); setTimeout(pulse,2000);}
   setTimeout(pulse,1200);
 })();
 
-// ═══════ ANIM 2 · FIXED-K VS DYNAMIC-K (S5) ═══════
+/* ═══ ANIM 2 — D3 CONCEITUAL ÚNICO: Efeito Cascata (S4) ═══ */
+(function(){
+  window.__cascadeGen=(window.__cascadeGen||0)+1; var myG=window.__cascadeGen;
+  var el=document.getElementById('anim-cascade'); if(!el) return; el.innerHTML='';
+  var W=860,H=230;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var stages=[{label:'k Excessivo',sub:'top-k fixo demais',col:'#FF904D',cut:'Dynamic k'},{label:'Distractors',sub:'ruído semântico',col:'#FFD54D',cut:''},{ label:'Viés\nPosicional',sub:'doc rel. vai ao meio',col:'#FF6464',cut:'RoToR'},{label:'Shortcut\nLearning',sub:'evidências triviais',col:'#B464FF',cut:'BAR-RAG'},{label:'Resposta\nErrada',sub:'falha silenciosa',col:'rgba(255,100,100,.5)',cut:''}];
+  var bw=88,bh=52,spacing=(W-bw*stages.length)/(stages.length+1),cy=H*0.42;
+  var defs=svg.append('defs'); defs.append('marker').attr('id','arrC').attr('markerWidth',8).attr('markerHeight',8).attr('refX',6).attr('refY',3).attr('orient','auto').append('path').attr('d','M0,0 L0,6 L8,3 z').attr('fill','rgba(255,100,100,.25)');
+  stages.forEach(function(s,i){
+    var x=spacing+i*(bw+spacing);
+    if(i<stages.length-1) svg.append('line').attr('x1',x+bw).attr('y1',cy).attr('x2',x+bw+spacing).attr('y2',cy).attr('stroke','rgba(255,100,100,.2)').attr('stroke-width',1.5).attr('marker-end','url(#arrC)');
+    var bg=svg.append('rect').attr('x',x).attr('y',cy-bh/2).attr('width',bw).attr('height',bh).attr('rx',7).attr('fill','rgba(255,255,255,.03)').attr('stroke',s.col).attr('stroke-width',1).attr('stroke-opacity',0.5).attr('opacity',0);
+    bg.transition().delay(200+i*200).duration(350).attr('opacity',1);
+    s.label.split('\n').forEach(function(ln,li,a){svg.append('text').attr('x',x+bw/2).attr('y',cy-5+(li-a.length/2+0.5)*14).attr('text-anchor','middle').style('fill','rgba(255,255,255,.85)').style('font-size','9.5px').style('font-weight','700').attr('opacity',0).transition().delay(300+i*200).duration(300).attr('opacity',1).text(ln);});
+    svg.append('text').attr('x',x+bw/2).attr('y',cy+bh/2-7).attr('text-anchor','middle').style('fill','rgba(255,255,255,.3)').style('font-size','7.5px').attr('opacity',0).transition().delay(350+i*200).duration(300).attr('opacity',1).text(s.sub);
+    if(s.cut){
+      var cutY=cy-bh/2-22;
+      svg.append('line').attr('x1',x+bw/2-8).attr('y1',cy-bh/2-5).attr('x2',x+bw/2+8).attr('y2',cy-bh/2-5).attr('stroke','#4DFFB4').attr('stroke-width',2.5).attr('opacity',0).transition().delay(900+i*200).duration(300).attr('opacity',1);
+      svg.append('text').attr('x',x+bw/2).attr('y',cutY).attr('text-anchor','middle').style('fill','#4DFFB4').style('font-size','8px').style('font-weight','700').attr('opacity',0).transition().delay(950+i*200).duration(300).attr('opacity',1).text(s.cut);
+    }
+  });
+  // Animated dot cascading
+  function cascade(){if(window.__cascadeGen!==myG) return; var dot=svg.append('circle').attr('r',5).attr('fill','#FF6464').attr('cx',spacing).attr('cy',cy).attr('opacity',0.9); function step(i){if(i>=stages.length){dot.remove(); setTimeout(cascade,800); return;} var x=spacing+i*(bw+spacing)+bw; dot.transition().duration(350).attr('cx',x).attr('cy',cy).on('end',function(){setTimeout(function(){step(i+1);},120);});} step(0);}
+  setTimeout(cascade,1500);
+})();
+
+/* ═══ ANIM 3 — Fixed-k vs. Dynamic-k (S5) ═══ */
 (function(){
   window.__fvdGen=(window.__fvdGen||0)+1; var myG=window.__fvdGen;
-  var el=document.getElementById('anim-fixvsdyn'); if(!el)return;
-  var W=el.clientWidth||760,H=270;
-  var svg=d3.select('#anim-fixvsdyn').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
+  var el=document.getElementById('anim-fixvsdyn'); if(!el) return; el.innerHTML='';
+  var W=400,H=240;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var cx=W/2;
-  // Title labels
-  svg.append('text').attr('x',cx*0.5).attr('y',20).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size',10).attr('font-weight',700).attr('letter-spacing','0.08em').text('FIXED k=5');
-  svg.append('text').attr('x',cx+cx*0.5).attr('y',20).attr('text-anchor','middle').attr('fill','rgba(77,255,180,0.7)').attr('font-size',10).attr('font-weight',700).attr('letter-spacing','0.08em').text('DYNAMIC k*=2');
-  // Divider
-  svg.append('line').attr('x1',cx).attr('y1',30).attr('x2',cx).attr('y2',H-20).attr('stroke','rgba(255,255,255,0.08)').attr('stroke-dasharray','4,4');
-  var bw=52,bh=38,rows=5,startY=38,gapY=6;
-  var leftDocs=[
-    {label:'Doc Rel 1',color:'#4DFFB4',relevant:true},
-    {label:'Doc Rel 2',color:'#4DFFB4',relevant:true},
-    {label:'Distractor A',color:'#FF6464',relevant:false},
-    {label:'Distractor B',color:'#FF6464',relevant:false},
-    {label:'Distractor C',color:'#FF6464',relevant:false}
-  ];
-  var rightDocs=[
-    {label:'Doc Rel 1',color:'#4DFFB4',relevant:true},
-    {label:'Doc Rel 2',color:'#4DFFB4',relevant:true}
-  ];
-  function drawDocs(docs,xBase,delay){
-    docs.forEach(function(d,i){
-      var x=xBase-bw/2, y=startY+i*(bh+gapY);
-      var g=svg.append('g').attr('opacity',0);
-      g.append('rect').attr('x',x).attr('y',y).attr('width',bw).attr('height',bh).attr('rx',6).attr('fill',d.relevant?'rgba(77,255,180,0.08)':'rgba(255,100,100,0.1)').attr('stroke',d.relevant?'rgba(77,255,180,0.35)':'rgba(255,100,100,0.45)').attr('stroke-width',1.3);
-      g.append('text').attr('x',xBase).attr('y',y+bh/2+4).attr('text-anchor','middle').attr('fill',d.color).attr('font-size',9).attr('font-weight',600).text(d.label);
-      g.transition().duration(300).delay(delay+i*100).attr('opacity',1);
-    });
-  }
-  drawDocs(leftDocs,cx*0.5,200);
-  drawDocs(rightDocs,cx+cx*0.5,400);
-  // EM score comparison
-  svg.append('text').attr('x',cx*0.5).attr('y',H-8).attr('text-anchor','middle').attr('fill','rgba(255,100,100,0.6)').attr('font-size',9).text('EM cai com distractors');
-  svg.append('text').attr('x',cx+cx*0.5).attr('y',H-8).attr('text-anchor','middle').attr('fill','rgba(77,255,180,0.7)').attr('font-size',9).text('EM mantido');
-  // Perpetual: pulse red docs on left
+  svg.append('text').attr('x',cx*0.5).attr('y',18).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.4)').attr('font-size',9.5).attr('font-weight',700).text('Fixed k=5');
+  svg.append('text').attr('x',cx+cx*0.5).attr('y',18).attr('text-anchor','middle').attr('fill','rgba(77,255,180,.7)').attr('font-size',9.5).attr('font-weight',700).text('Dynamic k*=2');
+  svg.append('line').attr('x1',cx).attr('y1',28).attr('x2',cx).attr('y2',H-18).attr('stroke','rgba(255,255,255,.07)').attr('stroke-dasharray','4,4');
+  var bw=48,bh=34,startY=30,gapY=5;
+  var leftDocs=[{label:'Doc Rel 1',color:'#4DFFB4',relevant:true},{label:'Doc Rel 2',color:'#4DFFB4',relevant:true},{label:'Distractor A',color:'#FF6464',relevant:false},{label:'Distractor B',color:'#FF6464',relevant:false},{label:'Distractor C',color:'#FF6464',relevant:false}];
+  var rightDocs=[{label:'Doc Rel 1',color:'#4DFFB4',relevant:true},{label:'Doc Rel 2',color:'#4DFFB4',relevant:true}];
+  function drawDocs(docs,xBase,delay){docs.forEach(function(d,i){var x=xBase-bw/2,y=startY+i*(bh+gapY); var g=svg.append('g').attr('opacity',0); g.append('rect').attr('x',x).attr('y',y).attr('width',bw).attr('height',bh).attr('rx',5).attr('fill',d.relevant?'rgba(77,255,180,.08)':'rgba(255,100,100,.1)').attr('stroke',d.relevant?'rgba(77,255,180,.35)':'rgba(255,100,100,.45)').attr('stroke-width',1.3); g.append('text').attr('x',xBase).attr('y',y+bh/2+3).attr('text-anchor','middle').attr('fill',d.color).attr('font-size',8.5).attr('font-weight',600).text(d.label); g.transition().duration(300).delay(delay+i*100).attr('opacity',1);});}
+  drawDocs(leftDocs,cx*0.5,200); drawDocs(rightDocs,cx+cx*0.5,400);
+  svg.append('text').attr('x',cx*0.5).attr('y',H-6).attr('text-anchor','middle').attr('fill','rgba(255,100,100,.6)').attr('font-size',8.5).text('EM cai com distractors');
+  svg.append('text').attr('x',cx+cx*0.5).attr('y',H-6).attr('text-anchor','middle').attr('fill','rgba(77,255,180,.7)').attr('font-size',8.5).text('EM mantido');
   var pi=0;
-  function pulseRed(){
-    if(window.__fvdGen!==myG) return;
-    var i=pi%3, x=cx*0.5-bw/2, y=startY+(2+i)*(bh+gapY);
-    var glow=svg.append('rect').attr('x',x-3).attr('y',y-3).attr('width',bw+6).attr('height',bh+6).attr('rx',7).attr('fill','none').attr('stroke','#FF6464').attr('stroke-width',2).attr('opacity',0.9);
-    glow.transition().duration(700).attr('opacity',0).remove();
-    pi++; setTimeout(pulseRed,900);
-  }
+  function pulseRed(){if(window.__fvdGen!==myG) return; var i=pi%3,x=cx*0.5-bw/2,y=startY+(2+i)*(bh+gapY); var glow=svg.append('rect').attr('x',x-3).attr('y',y-3).attr('width',bw+6).attr('height',bh+6).attr('rx',7).attr('fill','none').attr('stroke','#FF6464').attr('stroke-width',2).attr('opacity',0.9); glow.transition().duration(700).attr('opacity',0).remove(); pi++; setTimeout(pulseRed,900);}
   setTimeout(pulseRed,1000);
 })();
 
-// ═══════ ANIM 3 · DISTRACTOR IMPACT (S6) ═══════
+/* ═══ ANIM 4 — Distractor Impact (S5) ═══ */
 (function(){
   window.__distGen=(window.__distGen||0)+1; var myG=window.__distGen;
-  var el=document.getElementById('anim-distractors'); if(!el)return;
-  var W=el.clientWidth||760,H=270;
-  var svg=d3.select('#anim-distractors').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
-  var margin={l:45,r:20,t:30,b:40};
-  var cw=W-margin.l-margin.r, ch=H-margin.t-margin.b;
-  var g=svg.append('g').attr('transform','translate('+margin.l+','+margin.t+')');
-  var series=[
-    {label:'2-hop',color:'#4DFFB4',vals:[0.62,0.48,0.35,0.28,0.20]},
-    {label:'3-hop',color:'#4DB4FF',vals:[0.55,0.42,0.32,0.24,0.18]},
-    {label:'4-hop',color:'#B464FF',vals:[0.48,0.36,0.26,0.20,0.14]}
-  ];
+  var el=document.getElementById('anim-distractors'); if(!el) return; el.innerHTML='';
+  var W=400,H=240;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var m={l:38,r:18,t:28,b:38};
+  var cw=W-m.l-m.r,ch=H-m.t-m.b;
+  var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+  var series=[{label:'2-hop',color:'#4DFFB4',vals:[0.62,0.48,0.35,0.28,0.20]},{label:'3-hop',color:'#4DB4FF',vals:[0.55,0.42,0.32,0.24,0.18]},{label:'4-hop',color:'#B464FF',vals:[0.48,0.36,0.26,0.20,0.14]}];
   var xs=[0,1,2,3,4];
   var xSc=d3.scaleLinear().domain([0,4]).range([0,cw]);
   var ySc=d3.scaleLinear().domain([0,0.7]).range([ch,0]);
-  // Axes
-  g.append('g').attr('transform','translate(0,'+ch+')').call(d3.axisBottom(xSc).ticks(5).tickFormat(function(d){return d+'d';})).selectAll('text').attr('fill','rgba(255,255,255,0.35)').attr('font-size',9);
-  g.append('g').call(d3.axisLeft(ySc).ticks(4)).selectAll('text').attr('fill','rgba(255,255,255,0.35)').attr('font-size',9);
-  g.selectAll('.domain,.tick line').attr('stroke','rgba(255,255,255,0.1)');
-  g.append('text').attr('x',cw/2).attr('y',ch+32).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size',8.5).text('Número de Distractors');
-  g.append('text').attr('x',-8).attr('y',-10).attr('fill','rgba(255,255,255,0.3)').attr('font-size',8.5).text('EM Score');
-  // Lines
+  g.append('line').attr('x1',0).attr('y1',ch).attr('x2',cw).attr('y2',ch).style('stroke','rgba(255,255,255,.08)');
+  g.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',ch).style('stroke','rgba(255,255,255,.08)');
+  [0,1,2,3,4].forEach(function(v){g.append('text').attr('x',xSc(v)).attr('y',ch+14).attr('text-anchor','middle').style('fill','rgba(255,255,255,.25)').style('font-size',8).text(v+'d');});
+  [0.2,0.4,0.6].forEach(function(v){g.append('line').attr('x1',0).attr('x2',cw).attr('y1',ySc(v)).attr('y2',ySc(v)).style('stroke','rgba(255,255,255,.04)').style('stroke-dasharray','3,4');});
+  g.append('text').attr('x',cw/2).attr('y',ch+26).attr('text-anchor','middle').style('fill','rgba(255,255,255,.2)').style('font-size',8).text('Número de Distractors');
+  svg.append('text').attr('x',m.l+cw/2).attr('y',12).attr('text-anchor','middle').style('fill','rgba(255,255,255,.2)').style('font-size',8.5).text('EM Score por # Distractors');
   var line=d3.line().x(function(d,i){return xSc(xs[i]);}).y(function(d){return ySc(d);}).curve(d3.curveMonotoneX);
-  series.forEach(function(s,si){
-    var path=g.append('path').datum(s.vals).attr('fill','none').attr('stroke',s.color).attr('stroke-width',2).attr('stroke-opacity',0.85).attr('d',line);
-    var len=path.node().getTotalLength();
-    path.attr('stroke-dasharray',len+','+len).attr('stroke-dashoffset',len).transition().duration(800).delay(si*200).attr('stroke-dashoffset',0);
-    // Label
-    var lx=xSc(4)+6, ly=ySc(s.vals[4]);
-    g.append('text').attr('x',lx).attr('y',ly+4).attr('fill',s.color).attr('font-size',8.5).attr('font-weight',700).attr('opacity',0).text(s.label).transition().duration(300).delay(800+si*200).attr('opacity',1);
-  });
-  // Perpetual: scan line moving
+  series.forEach(function(s,si){var path=g.append('path').datum(s.vals).attr('fill','none').attr('stroke',s.col||s.color).attr('stroke-width',2).attr('stroke-opacity',0.85).attr('d',line); var len=path.node().getTotalLength(); path.attr('stroke-dasharray',len+','+len).attr('stroke-dashoffset',len).transition().duration(800).delay(si*200).attr('stroke-dashoffset',0); g.append('text').attr('x',xSc(4)+5).attr('y',ySc(s.vals[4])+4).attr('fill',s.color).attr('font-size',8.5).attr('font-weight',700).attr('opacity',0).text(s.label).transition().duration(300).delay(800+si*200).attr('opacity',1);});
   var scanX=[0];
-  function scanLine(){
-    if(window.__distGen!==myG) return;
-    svg.selectAll('.scan-vl').remove();
-    g.append('line').attr('class','scan-vl').attr('x1',xSc(scanX[0])).attr('y1',0).attr('x2',xSc(scanX[0])).attr('y2',ch).attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1).attr('stroke-dasharray','3,3');
-    scanX[0]=(scanX[0]+1)%5;
-    setTimeout(scanLine,1000);
-  }
+  function scanLine(){if(window.__distGen!==myG) return; svg.selectAll('.scan-vl').remove(); g.append('line').attr('class','scan-vl').attr('x1',xSc(scanX[0])).attr('y1',0).attr('x2',xSc(scanX[0])).attr('y2',ch).attr('stroke','rgba(255,255,255,.12)').attr('stroke-width',1).attr('stroke-dasharray','3,3'); scanX[0]=(scanX[0]+1)%5; setTimeout(scanLine,1000);}
   setTimeout(scanLine,1200);
 })();
 
-// ═══════ ANIM 4 · POSITIONAL EFFECT (S7) ═══════
+/* ═══ ANIM 5 — Positional Effect (S6) ═══ */
 (function(){
   window.__posGen=(window.__posGen||0)+1; var myG=window.__posGen;
-  var el=document.getElementById('anim-position'); if(!el)return;
-  var W=el.clientWidth||760,H=260;
-  var svg=d3.select('#anim-position').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
-  var positions=['Início\n(pos 1)','Início\n+ 1d','Início\n+ 2d','Meio','Fim\n(pos k)','Fim\n+ 1d','Fim\n+ 2d'];
+  var el=document.getElementById('anim-position'); if(!el) return; el.innerHTML='';
+  var W=860,H=260;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var positions=['Início\n(pos 1)','Início\n+1d','Início\n+2d','Meio','Fim\n(pos k)','Fim\n+1d','Fim\n+2d'];
   var scores=[0.60,0.46,0.38,0.28,0.59,0.44,0.37];
   var colors=scores.map(function(s){return s>0.50?'#4DFFB4':s>0.40?'#FFD54D':'#FF6464';});
-  var margin={l:15,r:15,t:25,b:45};
-  var cw=W-margin.l-margin.r, ch=H-margin.t-margin.b;
-  var g=svg.append('g').attr('transform','translate('+margin.l+','+margin.t+')');
-  var bw=Math.min(cw/(positions.length+1),70), gapX=(cw-bw*positions.length)/(positions.length+1);
-  var maxH=ch*0.75, baseY=ch*0.82;
-  positions.forEach(function(p,i){
-    var x=gapX+(bw+gapX)*i;
-    var bh=scores[i]*maxH;
-    var grp=svg.append('g').attr('opacity',0);
-    grp.append('rect').attr('x',margin.l+x).attr('y',margin.t+baseY-bh).attr('width',bw).attr('height',bh).attr('rx',5).attr('fill','rgba(255,255,255,0.05)').attr('stroke',colors[i]).attr('stroke-width',1.5);
-    grp.append('text').attr('x',margin.l+x+bw/2).attr('y',margin.t+baseY-bh-5).attr('text-anchor','middle').attr('fill',colors[i]).attr('font-size',9.5).attr('font-weight',700).text(scores[i].toFixed(2));
-    var lines=p.split('\n');
-    lines.forEach(function(line,li){grp.append('text').attr('x',margin.l+x+bw/2).attr('y',margin.t+baseY+14+li*11).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size',7.5).text(line);});
-    grp.transition().duration(350).delay(i*120).attr('opacity',1);
-  });
-  // Perpetual: highlight moving
+  var ml=15,mr=15,mt=25,mb=45;
+  var cw=W-ml-mr,ch=H-mt-mb;
+  var bw=Math.min(cw/(positions.length+1),70),gapX=(cw-bw*positions.length)/(positions.length+1);
+  var maxH=ch*0.75,baseY=ch*0.82;
+  var g=svg.append('g').attr('transform','translate('+ml+','+mt+')');
+  svg.append('text').attr('x',W/2).attr('y',12).attr('text-anchor','middle').style('fill','rgba(255,255,255,.2)').style('font-size',9).text('EM Score por Posição do Doc Relevante no Contexto');
+  positions.forEach(function(p,i){var x=gapX+(bw+gapX)*i; var bh=scores[i]*maxH; var grp=g.append('g').attr('opacity',0); grp.append('rect').attr('x',x).attr('y',baseY-bh).attr('width',bw).attr('height',bh).attr('rx',5).attr('fill','rgba(255,255,255,.05)').attr('stroke',colors[i]).attr('stroke-width',1.5); grp.append('text').attr('x',x+bw/2).attr('y',baseY-bh-5).attr('text-anchor','middle').attr('fill',colors[i]).attr('font-size',9.5).attr('font-weight',700).text(scores[i].toFixed(2)); var lns=p.split('\n'); lns.forEach(function(line,li){grp.append('text').attr('x',x+bw/2).attr('y',baseY+14+li*11).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.4)').attr('font-size',7.5).text(line);}); grp.transition().duration(350).delay(i*120).attr('opacity',1);});
   var hi=[0];
-  function highlight(){
-    if(window.__posGen!==myG) return;
-    svg.selectAll('.phigh').remove();
-    var i=hi[0], x=margin.l+gapX+(bw+gapX)*i, bh=scores[i]*maxH;
-    svg.append('rect').attr('class','phigh').attr('x',x-3).attr('y',margin.t+baseY-bh-3).attr('width',bw+6).attr('height',bh+6).attr('rx',7).attr('fill','none').attr('stroke',colors[i]).attr('stroke-width',2.5).attr('opacity',0.9);
-    hi[0]=(hi[0]+1)%positions.length;
-    setTimeout(highlight,850);
-  }
+  function highlight(){if(window.__posGen!==myG) return; g.selectAll('.phigh').remove(); var i=hi[0],x=gapX+(bw+gapX)*i,bh=scores[i]*maxH; g.append('rect').attr('class','phigh').attr('x',x-3).attr('y',baseY-bh-3).attr('width',bw+6).attr('height',bh+6).attr('rx',7).attr('fill','none').attr('stroke',colors[i]).attr('stroke-width',2.5).attr('opacity',0.9); hi[0]=(hi[0]+1)%positions.length; setTimeout(highlight,850);}
   setTimeout(highlight,1100);
 })();
 
-// ═══════ ANIM 5 · RoToR CIRCULAR (S12) ═══════
+/* ═══ ANIM 6 — RoToR Circular (S8) ═══ */
 (function(){
   window.__rotorGen=(window.__rotorGen||0)+1; var myG=window.__rotorGen;
-  var el=document.getElementById('anim-rotor'); if(!el)return;
-  var W=el.clientWidth||760,H=280;
-  var svg=d3.select('#anim-rotor').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
-  var cx=W/2,cy=H/2,R=100;
+  var el=document.getElementById('anim-rotor'); if(!el) return; el.innerHTML='';
+  var W=860,H=280;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var cx=W*0.38,cy=H/2,R=105;
   var segs=['Doc A','Doc B','Doc C','Doc D','Doc E','Doc F'];
   var colors=['#FF904D','#4DB4FF','#4DFFB4','#FFD54D','#B464FF','#26C6DA'];
   var n=segs.length;
-  // Draw circle
-  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',R+20).attr('fill','none').attr('stroke','rgba(255,255,255,0.05)').attr('stroke-width',2);
-  // Draw segment arcs
-  segs.forEach(function(s,i){
-    var a0=(i/n)*2*Math.PI-Math.PI/2;
-    var a1=((i+1)/n)*2*Math.PI-Math.PI/2;
-    var am=(a0+a1)/2;
-    var x=cx+R*Math.cos(am), y=cy+R*Math.sin(am);
-    var g=svg.append('g').attr('opacity',0);
-    g.append('circle').attr('cx',x).attr('cy',y).attr('r',24).attr('fill','rgba(0,0,0,0.6)').attr('stroke',colors[i]).attr('stroke-width',1.8);
-    // Position ID (circular: i+1 for all, but global)
-    g.append('text').attr('x',x).attr('y',y-4).attr('text-anchor','middle').attr('fill',colors[i]).attr('font-size',9).attr('font-weight',700).text(s);
-    g.append('text').attr('x',x).attr('y',y+9).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size',7.5).text('ID:'+(i+1));
-    // Arc arrow between segs
-    var nx=cx+R*Math.cos(a1), ny=cy+R*Math.sin(a1);
-    var mx=cx+R*Math.cos(am+Math.PI/(2*n)),my=cy+R*Math.sin(am+Math.PI/(2*n));
-    g.append('line').attr('x1',x+18*Math.cos(am+0.5)).attr('y1',y+18*Math.sin(am+0.5)).attr('x2',cx+R*Math.cos(a1)-18*Math.cos(a1-0.5)).attr('y2',cy+R*Math.sin(a1)-18*Math.sin(a1-0.5)).attr('stroke','rgba(255,255,255,0.12)').attr('stroke-width',1);
-    g.transition().duration(300).delay(i*150).attr('opacity',1);
-  });
-  // Center label
-  svg.append('text').attr('x',cx).attr('y',cy-6).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size',10).attr('font-weight',700).text('Global');
-  svg.append('text').attr('x',cx).attr('y',cy+9).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.25)').attr('font-size',8).text('Ordering');
-  // Right side: labels
-  var lx=cx+R+40, ly0=H*0.2;
-  ['PCW: isola cada doc','PINE: reordena por query','RoToR: circular global'].forEach(function(t,i){
-    var col=i===2?'#4DFFB4':'rgba(255,255,255,0.35)';
-    var fw=i===2?700:400;
-    svg.append('text').attr('x',lx).attr('y',ly0+i*22).attr('fill',col).attr('font-size',9).attr('font-weight',fw).attr('opacity',0).text(t).transition().duration(300).delay(900+i*150).attr('opacity',1);
-  });
-  // Perpetual: dot around circle
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',R+20).attr('fill','none').attr('stroke','rgba(255,255,255,.04)').attr('stroke-width',2);
+  segs.forEach(function(s,i){var a0=(i/n)*2*Math.PI-Math.PI/2; var a1=((i+1)/n)*2*Math.PI-Math.PI/2; var am=(a0+a1)/2; var x=cx+R*Math.cos(am),y=cy+R*Math.sin(am); var g=svg.append('g').attr('opacity',0); g.append('circle').attr('cx',x).attr('cy',y).attr('r',24).attr('fill','rgba(0,0,0,.6)').attr('stroke',colors[i]).attr('stroke-width',1.8); g.append('text').attr('x',x).attr('y',y-4).attr('text-anchor','middle').attr('fill',colors[i]).attr('font-size',9).attr('font-weight',700).text(s); g.append('text').attr('x',x).attr('y',y+9).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',7.5).text('ID:'+(i+1)); g.transition().duration(300).delay(i*150).attr('opacity',1);});
+  svg.append('text').attr('x',cx).attr('y',cy-4).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',10).attr('font-weight',700).text('Global');
+  svg.append('text').attr('x',cx).attr('y',cy+12).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',8).text('Ordering');
+  var lx=W*0.66,ly0=H*0.22;
+  ['PCW: processa docs isolados (perde cross-attention)','PINE: reordena por query O(n²) — instável','RoToR: circular global — estável, zero custo extra'].forEach(function(t,i){svg.append('text').attr('x',lx).attr('y',ly0+i*24).attr('fill',i===2?'#4DFFB4':'rgba(255,255,255,.35)').attr('font-size',9).attr('font-weight',i===2?700:400).attr('opacity',0).text(t).transition().duration(300).delay(900+i*150).attr('opacity',1);});
+  ['LitM: +72%','KGQA: SOTA','MMLU: robusto'].forEach(function(t,i){svg.append('text').attr('x',lx).attr('y',ly0+3*24+18+i*20).attr('fill','rgba(77,180,255,.7)').attr('font-size',9.5).attr('font-weight',700).attr('opacity',0).text(t).transition().duration(300).delay(1400+i*120).attr('opacity',1);});
   var cur=0;
-  function dotAround(){
-    if(window.__rotorGen!==myG) return;
-    var a0=(cur/n)*2*Math.PI-Math.PI/2;
-    var a1=((cur+1)/n)*2*Math.PI-Math.PI/2;
-    var am=(a0+a1)/2;
-    var x=cx+R*Math.cos(am), y=cy+R*Math.sin(am);
-    var glow=svg.append('circle').attr('cx',x).attr('cy',y).attr('r',24).attr('fill','none').attr('stroke',colors[cur]).attr('stroke-width',2.5).attr('opacity',0.85);
-    glow.transition().duration(600).attr('r',36).attr('opacity',0).remove();
-    cur=(cur+1)%n;
-    setTimeout(dotAround,700);
-  }
+  function dotAround(){if(window.__rotorGen!==myG) return; var a0=(cur/n)*2*Math.PI-Math.PI/2; var a1=((cur+1)/n)*2*Math.PI-Math.PI/2; var am=(a0+a1)/2; var x=cx+R*Math.cos(am),y=cy+R*Math.sin(am); var glow=svg.append('circle').attr('cx',x).attr('cy',y).attr('r',24).attr('fill','none').attr('stroke',colors[cur]).attr('stroke-width',2.5).attr('opacity',0.85); glow.transition().duration(600).attr('r',36).attr('opacity',0).remove(); cur=(cur+1)%n; setTimeout(dotAround,700);}
   setTimeout(dotAround,1200);
 })();
 
-// ═══════ ANIM 6 · GOLDILOCKS ZONE (S16) ═══════
+/* ═══ ANIM 7 — Goldilocks Zone (S11) ═══ */
 (function(){
   window.__glGen=(window.__glGen||0)+1; var myG=window.__glGen;
-  var el=document.getElementById('anim-goldilocks'); if(!el)return;
-  var W=el.clientWidth||760,H=270;
-  var svg=d3.select('#anim-goldilocks').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
-  var margin={l:45,r:25,t:30,b:40};
-  var cw=W-margin.l-margin.r, ch=H-margin.t-margin.b;
-  var g=svg.append('g').attr('transform','translate('+margin.l+','+margin.t+')');
+  var el=document.getElementById('anim-goldilocks'); if(!el) return; el.innerHTML='';
+  var W=860,H=270;
+  var m={l:48,r:25,t:32,b:40};
+  var cw=W-m.l-m.r,ch=H-m.t-m.b;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
   var xSc=d3.scaleLinear().domain([0,1]).range([0,cw]);
   var ySc=d3.scaleLinear().domain([0,1]).range([ch,0]);
-  // Generate bell-ish curve (boundary reward shape: peaks at 0.5)
-  var pts=d3.range(0,1.01,0.02).map(function(x){
-    var y=4*x*(1-x); // peaks at x=0.5
-    return {x:x,y:y};
-  });
-  // Fill zones
-  // Too easy (x < 0.3)
-  g.append('rect').attr('x',xSc(0)).attr('y',0).attr('width',xSc(0.3)).attr('height',ch).attr('fill','rgba(100,100,100,0.06)');
-  // Goldilocks (0.35 to 0.65)
-  g.append('rect').attr('x',xSc(0.35)).attr('y',0).attr('width',xSc(0.65)-xSc(0.35)).attr('height',ch).attr('fill','rgba(255,213,77,0.07)');
-  // Too hard (x > 0.7)
-  g.append('rect').attr('x',xSc(0.7)).attr('y',0).attr('width',xSc(1)-xSc(0.7)).attr('height',ch).attr('fill','rgba(100,100,100,0.06)');
-  // Zone labels
-  g.append('text').attr('x',xSc(0.15)).attr('y',16).attr('text-anchor','middle').attr('fill','rgba(255,100,100,0.5)').attr('font-size',8.5).text('Trivial');
-  g.append('text').attr('x',xSc(0.5)).attr('y',16).attr('text-anchor','middle').attr('fill','rgba(255,213,77,0.8)').attr('font-size',9).attr('font-weight',700).text('✦ Goldilocks Zone');
-  g.append('text').attr('x',xSc(0.85)).attr('y',16).attr('text-anchor','middle').attr('fill','rgba(150,150,150,0.5)').attr('font-size',8.5).text('Impossível');
-  // Axes
-  g.append('g').attr('transform','translate(0,'+ch+')').call(d3.axisBottom(xSc).ticks(5).tickFormat(function(d){return 'ĝ='+d.toFixed(1);})).selectAll('text').attr('fill','rgba(255,255,255,0.3)').attr('font-size',8);
-  g.append('g').call(d3.axisLeft(ySc).ticks(4).tickFormat(function(d){return 'R='+d.toFixed(1);})).selectAll('text').attr('fill','rgba(255,255,255,0.3)').attr('font-size',8);
-  g.selectAll('.domain,.tick line').attr('stroke','rgba(255,255,255,0.08)');
-  // Curve
+  var pts=d3.range(0,1.01,0.02).map(function(x){return {x:x,y:4*x*(1-x)};});
+  g.append('rect').attr('x',xSc(0)).attr('y',0).attr('width',xSc(0.3)).attr('height',ch).attr('fill','rgba(100,100,100,.06)');
+  g.append('rect').attr('x',xSc(0.35)).attr('y',0).attr('width',xSc(0.65)-xSc(0.35)).attr('height',ch).attr('fill','rgba(255,213,77,.07)');
+  g.append('rect').attr('x',xSc(0.7)).attr('y',0).attr('width',xSc(1)-xSc(0.7)).attr('height',ch).attr('fill','rgba(100,100,100,.06)');
+  g.append('text').attr('x',xSc(0.15)).attr('y',14).attr('text-anchor','middle').attr('fill','rgba(255,100,100,.5)').attr('font-size',8.5).text('Trivial (ĝ≈1)');
+  g.append('text').attr('x',xSc(0.5)).attr('y',14).attr('text-anchor','middle').attr('fill','rgba(255,213,77,.8)').attr('font-size',9).attr('font-weight',700).text('✦ Goldilocks Zone (ĝ≈0.5)');
+  g.append('text').attr('x',xSc(0.85)).attr('y',14).attr('text-anchor','middle').attr('fill','rgba(150,150,150,.5)').attr('font-size',8.5).text('Impossível (ĝ≈0)');
+  g.append('line').attr('x1',0).attr('y1',ch).attr('x2',cw).attr('y2',ch).style('stroke','rgba(255,255,255,.08)');
+  g.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',ch).style('stroke','rgba(255,255,255,.08)');
+  [0,0.25,0.5,0.75,1].forEach(function(v){g.append('text').attr('x',xSc(v)).attr('y',ch+16).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.25)').attr('font-size',8).text('ĝ='+v.toFixed(2));});
+  g.append('text').attr('x',-14).attr('y',ch/2).attr('text-anchor','middle').attr('transform','translate(-14,'+ch/2+') rotate(-90)').attr('fill','rgba(255,255,255,.25)').attr('font-size',8).text('Boundary Reward R(S)');
   var line=d3.line().x(function(d){return xSc(d.x);}).y(function(d){return ySc(d.y);}).curve(d3.curveCatmullRom);
   var path=g.append('path').datum(pts).attr('fill','none').attr('stroke','#FFD54D').attr('stroke-width',2.5).attr('stroke-opacity',0.85).attr('d',line);
-  var len=path.node().getTotalLength();
-  path.attr('stroke-dasharray',len+','+len).attr('stroke-dashoffset',len).transition().duration(1200).attr('stroke-dashoffset',0);
-  // Perpetual: ball bounces in zone
-  var bx=[0.5], dir=[0.01];
-  function bounceBall(){
-    if(window.__glGen!==myG) return;
-    bx[0]+=dir[0];
-    if(bx[0]>0.63||bx[0]<0.37) dir[0]*=-1;
-    var y=4*bx[0]*(1-bx[0]);
-    svg.selectAll('.glball').attr('cx',margin.l+xSc(bx[0])).attr('cy',margin.t+ySc(y));
-    setTimeout(bounceBall,60);
-  }
-  setTimeout(function(){
-    g.append('circle').attr('class','glball').attr('cx',xSc(0.5)).attr('cy',ySc(1)).attr('r',7).attr('fill','#FFD54D').attr('opacity',0.9);
-    bounceBall();
-  },1400);
+  var len=path.node().getTotalLength(); path.attr('stroke-dasharray',len+','+len).attr('stroke-dashoffset',len).transition().duration(1200).attr('stroke-dashoffset',0);
+  var bx=[0.5],dir=[0.008];
+  function bounceBall(){if(window.__glGen!==myG) return; bx[0]+=dir[0]; if(bx[0]>0.63||bx[0]<0.37) dir[0]*=-1; var y=4*bx[0]*(1-bx[0]); svg.selectAll('.glball').attr('cx',m.l+xSc(bx[0])).attr('cy',m.t+ySc(y)); setTimeout(bounceBall,50);}
+  setTimeout(function(){g.append('circle').attr('class','glball').attr('cx',xSc(0.5)).attr('cy',ySc(1)).attr('r',7).attr('fill','#FFD54D').attr('opacity',0.9); bounceBall();},1400);
 })();
 
-// ═══════ ANIM 7 · BAR-RAG PIPELINE (S17) ═══════
+/* ═══ ANIM 8 — BAR-RAG Pipeline (S11) ═══ */
 (function(){
   window.__brpGen=(window.__brpGen||0)+1; var myG=window.__brpGen;
-  var el=document.getElementById('anim-barrag'); if(!el)return;
-  var W=el.clientWidth||760,H=280;
-  var svg=d3.select('#anim-barrag').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
-  // Two stages side by side + inference
-  var stage1X=W*0.22, stage2X=W*0.62, infX=W*0.88;
-  var stageY=H*0.35;
-  var nodes=[
-    {x:W*0.08,y:H*0.35,label:'Query',sub:'+ Docs',color:'#FF904D',r:28},
-    {x:stage1X,y:H*0.25,label:'Seletor',sub:'Stage 1 RL',color:'#FFD54D',r:32},
-    {x:stage1X,y:H*0.65,label:'Reward',sub:'Boundary+Rel',color:'#FF6464',r:28},
-    {x:stage2X,y:H*0.25,label:'Gerador',sub:'Stage 2 FT',color:'#4DFFB4',r:32},
-    {x:stage2X,y:H*0.65,label:'Evidence',sub:'Goldilocks',color:'#FFD54D',r:28},
-    {x:infX,y:H*0.35,label:'Resposta',sub:'Robusta',color:'#4DB4FF',r:28}
-  ];
-  var arrows=[
-    {s:0,t:1},{s:1,t:4},{s:4,t:2},{s:2,t:1},{s:4,t:3},{s:3,t:5}
-  ];
-  // Draw arrows first
-  arrows.forEach(function(a){
-    var src=nodes[a.s], tgt=nodes[a.t];
-    var dx=tgt.x-src.x, dy=tgt.y-src.y, d=Math.sqrt(dx*dx+dy*dy);
-    var nx=dx/d, ny=dy/d;
-    svg.append('line').attr('x1',src.x+nx*src.r).attr('y1',src.y+ny*src.r).attr('x2',tgt.x-nx*tgt.r).attr('y2',tgt.y-ny*tgt.r).attr('stroke','rgba(255,255,255,0.12)').attr('stroke-width',1.5).attr('marker-end','none');
-  });
-  // Draw nodes
-  nodes.forEach(function(n,i){
-    var g=svg.append('g').attr('opacity',0);
-    g.append('circle').attr('cx',n.x).attr('cy',n.y).attr('r',n.r).attr('fill','rgba(0,0,0,0.65)').attr('stroke',n.color).attr('stroke-width',1.8);
-    g.append('text').attr('x',n.x).attr('y',n.y-4).attr('text-anchor','middle').attr('fill',n.color).attr('font-size',9).attr('font-weight',700).text(n.label);
-    g.append('text').attr('x',n.x).attr('y',n.y+9).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.35)').attr('font-size',7.5).text(n.sub);
-    g.transition().duration(300).delay(i*130).attr('opacity',1);
-  });
-  // Stage labels
-  svg.append('text').attr('x',stage1X).attr('y',H*0.04).attr('text-anchor','middle').attr('fill','rgba(255,213,77,0.5)').attr('font-size',8.5).attr('font-weight',700).text('Stage 1: Treino do Seletor');
-  svg.append('text').attr('x',stage2X).attr('y',H*0.04).attr('text-anchor','middle').attr('fill','rgba(77,255,180,0.5)').attr('font-size',8.5).attr('font-weight',700).text('Stage 2: Fine-tune Gerador');
-  // Perpetual: dot flows
+  var el=document.getElementById('anim-barrag'); if(!el) return; el.innerHTML='';
+  var W=400,H=200;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var stage1X=W*0.32,stage2X=W*0.7,infX=W*0.92;
+  var nodes=[{x:W*0.1,y:H*0.4,label:'Query',sub:'+Docs',color:'#FF904D',r:24},{x:stage1X,y:H*0.28,label:'Seletor',sub:'Stage 1 RL',color:'#FFD54D',r:28},{x:stage1X,y:H*0.72,label:'Reward',sub:'Boundary+Rel',color:'#FF6464',r:22},{x:stage2X,y:H*0.28,label:'Gerador',sub:'Stage 2 FT',color:'#4DFFB4',r:28},{x:stage2X,y:H*0.72,label:'Evidence',sub:'Goldilocks',color:'#FFD54D',r:22},{x:infX,y:H*0.4,label:'Resp.',sub:'Robusta',color:'#4DB4FF',r:22}];
+  var arrows=[{s:0,t:1},{s:1,t:4},{s:4,t:2},{s:2,t:1},{s:4,t:3},{s:3,t:5}];
+  arrows.forEach(function(a){var src=nodes[a.s],tgt=nodes[a.t]; var dx=tgt.x-src.x,dy=tgt.y-src.y,d=Math.sqrt(dx*dx+dy*dy); var nx=dx/d,ny=dy/d; svg.append('line').attr('x1',src.x+nx*src.r).attr('y1',src.y+ny*src.r).attr('x2',tgt.x-nx*tgt.r).attr('y2',tgt.y-ny*tgt.r).attr('stroke','rgba(255,255,255,.1)').attr('stroke-width',1.3);});
+  nodes.forEach(function(n,i){var g=svg.append('g').attr('opacity',0); g.append('circle').attr('cx',n.x).attr('cy',n.y).attr('r',n.r).attr('fill','rgba(0,0,0,.65)').attr('stroke',n.color).attr('stroke-width',1.8); g.append('text').attr('x',n.x).attr('y',n.y-3).attr('text-anchor','middle').attr('fill',n.color).attr('font-size',8.5).attr('font-weight',700).text(n.label); g.append('text').attr('x',n.x).attr('y',n.y+9).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.3)').attr('font-size',7).text(n.sub); g.transition().duration(300).delay(i*130).attr('opacity',1);});
+  svg.append('text').attr('x',stage1X).attr('y',H*0.04).attr('text-anchor','middle').attr('fill','rgba(255,213,77,.5)').attr('font-size',8).attr('font-weight',700).text('Stage 1: Seletor');
+  svg.append('text').attr('x',stage2X).attr('y',H*0.04).attr('text-anchor','middle').attr('fill','rgba(77,255,180,.5)').attr('font-size',8).attr('font-weight',700).text('Stage 2: Gerador');
   var ci=0;
-  function flowDot(){
-    if(window.__brpGen!==myG) return;
-    var a=arrows[ci%arrows.length];
-    var src=nodes[a.s], tgt=nodes[a.t];
-    var dot=svg.append('circle').attr('cx',src.x).attr('cy',src.y).attr('r',5).attr('fill',src.color).attr('opacity',0.9);
-    dot.transition().duration(600).ease(d3.easeCubicInOut).attr('cx',tgt.x).attr('cy',tgt.y).on('end',function(){dot.remove();});
-    ci++; setTimeout(flowDot,650);
-  }
+  function flowDot(){if(window.__brpGen!==myG) return; var a=arrows[ci%arrows.length]; var src=nodes[a.s],tgt=nodes[a.t]; var dot=svg.append('circle').attr('cx',src.x).attr('cy',src.y).attr('r',4).attr('fill',src.color).attr('opacity',0.9); dot.transition().duration(500).ease(d3.easeCubicInOut).attr('cx',tgt.x).attr('cy',tgt.y).on('end',function(){dot.remove();}); ci++; setTimeout(flowDot,600);}
   setTimeout(flowDot,1000);
 })();
 
-// ═══════ ANIM 8 · BAR-RAG RESULTS (S18) ═══════
+/* ═══ ANIM 9 — BAR-RAG Results (S11) ═══ */
 (function(){
   window.__brGen=(window.__brGen||0)+1; var myG=window.__brGen;
-  var el=document.getElementById('anim-barresults'); if(!el)return;
-  var W=el.clientWidth||760,H=260;
-  var svg=d3.select('#anim-barresults').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
-  var margin={l:45,r:20,t:30,b:40};
-  var cw=W-margin.l-margin.r, ch=H-margin.t-margin.b;
-  var g=svg.append('g').attr('transform','translate('+margin.l+','+margin.t+')');
+  var el=document.getElementById('anim-barresults'); if(!el) return; el.innerHTML='';
+  var W=400,H=200;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var m={l:38,r:14,t:28,b:36};
+  var cw=W-m.l-m.r,ch=H-m.t-m.b;
+  var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
   var benchmarks=['TriviaQA','PopQA','HotpotQA','2Wiki'];
   var ragBase=[55,32,28,20];
   var barRag=[65,46,39,32];
-  var bw=cw/(benchmarks.length*2+benchmarks.length+1);
-  var gapGroup=bw, gapBar=bw*0.15;
-  var ySc=d3.scaleLinear().domain([0,80]).range([ch,0]);
-  g.append('g').attr('transform','translate(0,'+ch+')').call(d3.axisBottom(d3.scaleBand().domain(benchmarks).range([0,cw]).padding(0.3))).selectAll('text').attr('fill','rgba(255,255,255,0.45)').attr('font-size',9);
-  g.append('g').call(d3.axisLeft(ySc).ticks(5)).selectAll('text').attr('fill','rgba(255,255,255,0.35)').attr('font-size',8);
-  g.selectAll('.domain,.tick line').attr('stroke','rgba(255,255,255,0.08)');
-  var groupW=cw/(benchmarks.length);
-  benchmarks.forEach(function(b,i){
-    var gx=i*groupW;
-    // Base RAG bar
-    var g1=g.append('g').attr('opacity',0);
-    g1.append('rect').attr('x',gx+gapGroup*0.3).attr('y',ySc(ragBase[i])).attr('width',bw).attr('height',ch-ySc(ragBase[i])).attr('rx',3).attr('fill','rgba(255,144,77,0.25)').attr('stroke','rgba(255,144,77,0.5)').attr('stroke-width',1);
-    g1.append('text').attr('x',gx+gapGroup*0.3+bw/2).attr('y',ySc(ragBase[i])-4).attr('text-anchor','middle').attr('fill','rgba(255,144,77,0.7)').attr('font-size',8.5).text(ragBase[i]);
-    g1.transition().duration(400).delay(i*130).attr('opacity',1);
-    // BAR-RAG bar
-    var g2=g.append('g').attr('opacity',0);
-    g2.append('rect').attr('x',gx+gapGroup*0.3+bw+gapBar).attr('y',ySc(barRag[i])).attr('width',bw).attr('height',ch-ySc(barRag[i])).attr('rx',3).attr('fill','rgba(77,255,180,0.25)').attr('stroke','rgba(77,255,180,0.6)').attr('stroke-width',1.5);
-    g2.append('text').attr('x',gx+gapGroup*0.3+bw+gapBar+bw/2).attr('y',ySc(barRag[i])-4).attr('text-anchor','middle').attr('fill','#4DFFB4').attr('font-size',8.5).attr('font-weight',700).text(barRag[i]);
-    g2.transition().duration(400).delay(i*130+200).attr('opacity',1);
+  var ySc=d3.scaleLinear().domain([0,75]).range([ch,0]);
+  var groupW=cw/benchmarks.length,bw=groupW*0.35,gapBar=groupW*0.06;
+  g.append('line').attr('x1',0).attr('y1',ch).attr('x2',cw).attr('y2',ch).style('stroke','rgba(255,255,255,.08)');
+  benchmarks.forEach(function(b,i){var gx=i*groupW;
+    var g1=g.append('g').attr('opacity',0); g1.append('rect').attr('x',gx+gapBar).attr('y',ySc(ragBase[i])).attr('width',bw).attr('height',ch-ySc(ragBase[i])).attr('rx',3).attr('fill','rgba(255,144,77,.22)').attr('stroke','rgba(255,144,77,.5)').attr('stroke-width',1); g1.append('text').attr('x',gx+gapBar+bw/2).attr('y',ySc(ragBase[i])-4).attr('text-anchor','middle').attr('fill','rgba(255,144,77,.7)').attr('font-size',8).text(ragBase[i]); g1.transition().duration(400).delay(i*130).attr('opacity',1);
+    var g2=g.append('g').attr('opacity',0); g2.append('rect').attr('x',gx+gapBar+bw+4).attr('y',ySc(barRag[i])).attr('width',bw).attr('height',ch-ySc(barRag[i])).attr('rx',3).attr('fill','rgba(77,255,180,.22)').attr('stroke','rgba(77,255,180,.6)').attr('stroke-width',1.5); g2.append('text').attr('x',gx+gapBar+bw*1.5+4).attr('y',ySc(barRag[i])-4).attr('text-anchor','middle').attr('fill','#4DFFB4').attr('font-size',8).attr('font-weight',700).text(barRag[i]); g2.transition().duration(400).delay(i*130+200).attr('opacity',1);
+    g.append('text').attr('x',gx+groupW/2).attr('y',ch+16).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.4)').attr('font-size',7.5).text(b.replace('QA','').replace('2','2W'));
   });
-  // Legend
-  var leg=svg.append('g').attr('transform','translate('+(margin.l+cw-120)+','+(margin.t+5)+')');
-  leg.append('rect').attr('width',12).attr('height',12).attr('rx',2).attr('fill','rgba(255,144,77,0.4)').attr('stroke','rgba(255,144,77,0.7)').attr('stroke-width',1);
-  leg.append('text').attr('x',16).attr('y',10).attr('fill','rgba(255,255,255,0.5)').attr('font-size',8).text('RAG Baseline');
-  leg.append('rect').attr('x',0).attr('y',16).attr('width',12).attr('height',12).attr('rx',2).attr('fill','rgba(77,255,180,0.4)').attr('stroke','rgba(77,255,180,0.7)').attr('stroke-width',1);
-  leg.append('text').attr('x',16).attr('y',26).attr('fill','rgba(255,255,255,0.5)').attr('font-size',8).text('BAR-RAG');
-  // +10.3% label
-  svg.append('text').attr('x',margin.l+cw/2).attr('y',margin.t-5).attr('text-anchor','middle').attr('fill','#4DFFB4').attr('font-size',10).attr('font-weight',700).attr('opacity',0).text('+10.3% médio').transition().duration(400).delay(1200).attr('opacity',1);
-  // Perpetual: pulse winner bars
+  svg.append('text').attr('x',m.l+cw/2).attr('y',12).attr('text-anchor','middle').attr('fill','#4DFFB4').attr('font-size',9).attr('font-weight',700).attr('opacity',0).text('+10.3% médio').transition().duration(400).delay(1200).attr('opacity',1);
   var pi=0;
-  function pulseWinner(){
-    if(window.__brGen!==myG) return;
-    var i=pi%4, gx=i*groupW;
-    var glow=g.append('rect').attr('x',gx+gapGroup*0.3+bw+gapBar-2).attr('y',ySc(barRag[i])-2).attr('width',bw+4).attr('height',ch-ySc(barRag[i])+4).attr('rx',5).attr('fill','none').attr('stroke','#4DFFB4').attr('stroke-width',2).attr('opacity',0.8);
-    glow.transition().duration(700).attr('opacity',0).remove();
-    pi++; setTimeout(pulseWinner,900);
-  }
+  function pulseWinner(){if(window.__brGen!==myG) return; var i=pi%4,gx=i*groupW; var glow=g.append('rect').attr('x',gx+4+bw+4-2).attr('y',ySc(barRag[i])-2).attr('width',bw+4).attr('height',ch-ySc(barRag[i])+4).attr('rx',5).attr('fill','none').attr('stroke','#4DFFB4').attr('stroke-width',2).attr('opacity',0.8); glow.transition().duration(700).attr('opacity',0).remove(); pi++; setTimeout(pulseWinner,900);}
   setTimeout(pulseWinner,1500);
 })();
 
-// ═══════ ANIM 9 · MAPA RELACIONAL (S19) ═══════
+/* ═══ ANIM 10 — Mapa Relacional 3 Papers (S13) ═══ */
 (function(){
   window.__rmGen=(window.__rmGen||0)+1; var myG=window.__rmGen;
-  var el=document.getElementById('anim-relmap'); if(!el)return;
-  var W=el.clientWidth||760,H=290;
-  var svg=d3.select('#anim-relmap').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
-  var cx=W/2, cy=H/2;
-  var center={x:cx,y:cy,label:'Contexto',sub:'Perfeito',color:'#FF904D',r:36};
-  var satellites=[
-    {x:cx-W*0.3,y:cy-H*0.22,label:'Quanto?',sub:'Dynamic k (Paper 01)',color:'#FF904D',r:44,question:'k* por query'},
-    {x:cx+W*0.3,y:cy-H*0.22,label:'Ordem?',sub:'RoToR (Paper 02)',color:'#4DB4FF',r:44,question:'Circular IDs'},
-    {x:cx,y:cy+H*0.28,label:'Quais?',sub:'BAR-RAG (Paper 03)',color:'#FFD54D',r:44,question:'Goldilocks Zone'}
-  ];
-  // Draw lines
-  satellites.forEach(function(s){
-    svg.append('line').attr('x1',center.x).attr('y1',center.y).attr('x2',s.x).attr('y2',s.y).attr('stroke','rgba(255,255,255,0.1)').attr('stroke-width',1.5).attr('stroke-dasharray','5,4');
-  });
-  // Center node
-  var cg=svg.append('g').attr('opacity',0);
-  cg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',center.r).attr('fill','rgba(255,144,77,0.12)').attr('stroke',center.color).attr('stroke-width',2);
-  cg.append('text').attr('x',cx).attr('y',cy-5).attr('text-anchor','middle').attr('fill',center.color).attr('font-size',10).attr('font-weight',800).text(center.label);
-  cg.append('text').attr('x',cx).attr('y',cy+9).attr('text-anchor','middle').attr('fill',center.color).attr('font-size',8).text(center.sub);
-  cg.transition().duration(300).attr('opacity',1);
-  // Satellite nodes
-  satellites.forEach(function(s,i){
-    var g=svg.append('g').attr('opacity',0);
-    g.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',s.r).attr('fill','rgba(0,0,0,0.6)').attr('stroke',s.color).attr('stroke-width',1.8);
-    g.append('text').attr('x',s.x).attr('y',s.y-12).attr('text-anchor','middle').attr('fill',s.color).attr('font-size',10).attr('font-weight',800).text(s.label);
-    g.append('text').attr('x',s.x).attr('y',s.y+2).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.5)').attr('font-size',7.5).text(s.sub);
-    g.append('text').attr('x',s.x).attr('y',s.y+14).attr('text-anchor','middle').attr('fill',s.color).attr('font-size',8).attr('font-weight',700).text(s.question);
-    g.transition().duration(300).delay(200+i*180).attr('opacity',1);
-  });
-  // Perpetual: pulse satellites
+  var el=document.getElementById('anim-relmap'); if(!el) return; el.innerHTML='';
+  var W=860,H=290;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var cx=W/2,cy=H/2;
+  var center={x:cx,y:cy,label:'Contexto',sub:'Perfeito',color:'#FF904D',r:38};
+  var satellites=[{x:cx-W*0.29,y:cy-H*0.22,label:'Quanto?',sub:'Dynamic k (IRIT 2025)',color:'#FF904D',r:46,question:'k* por query'},{x:cx+W*0.29,y:cy-H*0.22,label:'Onde?',sub:'RoToR (Seoul NatU)',color:'#4DB4FF',r:46,question:'IDs circulares'},{x:cx,y:cy+H*0.27,label:'Qual?',sub:'BAR-RAG (UIUC 2026)',color:'#FFD54D',r:46,question:'ĝ(S) ≈ 0.5'}];
+  satellites.forEach(function(s){svg.append('line').attr('x1',center.x).attr('y1',center.y).attr('x2',s.x).attr('y2',s.y).attr('stroke','rgba(255,255,255,.08)').attr('stroke-width',1.5).attr('stroke-dasharray','5,4');});
+  var cg=svg.append('g').attr('opacity',0); cg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',center.r).attr('fill','rgba(255,144,77,.12)').attr('stroke',center.color).attr('stroke-width',2); cg.append('text').attr('x',cx).attr('y',cy-5).attr('text-anchor','middle').attr('fill',center.color).attr('font-size',10).attr('font-weight',800).text(center.label); cg.append('text').attr('x',cx).attr('y',cy+9).attr('text-anchor','middle').attr('fill',center.color).attr('font-size',8).text(center.sub); cg.transition().duration(300).attr('opacity',1);
+  satellites.forEach(function(s,i){var g=svg.append('g').attr('opacity',0); g.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',s.r).attr('fill','rgba(0,0,0,.6)').attr('stroke',s.color).attr('stroke-width',1.8); g.append('text').attr('x',s.x).attr('y',s.y-13).attr('text-anchor','middle').attr('fill',s.color).attr('font-size',11).attr('font-weight',800).text(s.label); g.append('text').attr('x',s.x).attr('y',s.y+2).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.5)').attr('font-size',7.5).text(s.sub); g.append('text').attr('x',s.x).attr('y',s.y+15).attr('text-anchor','middle').attr('fill',s.color).attr('font-size',8).attr('font-weight',700).text(s.question); g.transition().duration(300).delay(200+i*180).attr('opacity',1);});
   var si=0;
-  function pulseSat(){
-    if(window.__rmGen!==myG) return;
-    var s=satellites[si%3];
-    var glow=svg.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',s.r).attr('fill','none').attr('stroke',s.color).attr('stroke-width',2.5).attr('opacity',0.85);
-    glow.transition().duration(700).attr('r',s.r+18).attr('opacity',0).remove();
-    // Traveling dot to center
-    var dot=svg.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',5).attr('fill',s.color).attr('opacity',0.9);
-    dot.transition().duration(600).ease(d3.easeCubicInOut).attr('cx',cx).attr('cy',cy).on('end',function(){dot.remove();});
-    si++; setTimeout(pulseSat,1000);
-  }
+  function pulseSat(){if(window.__rmGen!==myG) return; var s=satellites[si%3]; var glow=svg.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',s.r).attr('fill','none').attr('stroke',s.color).attr('stroke-width',2.5).attr('opacity',0.85); glow.transition().duration(700).attr('r',s.r+18).attr('opacity',0).remove(); var dot=svg.append('circle').attr('cx',s.x).attr('cy',s.y).attr('r',5).attr('fill',s.color).attr('opacity',0.9); dot.transition().duration(600).ease(d3.easeCubicInOut).attr('cx',cx).attr('cy',cy).on('end',function(){dot.remove();}); si++; setTimeout(pulseSat,1000);}
   setTimeout(pulseSat,1000);
 })();
 </script>
