@@ -4,76 +4,52 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Módulo 10 · Banco Vetorial &amp; Índices — RAG Studio</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
   <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
-    :root {
-      --mira-primary: #FF904D;
-      --mira-bg: #000000;
-      --mira-success: #4DFFB4;
-      --mira-warning: #FFD54D;
-      --mira-error: #FF6464;
-      --mira-blue: #4DB4FF;
-      --mira-purple: #B464FF;
-      --mira-teal: #26C6DA;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: var(--mira-bg); color: #fff; overflow-x: hidden; }
-
-    #progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--mira-blue); z-index: 9999; width: 0%; transition: width 0.2s ease; }
-    #back-btn { position: fixed; bottom: 2rem; right: 2rem; width: 3rem; height: 3rem; border-radius: 50%; background: var(--mira-blue); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; z-index: 100; box-shadow: 0 4px 24px rgba(77,180,255,0.45); }
-    #back-btn.visible { opacity: 1; }
-
-    .slide { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 4rem 1.5rem; position: relative; }
-    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; backdrop-filter: blur(10px); max-width: 900px; width: 100%; padding: 2.75rem; }
-
-    .slide-hero { background: radial-gradient(ellipse 65% 55% at 15% 55%, rgba(77,180,255,0.12) 0%, transparent 60%), radial-gradient(ellipse 45% 40% at 85% 25%, rgba(38,198,218,0.07) 0%, transparent 50%), var(--mira-bg); }
-    .module-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(77,180,255,0.12); border: 1px solid rgba(77,180,255,0.3); color: var(--mira-blue); border-radius: 2rem; padding: 0.4rem 1rem; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
-    .hero-title { font-size: clamp(2.8rem, 7vw, 5rem); font-weight: 900; line-height: 1.0; letter-spacing: -0.03em; }
-    .hero-accent { color: var(--mira-blue); }
-
-    .sec-label { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(77,180,255,0.1); border: 1px solid rgba(77,180,255,0.25); border-radius: 2rem; padding: 0.3rem 0.9rem; font-size: 0.7rem; color: var(--mira-blue); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-
-    .metaphor-box { background: rgba(77,180,255,0.05); border: 1px solid rgba(77,180,255,0.18); border-radius: 1rem; padding: 1.5rem; }
-    .metaphor-icon { width: 3.5rem; height: 3.5rem; border-radius: 50%; background: rgba(77,180,255,0.14); border: 1px solid rgba(77,180,255,0.3); display: flex; align-items: center; justify-content: center; color: var(--mira-blue); flex-shrink: 0; }
-
-    .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 1rem; padding: 1.5rem; text-align: center; }
-    .stat-num { font-size: 2.6rem; font-weight: 900; line-height: 1; }
-    .stat-lbl { font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; font-weight: 500; }
-
-    .gi { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.2rem; }
-
-    .tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.65rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
-    .t-b { background: rgba(77,180,255,0.15); color: var(--mira-blue); border: 1px solid rgba(77,180,255,0.3); }
-    .t-p { background: rgba(180,100,255,0.15); color: var(--mira-purple); border: 1px solid rgba(180,100,255,0.3); }
-    .t-g { background: rgba(77,255,180,0.15); color: var(--mira-success); border: 1px solid rgba(77,255,180,0.3); }
-    .t-y { background: rgba(255,213,77,0.15); color: var(--mira-warning); border: 1px solid rgba(255,213,77,0.3); }
-    .t-o { background: rgba(255,144,77,0.15); color: var(--mira-primary); border: 1px solid rgba(255,144,77,0.3); }
-    .t-t { background: rgba(38,198,218,0.15); color: var(--mira-teal); border: 1px solid rgba(38,198,218,0.3); }
-    .t-r { background: rgba(255,100,100,0.15); color: var(--mira-error); border: 1px solid rgba(255,100,100,0.3); }
-
-    .d3-wrap { width: 100%; border-radius: 1rem; overflow: hidden; background: rgba(255,255,255,0.02); }
-
-    table { width: 100%; border-collapse: collapse; }
-    th { background: rgba(77,180,255,0.1); color: var(--mira-blue); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.7rem 1rem; text-align: left; }
-    td { padding: 0.65rem 1rem; font-size: 0.83rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-
-    .alert { border-radius: 0.875rem; padding: 1.1rem 1.4rem; border-left: 4px solid; }
-    .alert-b { background: rgba(77,180,255,0.07); border-color: var(--mira-blue); }
-    .alert-r { background: rgba(255,100,100,0.07); border-color: var(--mira-error); }
-    .alert-g { background: rgba(77,255,180,0.07); border-color: var(--mira-success); }
-    .alert-y { background: rgba(255,213,77,0.07); border-color: var(--mira-warning); }
-
-    .tl-num { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; }
-
-    hr.div { border: none; border-top: 1px solid rgba(255,255,255,0.07); }
-    .accent-bar { width: 2.5rem; height: 3px; background: var(--mira-blue); border-radius: 2px; }
+    :root{--mira-primary:#FF904D;--mira-bg:#000000;--mira-success:#4DFFB4;--mira-warning:#FFD54D;--mira-error:#FF6464;--mira-blue:#4DB4FF;--mira-purple:#B464FF;--mira-teal:#26C6DA;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflow-x:hidden}
+    #progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--mira-blue);z-index:9999;width:0%;transition:width 0.2s ease}
+    #back-btn{position:fixed;bottom:2rem;right:2rem;width:3rem;height:3rem;border-radius:50%;background:var(--mira-blue);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;z-index:100;box-shadow:0 4px 24px rgba(77,180,255,0.45)}
+    #back-btn.visible{opacity:1}
+    .slide{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:4rem 1.5rem;position:relative}
+    .slide-hero{background:radial-gradient(ellipse 65% 55% at 15% 55%,rgba(77,180,255,0.12) 0%,transparent 60%),var(--mira-bg)}
+    .card{background:rgba(255,255,255,0.03);border:1px solid rgba(77,180,255,0.14);border-radius:1.5rem;backdrop-filter:blur(10px);max-width:900px;width:100%;padding:2.75rem}
+    .module-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(77,180,255,0.12);border:1px solid rgba(77,180,255,0.3);color:var(--mira-blue);border-radius:2rem;padding:0.4rem 1rem;font-size:0.76rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase}
+    .hero-title{font-size:clamp(2.8rem,7vw,5rem);font-weight:900;line-height:1.0;letter-spacing:-0.03em}
+    .hero-accent{color:var(--mira-blue)}
+    .sec-label{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(77,180,255,0.1);border:1px solid rgba(77,180,255,0.25);border-radius:2rem;padding:0.3rem 0.9rem;font-size:0.7rem;color:var(--mira-blue);font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
+    .metaphor-box{background:rgba(77,180,255,0.05);border:1px solid rgba(77,180,255,0.18);border-radius:1rem;padding:1.5rem}
+    .metaphor-icon{width:3.5rem;height:3.5rem;border-radius:50%;background:rgba(77,180,255,0.14);border:1px solid rgba(77,180,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.4rem}
+    .stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:1rem;padding:1.5rem;text-align:center}
+    .stat-num{font-size:2.6rem;font-weight:900;line-height:1}
+    .stat-lbl{font-size:0.74rem;color:rgba(255,255,255,0.45);margin-top:0.4rem;font-weight:500}
+    .gi{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:1.2rem}
+    .tag{display:inline-flex;align-items:center;gap:0.3rem;padding:0.22rem 0.65rem;border-radius:1rem;font-size:0.7rem;font-weight:600}
+    .t-b{background:rgba(77,180,255,0.15);color:var(--mira-blue);border:1px solid rgba(77,180,255,0.3)}
+    .t-p{background:rgba(180,100,255,0.15);color:var(--mira-purple);border:1px solid rgba(180,100,255,0.3)}
+    .t-g{background:rgba(77,255,180,0.15);color:var(--mira-success);border:1px solid rgba(77,255,180,0.3)}
+    .t-y{background:rgba(255,213,77,0.15);color:var(--mira-warning);border:1px solid rgba(255,213,77,0.3)}
+    .t-t{background:rgba(38,198,218,0.15);color:var(--mira-teal);border:1px solid rgba(38,198,218,0.3)}
+    .t-r{background:rgba(255,100,100,0.15);color:var(--mira-error);border:1px solid rgba(255,100,100,0.3)}
+    .d3-wrap{width:100%;border-radius:1rem;overflow:hidden;background:rgba(255,255,255,0.02)}
+    table{width:100%;border-collapse:collapse}
+    th{background:rgba(77,180,255,0.1);color:var(--mira-blue);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:0.7rem 1rem;text-align:left}
+    td{padding:0.65rem 1rem;font-size:0.83rem;border-bottom:1px solid rgba(255,255,255,0.05);color:rgba(255,255,255,0.8)}
+    tr:last-child td{border-bottom:none}
+    .alert-b{background:rgba(77,180,255,0.07);border:1px solid rgba(77,180,255,0.2);border-left:4px solid var(--mira-blue);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-r{background:rgba(255,100,100,0.07);border:1px solid rgba(255,100,100,0.2);border-left:4px solid var(--mira-error);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-g{background:rgba(77,255,180,0.07);border:1px solid rgba(77,255,180,0.2);border-left:4px solid var(--mira-success);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-y{background:rgba(255,213,77,0.07);border:1px solid rgba(255,213,77,0.2);border-left:4px solid var(--mira-warning);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .accent-bar{width:2.5rem;height:3px;background:var(--mira-blue);border-radius:2px}
+    hr.div{border:none;border-top:1px solid rgba(255,255,255,0.07)}
+    .tl-num{width:2.2rem;height:2.2rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;flex-shrink:0}
+    .dec-node{background:rgba(255,255,255,0.04);border:1px solid rgba(77,180,255,0.2);border-radius:0.75rem;padding:0.9rem 1.2rem;font-size:0.83rem}
+    .dec-node.answer{background:rgba(77,180,255,0.07);border-color:rgba(77,180,255,0.3);color:var(--mira-blue);font-weight:700}
+    .dec-connector{text-align:center;color:rgba(255,255,255,0.3);font-size:0.75rem;padding:0.2rem 0}
   </style>
 </head>
 <body>
@@ -83,1143 +59,545 @@
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
 </button>
 
-<!-- ═══ SLIDE 1 · CAPA ═══ -->
+<!-- SLIDE 1 · CAPA -->
 <div class="slide slide-hero" id="slide-1">
-  <div class="card" style="border-color:rgba(77,180,255,0.18); max-width:960px;">
+  <div class="card" style="border-color:rgba(77,180,255,0.22);max-width:960px">
     <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="module-badge mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M9 9h6v6H9z"/></svg>
-        Módulo 10 · RAG Studio
-      </div>
+      <div class="module-badge mb-6">Módulo 10 · RAG Studio</div>
       <h1 class="hero-title mb-4">Banco Vetorial<br><span class="hero-accent">&amp; Índices</span></h1>
-      <p style="color:rgba(255,255,255,0.5); font-size:1rem;" class="mb-8">Benchmarks ANN · Busca com Filtros · GPU-Native · Índice Híbrido Unificado</p>
+      <p style="color:rgba(255,255,255,0.5);font-size:1rem" class="mb-8">Benchmarks ANN modernos · Busca com Filtros · GPU-Native · Índice Híbrido Unificado — 5 papers que definem o estado da arte em 2025-26</p>
     </div>
     <hr class="div mb-8" />
-    <div class="grid grid-cols-4 gap-4 mb-8" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">5</div>
-        <div class="stat-lbl">artigos científicos</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">22</div>
-        <div class="stat-lbl">slides animados</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">6</div>
-        <div class="stat-lbl">animações D3</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">21</div>
-        <div class="stat-lbl">implementações ANN</div>
-      </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">21</div><div class="stat-lbl">implementações ANN avaliadas pelo VIBE</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">2.2×</div><div class="stat-lbl">IVF-RaBitQ QPS vs. CAGRA (Recall ≥ 0,95)</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">186×</div><div class="stat-lbl">Allan-Poe throughput máximo vs. multi-path</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">90%</div><div class="stat-lbl">FANNS: pré-filtragem ideal para seletividade &lt;1%</div></div>
     </div>
-    <div class="flex flex-wrap gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <span class="tag t-b">VIBE · ANN Benchmark</span>
-      <span class="tag t-t">RAGPerf · End-to-End</span>
-      <span class="tag t-g">FANNS · Filtered ANN</span>
-      <span class="tag t-y">IVF-RaBitQ · GPU 2.2×</span>
-      <span class="tag t-p">Allan-Poe · Híbrido 186×</span>
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-b">VIBE · Helsinki+Aalto+Padova · Mai 2025</span>
+      <span class="tag t-t">RAGPerf · UIUC+IBM · Mar 2026</span>
+      <span class="tag t-g">FANNS · ETH Zurich · Abr 2026</span>
+      <span class="tag t-y">IVF-RaBitQ · NTU+NVIDIA · Fev 2026</span>
+      <span class="tag t-p">Allan-Poe · Zhejiang+Huawei · PVLDB 2026</span>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 2 · METÁFORA 1 — A Biblioteca com 1 Bilhão de Livros ═══ -->
+<!-- SLIDE 2 · METÁFORA 1 — BIBLIOTECA 1 BILHÃO -->
 <div class="slide" id="slide-2">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-5">Metáfora · O Problema do ANN</div>
+      <div class="sec-label mb-5">Metáfora · VIBE (ANN Benchmark)</div>
     </div>
     <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="flex gap-4 items-start">
-        <div class="metaphor-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        </div>
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">📚</div>
         <div>
-          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">A Biblioteca com 1 Bilhão de Livros</div>
-          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
-            Imagine uma biblioteca com 1 bilhão de livros. Alguém lhe entrega um livro e pergunta: <em>"Quais são os 10 livros mais parecidos com este?"</em> Comparar um por um levaria anos. O <strong>Approximate Nearest Neighbor (ANN)</strong> é como um sistema de catálogos inteligentes que chega perto da resposta certa em milissegundos — aceitando uma margem mínima de erro. O VIBE mede quão bons esses sistemas de catálogos realmente são com embeddings modernos.
-          </p>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-blue)">A Biblioteca com 1 Bilhão de Livros</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Alguém lhe entrega um livro e pergunta: <em>"Quais são os 10 mais parecidos com este?"</em> Comparar um por um levaria anos. O <strong style="color:var(--mira-blue)">Approximate Nearest Neighbor (ANN)</strong> é como um sistema de catálogos inteligentes que chega perto da resposta certa em milissegundos — aceitando uma margem mínima de erro. O VIBE mede quão bons esses sistemas realmente são com <strong>embeddings modernos</strong> — não com os livros de pixel (MNIST, SIFT) dos benchmarks antigos. Suas prateleiras têm Nomic, CLIP, OpenAI, DINOv2 — o que você realmente usa em produção.</p>
         </div>
       </div>
     </div>
-    <div class="grid grid-cols-3 gap-3 mb-5" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.85rem; color:var(--mira-error);">Busca Exata (kNN)</div>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Compare um por um — sempre correto, mas O(n) impossível em escala</p>
-      </div>
-      <div class="gi text-center" style="border-color:rgba(77,180,255,0.25); background:rgba(77,180,255,0.05);">
-        <div class="font-bold mb-1" style="font-size:0.85rem; color:var(--mira-blue);">ANN (Aproximado)</div>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Resposta em sub-linear time — recall ≥ 95% a milissegundos</p>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.85rem; color:var(--mira-success);">Índice Vetorial</div>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.55);">Estrutura de dados que torna ANN possível — grafo, cluster, árvore, hash</p>
-      </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="text-align:center"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.85rem;color:var(--mira-error)">Busca Exata (kNN)</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.55)">Compare um por um — sempre correto mas O(n) impossível em escala</p></div>
+      <div class="gi" style="text-align:center;border-color:rgba(77,180,255,0.25);background:rgba(77,180,255,0.05)"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.85rem;color:var(--mira-blue)">ANN (Aproximado)</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.55)">Resposta em sub-linear time — recall ≥ 95% em milissegundos</p></div>
+      <div class="gi" style="text-align:center"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.85rem;color:var(--mira-success)">VIBE: 21 implementações</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.55)">18 datasets modernos — 12 in-distribution + 6 OOD — sem MNIST</p></div>
     </div>
-    <div class="flex gap-2 flex-wrap" data-aos="fade-up" data-aos-delay="280" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <span class="tag t-b">Helsinki · Aalto · Padova · Copenhagen</span>
-      <span class="tag t-y">arXiv Mai 2025</span>
+    <div class="alert-r" data-aos="fade-up" data-aos-delay="280" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-error)">Benchmarks antigos enganam:</strong> MNIST e SIFT têm distribuições de similaridade completamente diferentes de embeddings modernos. Datasets OpenAI têm 3.072 dims (vs. 128 do SIFT). Grafos lideram in-distribution; em OOD text-to-image, surpreendentemente, métodos genéricos superam especialistas OOD.</p>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 3 · VIBE — Benchmark Moderno ═══ -->
+<!-- SLIDE 3 · VIBE — 4 Famílias [D3] -->
 <div class="slide" id="slide-3">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">VIBE · Motivação</div>
-      <h2 class="text-3xl font-black mb-1">Por que os Benchmarks <span style="color:var(--mira-error);">Antigos Falham</span></h2>
-      <div class="accent-bar mb-6"></div>
+      <div class="sec-label mb-2">VIBE · Taxonomia ANN</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Quatro Famílias de <span style="color:var(--mira-blue)">Algoritmos</span> — Cada uma com Trade-offs Distintos</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">SymphonyQG/Glass (grafos) e ScaNN/LoRaNN (clustering) dominam in-distribution. Hashing e Árvores perdem em alta dimensionalidade.</p>
     </div>
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">Datasets Desatualizados</div>
-        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">MNIST, Fashion-MNIST, SIFT — pixels e descritores de imagem. Embeddings modernos (Nomic, CLIP, OpenAI) têm características completamente diferentes.</p>
-      </div>
-      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">Ausência do Cenário OOD</div>
-        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Em produção real, corpus e queries têm distribuições diferentes (texto vs. imagem, domínio vs. multi-domínio). Benchmarks antigos ignoram o cenário Out-of-Distribution.</p>
-      </div>
-    </div>
-    <div class="alert alert-b mb-6" data-aos="fade-up" data-aos-delay="260" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <p style="font-size:0.88rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-blue);">VIBE</strong> cria datasets usando modelos de embedding modernos (Nomic, CLIP, MXBAI, DINOv2, OpenAI) a partir de fontes reais como ArXiv, ImageNet e Google Q&A — 12 datasets in-distribution + 6 OOD para refletir cargas de trabalho reais.</p>
-    </div>
-    <div class="grid grid-cols-3 gap-4" data-aos="fade-up" data-aos-delay="340" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">21</div>
-        <div class="stat-lbl">implementações avaliadas</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">18</div>
-        <div class="stat-lbl">datasets (12 in-dist + 6 OOD)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">3072</div>
-        <div class="stat-lbl">dims max (Simple Wiki OpenAI)</div>
-      </div>
+    <div class="d3-wrap mb-5" id="anim-families" style="height:200px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.8rem;color:var(--mira-blue)">Grafos</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.6)">HNSW · SymphonyQG — alto recall, build lento</p><div style="margin-top:0.5rem"><span class="tag t-b" style="font-size:0.62rem">melhor in-dist</span></div></div>
+      <div class="gi"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.8rem;color:var(--mira-success)">Clustering</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.6)">IVF-PQ · ScaNN — escalável, probe k clusters</p><div style="margin-top:0.5rem"><span class="tag t-g" style="font-size:0.62rem">GPU-friendly</span></div></div>
+      <div class="gi"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.8rem;color:var(--mira-warning)">Árvores</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.6)">Annoy · MRPT — degrada em alta dim</p><div style="margin-top:0.5rem"><span class="tag t-y" style="font-size:0.62rem">baixa mem</span></div></div>
+      <div class="gi"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.8rem;color:var(--mira-purple)">Hashing</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.6)">LSH · PUFFINN — garantias prob.</p><div style="margin-top:0.5rem"><span class="tag t-p" style="font-size:0.62rem">sub-linear</span></div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 4 · VIBE — 4 Famílias de Algoritmos ANN [D3] ═══ -->
+<!-- SLIDE 4 · RAGPerf -->
 <div class="slide" id="slide-4">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">VIBE · Taxonomia</div>
-      <h2 class="text-3xl font-black mb-1">Quatro <span style="color:var(--mira-blue);">Famílias de Algoritmos</span> ANN</h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Cada família usa uma estrutura de dados diferente para aproximar os vizinhos mais próximos</p>
+      <div class="sec-label mb-2">RAGPerf · UIUC + IBM Research · Mar 2026</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">O RAG Vai Muito Além do <span style="color:var(--mira-blue)">Índice Vetorial</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">5 vector databases · 4 operações (Query+Insert+Update+Remove) · Sistema + Qualidade em cada estágio</p>
     </div>
-    <div class="d3-wrap mb-5" id="anim-families" style="height:200px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
-    <div class="grid grid-cols-4 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi">
-        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-blue);">Grafos</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.6);">HNSW, SymphonyQG — busca por grafo de proximidade</p>
-        <div class="mt-1"><span class="tag t-b" style="font-size:0.62rem;">alto recall</span></div>
-      </div>
-      <div class="gi">
-        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-success);">Clustering</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.6);">IVF-PQ, ScaNN — partição em clusters, probe dos mais próximos</p>
-        <div class="mt-1"><span class="tag t-g" style="font-size:0.62rem;">escalável</span></div>
-      </div>
-      <div class="gi">
-        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-warning);">Árvores</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.6);">KD-tree, Annoy, MRPT — partição recursiva do espaço</p>
-        <div class="mt-1"><span class="tag t-y" style="font-size:0.62rem;">memória eficiente</span></div>
-      </div>
-      <div class="gi">
-        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-purple);">Hashing</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.6);">LSH, PUFFINN — funções de hash com garantias probabilísticas</p>
-        <div class="mt-1"><span class="tag t-p" style="font-size:0.62rem;">sub-linear</span></div>
-      </div>
+    <div class="d3-wrap mb-5" id="anim-ragperf" style="height:180px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-blue);margin-bottom:0.4rem">Métricas de Sistema</div><ul style="font-size:0.78rem;color:rgba(255,255,255,0.65);list-style:disc;padding-left:1rem;line-height:1.7"><li>Throughput (QPS) &amp; latência E2E</li><li>GPU/CPU utilização e I/O bandwidth</li><li>Memory footprint (host + device)</li></ul></div>
+      <div class="gi"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-success);margin-bottom:0.4rem">Métricas de Qualidade</div><ul style="font-size:0.78rem;color:rgba(255,255,255,0.65);list-style:disc;padding-left:1rem;line-height:1.7"><li>Context recall (chunks certos?)</li><li>Query accuracy (resposta correta?)</li><li>Factual consistency (alucinação?)</li></ul></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 5 · VIBE — Resultados ═══ -->
+<!-- SLIDE 5 · D3 CONCEITUAL ÚNICO — Trilemma do Banco Vetorial -->
 <div class="slide" id="slide-5">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">VIBE · Achados</div>
-      <h2 class="text-3xl font-black mb-1">Três <span style="color:var(--mira-blue);">Descobertas Surpreendentes</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Avaliando 21 implementações em 18 datasets modernos de embeddings</p>
+      <div class="sec-label mb-2">Animação Conceitual · O Trilemma do Banco Vetorial</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Recall × Throughput × Memória: <span style="color:var(--mira-blue)">Escolha 2 dos 3</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Cada método ANN sacrifica um vértice — o ponto animado mostra onde cada paper se posiciona no triângulo impossível</p>
     </div>
-    <div class="space-y-4 mb-6">
-      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0" style="background:rgba(77,180,255,0.2); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">①</div>
-        <div>
-          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-blue);">Grafos e Clustering dominam — com quantização diferente</div>
-          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">SymphonyQG, Glass, NGT-QG (grafos) e LoRaNN, ScaNN, IVF-PQ (clustering) são top. Cada família usa métodos de quantização distintos para compressão de vetores.</p>
-        </div>
-      </div>
-      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0" style="background:rgba(255,213,77,0.2); color:var(--mira-warning); border:1px solid rgba(255,213,77,0.3);">②</div>
-        <div>
-          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-warning);">Em OOD text-to-image, métodos genéricos superam especialistas</div>
-          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Surpreendentemente, algoritmos ANN regulares (não especializados em OOD) superam métodos OOD especializados em queries text-to-image — o campo ainda tem muito a descobrir.</p>
-        </div>
-      </div>
-      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0" style="background:rgba(77,255,180,0.2); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">③</div>
-        <div>
-          <div class="font-bold mb-1" style="font-size:0.88rem; color:var(--mira-success);">Attention computation exige métodos especializados OOD</div>
-          <p style="font-size:0.8rem; color:rgba(255,255,255,0.65);">Para approximate attention computation em LLMs, métodos ANN regulares não atingem os níveis de recall necessários — métodos OOD especializados são essenciais.</p>
-        </div>
-      </div>
+    <div class="d3-wrap mb-5" id="anim-trilemma10" style="height:240px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="font-size:0.8rem;font-weight:700;color:var(--mira-blue);margin-bottom:0.25rem">CAGRA (grafos GPU)</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.55)">Recall + Throughput → sacrifica memória (build grande + lento)</p></div>
+      <div class="gi"><div style="font-size:0.8rem;font-weight:700;color:var(--mira-success);margin-bottom:0.25rem">IVF-RaBitQ (GPU)</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.55)">Throughput + Memória → recall via ex-code sem vetores brutos (2,2× QPS)</p></div>
+      <div class="gi"><div style="font-size:0.8rem;font-weight:700;color:var(--mira-purple);margin-bottom:0.25rem">Allan-Poe (híbrido)</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.55)">Recall + Memória → throughput máximo 186× via grafo unificado GPU</p></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 6 · RAGPerf — O RAG Vai Além do Índice ═══ -->
+<!-- SLIDE 6 · METÁFORA 2 — O CATÁLOGO DUPLO (FANNS) -->
 <div class="slide" id="slide-6">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">RAGPerf · Motivação</div>
-      <h2 class="text-3xl font-black mb-1">O RAG Vai Muito Além <span style="color:var(--mira-blue);">do Índice Vetorial</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Benchmarks de recall isolado não capturam o comportamento real do pipeline — UIUC + IBM Research</p>
+      <div class="sec-label mb-5">Metáfora · FANNS (ETH Zurich, Abr 2026)</div>
     </div>
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">Benchmarks Existentes — Limitações</div>
-        <ul style="font-size:0.8rem; color:rgba(255,255,255,0.7); list-style:disc; padding-left:1rem; line-height:1.6;">
-          <li>Focam só em métricas semânticas (recall, hallucination)</li>
-          <li>Ignoram throughput, latência, GPU/CPU utilização</li>
-          <li>Usam datasets estáticos — sem updates/deletes</li>
-          <li>Não permitem customizar embedding + VectorDB + LLM</li>
-        </ul>
-      </div>
-      <div class="alert alert-b" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-blue); font-size:0.88rem;">RAGPerf — O que adiciona</div>
-        <ul style="font-size:0.8rem; color:rgba(255,255,255,0.7); list-style:disc; padding-left:1rem; line-height:1.6;">
-          <li>End-to-end: Embedding → IndexDB → Retrieval → Rerank → LLM</li>
-          <li>Workload generator: Query + Insert + Update + Remove</li>
-          <li>5 vector databases: LanceDB, Milvus, Qdrant, Chroma, Elasticsearch</li>
-          <li>Overhead de profiling negligível no pipeline</li>
-        </ul>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">🗂️</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-teal)">O Catálogo Duplo</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Na mesma biblioteca, agora você quer: <em>"os 10 livros mais parecidos com este, mas apenas os publicados após 2023, de autores brasileiros, sobre tecnologia."</em> Você precisa usar dois catálogos simultaneamente: o catálogo de <strong style="color:var(--mira-teal)">conteúdo</strong> (similaridade do embedding) e o catálogo de <strong style="color:var(--mira-blue)">atributos</strong> (filtros por data, autor, categoria). A ordem em que você usa cada catálogo — e isso é o insight crucial do FANNS — muda dramaticamente a eficiência dependendo de <strong>quantos livros passam no filtro</strong>.</p>
+        </div>
       </div>
     </div>
-    <div class="flex gap-2 flex-wrap" data-aos="fade-up" data-aos-delay="260" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <span class="tag t-b">UIUC · IBM Research</span>
-      <span class="tag t-y">arXiv Mar 2026</span>
-      <span class="tag t-g">Open-source</span>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="text-align:center"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.82rem;color:var(--mira-blue)">EM — Exact Match</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">categoria = "CS.LG" exatamente</p></div>
+      <div class="gi" style="text-align:center"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.82rem;color:var(--mira-teal)">R — Range</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">ano ≥ 2023 &amp; ano ≤ 2026</p></div>
+      <div class="gi" style="text-align:center"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.82rem;color:var(--mira-purple)">EMIS — Exact Match in Set</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">autores ∩ {"Alice","Bob"} ≠ ∅</p></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 7 · RAGPerf — Workload Generator ═══ -->
+<!-- SLIDE 7 · FANNS — Seletividade [D3] -->
 <div class="slide" id="slide-7">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">RAGPerf · Workload</div>
-      <h2 class="text-3xl font-black mb-1">Quatro Operações do <span style="color:var(--mira-blue);">Mundo Real</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Bases de conhecimento reais são dinâmicas — não estáticas. RAGPerf simula isso.</p>
+      <div class="sec-label mb-2">FANNS · ETH Zurich · Abr 2026</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Seletividade Define <span style="color:var(--mira-blue)">a Estratégia Ótima</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">2,7M artigos arXiv · 11 atributos reais · Nenhum método domina em todos os cenários — EMIS (multi-valor) é o caso mais difícil</p>
     </div>
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0" style="background:rgba(77,180,255,0.2); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">Q</div>
-        <div>
-          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-blue);">Query</div>
-          <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Pergunta do usuário → embedding → top-K retrieval → reranking → geração LLM</p>
-        </div>
-      </div>
-      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="130" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0" style="background:rgba(77,255,180,0.2); color:var(--mira-success); border:1px solid rgba(77,255,180,0.3);">I</div>
-        <div>
-          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-success);">Insert</div>
-          <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Ingestão de novos chunks — embedding + indexação no vector DB</p>
-        </div>
-      </div>
-      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0" style="background:rgba(255,213,77,0.2); color:var(--mira-warning); border:1px solid rgba(255,213,77,0.3);">U</div>
-        <div>
-          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-warning);">Update</div>
-          <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Atualização de documento com dados factuais novos — testa a capacidade de refletir mudanças</p>
-        </div>
-      </div>
-      <div class="gi flex gap-3 items-start" data-aos="fade-up" data-aos-delay="230" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0" style="background:rgba(255,100,100,0.2); color:var(--mira-error); border:1px solid rgba(255,100,100,0.3);">R</div>
-        <div>
-          <div class="font-bold mb-0.5" style="font-size:0.88rem; color:var(--mira-error);">Remove</div>
-          <p style="font-size:0.78rem; color:rgba(255,255,255,0.6);">Remoção de documento específico pelo ID — testa integridade do índice</p>
-        </div>
-      </div>
-    </div>
-    <div class="alert alert-b" data-aos="fade-up" data-aos-delay="310" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);">Distribuições de acesso: <strong style="color:var(--mira-blue);">Uniform</strong> (todos os arquivos igual probabilidade) ou <strong style="color:var(--mira-blue);">Zipfian</strong> ("hotspot" — poucos arquivos recebem a maioria das operações, como Wikipedia em tendências).</p>
+    <div class="d3-wrap mb-5" id="anim-fanns" style="height:190px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="text-align:center"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.82rem;color:var(--mira-blue)">Pré-Filtragem</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">Filtra atributos primeiro → ANN. Ideal seletividade &lt;1%</p></div>
+      <div class="gi" style="text-align:center"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.82rem;color:var(--mira-warning)">Índice Híbrido</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">Vetores + atributos juntos. Melhor seletividade moderada 1-50%</p></div>
+      <div class="gi" style="text-align:center"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.82rem;color:var(--mira-teal)">Pós/In-Filtragem</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">ANN primeiro → filtra. Ideal seletividade &gt;50%</p></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 8 · RAGPerf — Arquitetura e Métricas [D3] ═══ -->
+<!-- SLIDE 8 · METÁFORA 3 — DEPÓSITO (IVF-RaBitQ) -->
 <div class="slide" id="slide-8">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">RAGPerf · Arquitetura</div>
-      <h2 class="text-3xl font-black mb-1">Pipeline <span style="color:var(--mira-blue);">End-to-End</span> Completo</h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Métricas coletadas em cada estágio — sistema + qualidade — sem overhead significativo</p>
+      <div class="sec-label mb-5">Metáfora · IVF-RaBitQ (NTU + NVIDIA, Fev 2026)</div>
     </div>
-    <div class="d3-wrap mb-5" id="anim-ragperf" style="height:180px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
-    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi">
-        <div class="font-semibold mb-2" style="font-size:0.85rem; color:var(--mira-blue);">Métricas de Sistema</div>
-        <ul style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
-          <li>Throughput (QPS) &amp; latência end-to-end</li>
-          <li>GPU/CPU utilização e I/O bandwidth</li>
-          <li>Memory footprint (host + device)</li>
-        </ul>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">🏭</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-warning)">O Depósito Organizado por Corredores</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Imagine um depósito com 1 bilhão de produtos. O <strong style="color:var(--mira-warning)">IVF</strong> organiza os produtos em corredores temáticos (clusters via k-means). Ao buscar, você verifica apenas os 3-4 corredores mais próximos — não o depósito inteiro. <strong style="color:var(--mira-warning)">RaBitQ</strong> comprime a etiqueta de cada produto para apenas <em>1 bit</em> (filtro ultra-rápido) + um ex-code (refinamento preciso) — <strong>sem codebook</strong> e com garantias teóricas de erro. A <strong style="color:var(--mira-blue)">GPU</strong> é como ter 10.000 funcionários varrendo os corredores em paralelo em kernels fusionados. Resultado: 2,2× mais rápido que CAGRA (grafos GPU) com 7,7× build mais rápido que IVF-PQ — sem nunca acessar vetores brutos.</p>
+        </div>
       </div>
-      <div class="gi">
-        <div class="font-semibold mb-2" style="font-size:0.85rem; color:var(--mira-success);">Métricas de Qualidade</div>
-        <ul style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
-          <li>Context recall (recuperou os chunks certos?)</li>
-          <li>Query accuracy (resposta correta?)</li>
-          <li>Factual consistency (alucinação?)</li>
-        </ul>
-      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">2.2×</div><div class="stat-lbl">QPS vs. CAGRA (Recall ≥ 0,95)</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">7.7×</div><div class="stat-lbl">build mais rápido vs. IVF-PQ</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">2.7×</div><div class="stat-lbl">throughput vs. IVF-PQ sem reranking bruto</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 9 · FANNS — Busca com Restrições de Atributos ═══ -->
+<!-- SLIDE 9 · IVF-RaBitQ Pipeline [D3] -->
 <div class="slide" id="slide-9">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">FANNS · Motivação</div>
-      <h2 class="text-3xl font-black mb-1">ANN com <span style="color:var(--mira-blue);">Filtros de Atributos</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">ETH Zurich · arXiv Abr 2026 — dataset: 2.7M artigos arXiv com 11 atributos reais</p>
+      <div class="sec-label mb-2">IVF-RaBitQ · NTU Singapura + NVIDIA · Fev 2026</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Build + Search em <span style="color:var(--mira-warning)">2 Fases GPU</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Sem codebook · Garantias teóricas de erro · Integrado ao NVIDIA cuVS · Fronteira Pareto-Ótima em Recall × Throughput × Memória</p>
     </div>
-    <div class="gi mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <p style="font-size:0.9rem; color:rgba(255,255,255,0.8); line-height:1.65;">
-        Em sistemas de RAG reais, não basta encontrar os k documentos mais similares — frequentemente precisamos impor <strong style="color:var(--mira-blue);">restrições de atributos</strong>: "apenas artigos de 2024", "apenas autores de uma instituição específica", "apenas artigos de uma determinada categoria". Isso é <strong>FANNS (Filtered Approximate Nearest Neighbor Search)</strong>.
-      </p>
-    </div>
-    <div class="grid grid-cols-3 gap-3 mb-5">
-      <div class="gi text-center" data-aos="fade-up" data-aos-delay="150" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-blue);">EM — Exact Match</div>
-        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">categoria = "CS.LG" exatamente</div>
-      </div>
-      <div class="gi text-center" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-teal);">R — Range</div>
-        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">ano &ge; 2023 &amp; ano &le; 2026</div>
-      </div>
-      <div class="gi text-center" data-aos="fade-up" data-aos-delay="250" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="font-size:0.8rem; color:var(--mira-purple);">EMIS — Exact Match in Set</div>
-        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5);">autores &cap; {"Alice", "Bob"} ≠ ∅</div>
-      </div>
-    </div>
-    <div class="alert alert-b" data-aos="fade-up" data-aos-delay="320" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-blue);">Dataset arxiv-for-fanns:</strong> 2.7M abstracts do arXiv com 11 atributos reais (venue, publication year, authors, categories). Benchmark 11 métodos FANNS diferentes.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 10 · METÁFORA 2 — O Catálogo Duplo ═══ -->
-<div class="slide" id="slide-10">
-  <div class="card">
-    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-5">Metáfora · FANNS</div>
-    </div>
-    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="flex gap-4 items-start">
-        <div class="metaphor-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-        </div>
-        <div>
-          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">O Catálogo Duplo</div>
-          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
-            Na mesma biblioteca com 1 bilhão de livros, agora você quer: <em>"os 10 livros mais parecidos com este, mas apenas os publicados após 2020, de autores brasileiros, sobre tecnologia."</em> Você precisa usar dois catálogos ao mesmo tempo: o catálogo de <strong style="color:var(--mira-blue);">conteúdo</strong> (similaridade semântica do embedding) e o catálogo de <strong style="color:var(--mira-teal);">atributos</strong> (filtros por data, autor, tema). A ordem em que você usa cada catálogo muda dramaticamente a eficiência.
-          </p>
-        </div>
-      </div>
-    </div>
-    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-blue);">Pré-Filtragem</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Filtra atributos primeiro → depois busca ANN. Eficiente com baixa seletividade.</p>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-warning);">Índice Híbrido</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Um único índice combina vetores e atributos. Melhor para seletividade moderada.</p>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-teal);">Pós-Filtragem</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Busca ANN primeiro → filtra os resultados. Eficiente com alta seletividade.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 11 · FANNS — 3 Abordagens + Selectivity [D3] ═══ -->
-<div class="slide" id="slide-11">
-  <div class="card">
-    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">FANNS · Abordagens</div>
-      <h2 class="text-3xl font-black mb-1">Seletividade Define <span style="color:var(--mira-blue);">a Estratégia Ótima</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Seletividade = fração de itens que satisfazem o filtro — determina qual método usar</p>
-    </div>
-    <div class="d3-wrap mb-5" id="anim-fanns" style="height:180px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
-    <div class="gi" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="font-semibold mb-3" style="font-size:0.85rem; color:var(--mira-blue);">8 Observações Práticas (resumo)</div>
-      <div class="grid grid-cols-2 gap-2">
-        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• Nenhum método domina em todos os cenários</div>
-        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• Pré-filtragem: ideal para seletividade baixa (&lt;1%)</div>
-        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• Pós-filtragem: ideal para seletividade alta (&gt;50%)</div>
-        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• Índice híbrido: melhor para seletividade moderada</div>
-        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• In-filtering em grafos: cobre todos os tipos de filtro</div>
-        <div style="font-size:0.76rem; color:rgba(255,255,255,0.7); padding:0.5rem; background:rgba(255,255,255,0.03); border-radius:0.5rem;">• EMIS (multi-valor) é o caso mais difícil</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 12 · IVF-RaBitQ — GPU-Native ANN ═══ -->
-<div class="slide" id="slide-12">
-  <div class="card">
-    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">IVF-RaBitQ · Motivação</div>
-      <h2 class="text-3xl font-black mb-1">ANN <span style="color:var(--mira-blue);">Nativo em GPU</span> — Rápido e Compacto</h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">NTU Singapura + NVIDIA · arXiv Fev 2026 · integrado ao NVIDIA cuVS</p>
-    </div>
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">Grafos GPU (CAGRA, cuHNSW)</div>
-        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Alto recall, mas construção lenta e grande footprint de memória. Acesso irregular à memória → warp divergence em GPUs.</p>
-      </div>
-      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="180" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.88rem;">IVF-PQ (Cluster-Based)</div>
-        <p style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Build rápido, mas codebook PQ precisa de treinamento adicional. Para alto recall, exige reranking com vetores brutos — memória no host, latência alta.</p>
-      </div>
-    </div>
-    <div class="alert alert-b mb-5" data-aos="fade-up" data-aos-delay="260" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <p style="font-size:0.88rem; color:rgba(255,255,255,0.8);"><strong style="color:var(--mira-blue);">IVF-RaBitQ (GPU)</strong> combina IVF (clusters) com a quantização RaBitQ — sem codebook, com garantias teóricas de erro, e sem acesso a vetores brutos para reranking. GPU-native com kernels fusionados.</p>
-    </div>
-    <div class="grid grid-cols-3 gap-4" data-aos="fade-up" data-aos-delay="340" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-success);">2.2×</div>
-        <div class="stat-lbl">QPS vs. CAGRA<br>(Recall ≥ 0.95)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-success);">7.7×</div>
-        <div class="stat-lbl">build mais rápido<br>vs. IVF-PQ</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-success);">2.7×</div>
-        <div class="stat-lbl">throughput vs. IVF-PQ<br>sem reranking bruto</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 13 · METÁFORA 3 — O Depósito por Corredores ═══ -->
-<div class="slide" id="slide-13">
-  <div class="card">
-    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-5">Metáfora · IVF-RaBitQ</div>
-    </div>
-    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="flex gap-4 items-start">
-        <div class="metaphor-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        </div>
-        <div>
-          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">O Depósito Organizado por Corredores</div>
-          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
-            Imagine um depósito com 1 bilhão de produtos. O <strong style="color:var(--mira-blue);">IVF</strong> organiza os produtos em corredores temáticos (clusters). Ao buscar um produto, você não vasculha o depósito inteiro — verifica apenas os 3-4 corredores mais próximos do que você quer. <strong style="color:var(--mira-teal);">RaBitQ</strong> comprime a etiqueta de cada produto para apenas 1 bit (endereço ultrarreduzido), tornando a varredura dentro do corredor ultra-rápida. A <strong style="color:var(--mira-warning);">GPU</strong> é como ter 10.000 funcionários varrendo os corredores em paralelo ao mesmo tempo.
-          </p>
-        </div>
-      </div>
-    </div>
-    <div class="grid grid-cols-3 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-blue);">IVF = Corredores</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">k-means divide vetores em N clusters (corredores). Busca verifica os nprobe corredores mais próximos.</p>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-teal);">RaBitQ = Etiquetas 1-bit</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Quantiza cada vetor em 1 bit (filtro) + ex-code (refinamento). Sem codebook, com garantias de erro.</p>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.82rem; color:var(--mira-warning);">GPU = 10K Funcionários</div>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.5);">Paralelismo massivo com kernels fusionados — filtro 1-bit + refinamento ex-code em único kernel.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 14 · IVF-RaBitQ — Pipeline [D3] ═══ -->
-<div class="slide" id="slide-14">
-  <div class="card">
-    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">IVF-RaBitQ · Pipeline</div>
-      <h2 class="text-3xl font-black mb-1">Build + Search em <span style="color:var(--mira-blue);">2 Fases GPU</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Quantização em 1 bit (filtro rápido) + ex-code (refinamento preciso) — tudo sem vetores brutos</p>
-    </div>
-    <div class="d3-wrap mb-5" id="anim-ivf" style="height:200px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
-    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi">
-        <div class="font-semibold mb-1" style="font-size:0.85rem; color:var(--mira-blue);">Index Build</div>
-        <ol style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:decimal; padding-left:1rem; line-height:1.7;">
-          <li>k-means → N clusters (IVF index)</li>
-          <li>RaBitQ quantize → 1-bit codes + ex-codes por vetor</li>
-          <li>GPU-native layout (coalesced memory access)</li>
-        </ol>
-      </div>
-      <div class="gi">
-        <div class="font-semibold mb-1" style="font-size:0.85rem; color:var(--mira-teal);">Search (2 fases)</div>
-        <ol style="font-size:0.78rem; color:rgba(255,255,255,0.65); list-style:decimal; padding-left:1rem; line-height:1.7;">
-          <li>Fase 1 — Filter: 1-bit RaBitQ code (kernel rápido)</li>
-          <li>Fase 2 — Refinement: ex-code (candidatos da fase 1)</li>
-          <li>Top-K seleção — tudo em kernel fusionado</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 15 · IVF-RaBitQ — Resultados ═══ -->
-<div class="slide" id="slide-15">
-  <div class="card">
-    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">IVF-RaBitQ · Resultados</div>
-      <h2 class="text-3xl font-black mb-1">Fronteira <span style="color:var(--mira-success);">Pareto-Ótima</span> em GPU</h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Recall-throughput-build time-memória: IVF-RaBitQ domina em todas as dimensões</p>
-    </div>
-    <div class="overflow-x-auto mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+    <div class="d3-wrap mb-5" id="anim-ivf" style="height:200px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="overflow-x:auto" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
       <table>
-        <thead>
-          <tr><th>Métrica (Recall ≥ 0.95)</th><th>CAGRA (Grafos GPU)</th><th>IVF-PQ (GPU)</th><th>IVF-RaBitQ (GPU)</th></tr>
-        </thead>
+        <thead><tr><th>Métrica (Recall ≥ 0,95)</th><th>CAGRA (Grafos GPU)</th><th>IVF-PQ (GPU)</th><th>IVF-RaBitQ (GPU)</th></tr></thead>
         <tbody>
-          <tr><td>Throughput (QPS)</td><td>baseline</td><td>~0.7× CAGRA</td><td style="color:var(--mira-success);">2.2× CAGRA</td></tr>
-          <tr><td>Tempo de Build</td><td>baseline</td><td>7.7× mais lento</td><td style="color:var(--mira-success);">até 13.1× mais rápido</td></tr>
-          <tr><td>Footprint de Memória</td><td>alta</td><td>menor</td><td style="color:var(--mira-success);">menor (sem vetores brutos)</td></tr>
-          <tr><td>Reranking com vetores brutos</td><td>não</td><td style="color:var(--mira-error);">sim (bottleneck)</td><td style="color:var(--mira-success);">não necessário</td></tr>
+          <tr><td>Throughput (QPS)</td><td>baseline</td><td>~0,7× CAGRA</td><td style="color:var(--mira-success)">2,2× CAGRA ↑</td></tr>
+          <tr><td>Build time</td><td>baseline</td><td style="color:var(--mira-error)">7,7× mais lento</td><td style="color:var(--mira-success)">até 13,1× mais rápido ↑</td></tr>
+          <tr><td>Reranking com vetores brutos</td><td>não</td><td style="color:var(--mira-error)">sim (bottleneck)</td><td style="color:var(--mira-success)">não necessário ↑</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="alert alert-g" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8);">Integrado ao <strong style="color:var(--mira-success);">NVIDIA cuVS Library</strong> — disponível como solução de produção para cargas GPU de grande escala. Valida em cuVS Bench com múltiplos datasets.</p>
-    </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 16 · Allan-Poe — O Trilemma da Busca Híbrida ═══ -->
-<div class="slide" id="slide-16">
+<!-- SLIDE 10 · METÁFORA 4 — O MOTOR UNIFICADO (Allan-Poe) -->
+<div class="slide" id="slide-10">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">Allan-Poe · Motivação</div>
-      <h2 class="text-3xl font-black mb-1">O <span style="color:var(--mira-error);">Trilemma</span> da Busca Híbrida</h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Zhejiang University + Huawei Cloud · PVLDB 2026 · Allan-Poe: índice grafo unificado em GPU</p>
-    </div>
-    <div class="grid grid-cols-3 gap-4 mb-6">
-      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.82rem;">Paradigma 1: Fusion</div>
-        <p style="font-size:0.78rem; color:rgba(255,255,255,0.7);">Mapeia dense + sparse para espaço unificado. Sacrifica flexibilidade para mudar pesos de fusão.</p>
-      </div>
-      <div class="alert alert-r" data-aos="fade-up" data-aos-delay="150" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-error); font-size:0.82rem;">Paradigma 2: Multi-path</div>
-        <p style="font-size:0.78rem; color:rgba(255,255,255,0.7);">Índices separados por tipo. Flexível, mas grande overhead de armazenamento (5× mais espaço) e menor precisão.</p>
-      </div>
-      <div class="gi" style="border-color:rgba(77,180,255,0.25); background:rgba(77,180,255,0.04);" data-aos="fade-up" data-aos-delay="220" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="font-bold mb-1" style="color:var(--mira-blue); font-size:0.82rem;">Allan-Poe: Unificado</div>
-        <p style="font-size:0.78rem; color:rgba(255,255,255,0.7);">Grafo único que integra dense, sparse e full-text. Pesos dinâmicos em query-time sem reconstruir o índice.</p>
-      </div>
-    </div>
-    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-success);">1.5–186×</div>
-        <div class="stat-lbl">throughput vs. métodos atuais</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">3</div>
-        <div class="stat-lbl">caminhos integrados no mesmo índice<br>(dense + sparse + full-text)</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 17 · METÁFORA 4 — O Motor de Busca Unificado ═══ -->
-<div class="slide" id="slide-17">
-  <div class="card">
-    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-5">Metáfora · Allan-Poe</div>
+      <div class="sec-label mb-5">Metáfora · Allan-Poe (Zhejiang + Huawei, PVLDB 2026)</div>
     </div>
     <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="flex gap-4 items-start">
-        <div class="metaphor-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </div>
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">🗺️</div>
         <div>
-          <div class="font-bold text-xl mb-2" style="color:var(--mira-blue);">O Motor de Busca que Tudo Une</div>
-          <p style="color:rgba(255,255,255,0.75); font-size:0.92rem; line-height:1.65;">
-            Imagine uma cidade com três sistemas de transporte separados: metrô, ônibus e bicicleta — cada um com seu próprio mapa. Para ir do ponto A ao B, você consulta três mapas diferentes e combina as rotas manualmente. <strong style="color:var(--mira-blue);">Allan-Poe</strong> é como construir <em>um único mapa integrado</em> da cidade — você encontra a melhor rota usando qualquer combinação dos três meios de transporte, sem precisar de mapas separados. E o mais importante: você pode mudar o peso de cada modal (<em>"hoje prefiro bicicleta 70%, metrô 30%"</em>) sem reconstruir o mapa inteiro.
-          </p>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-purple)">O Motor de Busca que Tudo Une</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Uma cidade com três sistemas de transporte <strong>separados</strong>: metrô (dense vector), ônibus (sparse vector) e bicicleta (full-text) — cada um com seu próprio mapa e manutenção. Para ir do ponto A ao B usando a melhor combinação, você consulta três mapas e combina manualmente. <strong style="color:var(--mira-purple)">Allan-Poe</strong> é como construir <em>um único mapa integrado</em> — busca a melhor rota usando qualquer combinação dos três meios, no mesmo grafo GPU. E o mais importante: você pode mudar os pesos (<em>"hoje prefiro denso 70%, lexical 30%"</em>) <strong>sem reconstruir o mapa inteiro</strong>. Resultado: 1,5×-186× throughput, 4-5× menos storage.</p>
         </div>
       </div>
     </div>
-    <div class="grid grid-cols-4 gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-blue);">Dense Vector</div>
-        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">significado semântico</div>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-teal);">Sparse Vector</div>
-        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">palavras-chave aprendidas</div>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-warning);">Full-text</div>
-        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">busca lexical exata</div>
-      </div>
-      <div class="gi text-center" style="border-color:rgba(77,180,255,0.25); background:rgba(77,180,255,0.05);">
-        <div class="font-bold mb-1" style="font-size:0.78rem; color:var(--mira-blue);">Allan-Poe</div>
-        <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">todos no mesmo grafo</div>
-      </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">1.5–186×</div><div class="stat-lbl">throughput vs. métodos estado-da-arte</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-purple)">4-5×</div><div class="stat-lbl">menos storage vs. Infinity (multi-path)</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 18 · Allan-Poe — Índice Grafo Unificado [D3] ═══ -->
-<div class="slide" id="slide-18">
+<!-- SLIDE 11 · Allan-Poe [D3] -->
+<div class="slide" id="slide-11">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">Allan-Poe · Arquitetura</div>
-      <h2 class="text-3xl font-black mb-1">Grafo <span style="color:var(--mira-blue);">Híbrido All-in-One</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Warp-level GPU kernel + RNG-IP pruning + dynamic fusion weights em query-time</p>
+      <div class="sec-label mb-2">Allan-Poe · Zhejiang + Huawei Cloud · PVLDB 2026</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Grafo <span style="color:var(--mira-purple)">Híbrido All-in-One</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Warp-level GPU kernel · RNG-IP pruning · Dynamic fusion weights em query-time sem reconstruir o índice</p>
     </div>
-    <div class="d3-wrap mb-5" id="anim-allanpoe" style="height:210px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
-    <div class="grid grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi">
-        <div class="font-semibold mb-1" style="font-size:0.82rem; color:var(--mira-blue);">Construção — GPU Pipeline</div>
-        <ul style="font-size:0.76rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
-          <li>Warp-level hybrid distance kernel (dense + sparse)</li>
-          <li>RNG-IP joint pruning — qualidade + eficiência</li>
-          <li>Keyword-aware neighbor recycling (full-text)</li>
-          <li>Logical edge augmentation (Knowledge Graph opcional)</li>
-        </ul>
-      </div>
-      <div class="gi">
-        <div class="font-semibold mb-1" style="font-size:0.82rem; color:var(--mira-success);">Query — Framework Dinâmico</div>
-        <ul style="font-size:0.76rem; color:rgba(255,255,255,0.65); list-style:disc; padding-left:1rem; line-height:1.7;">
-          <li>Qualquer combinação de paths em runtime</li>
-          <li>Pesos dinâmicos sem reconstruir o índice</li>
-          <li>Dynamic heterogeneous edges loading</li>
-          <li>Entity-document joint traversal (KG complex queries)</li>
-        </ul>
-      </div>
+    <div class="d3-wrap mb-5" id="anim-allanpoe" style="height:210px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-purple);margin-bottom:0.4rem">Construção GPU</div><ul style="font-size:0.76rem;color:rgba(255,255,255,0.65);list-style:disc;padding-left:1rem;line-height:1.7"><li>Warp-level hybrid distance kernel</li><li>RNG-IP joint pruning</li><li>Keyword-aware neighbor recycling</li></ul></div>
+      <div class="gi"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-success);margin-bottom:0.4rem">Query Dinâmico</div><ul style="font-size:0.76rem;color:rgba(255,255,255,0.65);list-style:disc;padding-left:1rem;line-height:1.7"><li>Qualquer combinação de paths em runtime</li><li>Pesos dinâmicos sem reconstruir índice</li><li>Entity-document joint traversal (KG)</li></ul></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 19 · Allan-Poe — Resultados ═══ -->
-<div class="slide" id="slide-19">
+<!-- SLIDE 12 · O DEBATE -->
+<div class="slide" id="slide-12">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">Allan-Poe · Resultados</div>
-      <h2 class="text-3xl font-black mb-1">Superiority <span style="color:var(--mira-success);">até 186× de Throughput</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-6">Avaliado em 6 datasets reais — PVLDB 2026</p>
+      <div class="sec-label mb-2">Tensão Conceitual · O Debate</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Em GPU: <span style="color:var(--mira-blue)">Grafos ou Clusters com Quantização?</span></h2>
+      <div class="accent-bar mb-5"></div>
     </div>
-    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-success);">1.5–186×</div>
-        <div class="stat-lbl">throughput vs.<br>métodos estado-da-arte</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="background:rgba(77,180,255,0.06);border:1px solid rgba(77,180,255,0.2);border-radius:1rem;padding:1.4rem">
+        <div style="font-weight:700;margin-bottom:0.5rem;color:var(--mira-blue);font-size:0.9rem">🕸️ CAGRA / cuHNSW (Grafos GPU)</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.5">Tese: grafos de proximidade mantêm vizinhança global melhor — recall mais alto e robustez em datasets difíceis. CAGRA é o referencial de qualidade para GPU ANN. Build grande é aceitável para índices que raramente mudam.</p>
+        <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(77,180,255,0.1);border-radius:0.5rem;font-size:0.75rem;color:var(--mira-blue)">Build lento · Footprint grande · Recall de referência</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-blue);">6</div>
-        <div class="stat-lbl">datasets reais<br>avaliados</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-warning);">23%</div>
-        <div class="stat-lbl">footprint de memória<br>(Infinity usa 5GB para 1M docs)</div>
+      <div style="background:rgba(255,213,77,0.06);border:1px solid rgba(255,213,77,0.2);border-radius:1rem;padding:1.4rem">
+        <div style="font-weight:700;margin-bottom:0.5rem;color:var(--mira-warning);font-size:0.9rem">⚡ IVF-RaBitQ (Clusters + Quantização)</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.5">Tese: com a quantização certa (RaBitQ 1-bit + ex-code com garantias teóricas), clusters chegam ao mesmo recall sem acessar vetores brutos — e fazem isso 2,2× mais rápido com 7,7× menos tempo de build. Adequado para índices dinâmicos e grandes volumes.</p>
+        <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(255,213,77,0.1);border-radius:0.5rem;font-size:0.75rem;color:var(--mira-warning)">2,2× QPS · 7,7× build mais rápido · Pareto-Ótimo</div>
       </div>
     </div>
-    <div class="gi mb-5" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="font-semibold mb-2" style="font-size:0.85rem; color:var(--mira-blue);">Vantagens concretas vs. Infinity (multi-path baseline)</div>
-      <div class="grid grid-cols-2 gap-3">
-        <div style="font-size:0.8rem; color:rgba(255,255,255,0.75); padding:0.5rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">✓ Mesmo índice para qualquer combinação de retrieval paths</div>
-        <div style="font-size:0.8rem; color:rgba(255,255,255,0.75); padding:0.5rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">✓ Storage 4-5× menor (índice unificado vs. 3 índices separados)</div>
-        <div style="font-size:0.8rem; color:rgba(255,255,255,0.75); padding:0.5rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">✓ Fusão sem index reconstruction para qualquer peso</div>
-        <div style="font-size:0.8rem; color:rgba(255,255,255,0.75); padding:0.5rem; background:rgba(77,255,180,0.06); border-radius:0.5rem; border-left:3px solid var(--mira-success);">✓ Suporte nativo a Knowledge Graph para queries complexas</div>
-      </div>
+    <div class="alert-b" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-blue)">Síntese:</strong> CAGRA vence quando recall máximo é o único critério e o índice é estático. IVF-RaBitQ vence quando há restrições de latência de build, orçamento de memória, ou quando o corpus é dinâmico (insert/update frequentes). Para sistemas em produção com bases vivas — IVF-RaBitQ é Pareto-ótimo. Para benchmarks acadêmicos de recall máximo — CAGRA ainda lidera.</p>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 20 · MAPA COMPARATIVO [D3] ═══ -->
-<div class="slide" id="slide-20">
+<!-- SLIDE 13 · QUANDO USAR -->
+<div class="slide" id="slide-13">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">Módulo 10 · Síntese</div>
-      <h2 class="text-3xl font-black mb-1">Cinco <span style="color:var(--mira-blue);">Perspectivas Complementares</span></h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.875rem;" class="mb-5">Cada paper resolve um aspecto diferente do banco vetorial em produção</p>
+      <div class="sec-label mb-2">Guia Prático · Quando Usar Cada Abordagem</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Na Segunda-Feira: <span style="color:var(--mira-blue)">Meu Banco Vetorial</span></h2>
+      <div class="accent-bar mb-5"></div>
     </div>
-    <div class="d3-wrap mb-5" id="anim-compare10" style="height:220px;" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
-    <div class="grid grid-cols-5 gap-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-blue);">VIBE</div>
-        <div class="tag t-b" style="font-size:0.6rem; display:table; margin:0 auto;">Benchmarkar</div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="dec-node">📊 <strong>Quero avaliar qual índice ANN escolher?</strong></div>
+      <div class="dec-connector">↓ sim</div>
+      <div class="dec-node answer">→ <strong>VIBE</strong> com embeddings modernos do mesmo modelo que você usa. Não use MNIST ou SIFT — datasets desatualizados selecionam o algoritmo errado.</div>
+      <div class="dec-node">🔄 <strong>Minha base é dinâmica (insert/update frequentes) ou estática?</strong></div>
+      <div style="display:flex;gap:1rem;margin:0.25rem 0">
+        <div style="flex:1">
+          <div class="dec-connector">↓ dinâmica — preciso medir pipeline completo</div>
+          <div class="dec-node answer">→ <strong>RAGPerf</strong>: Q/I/U/R workloads · 5 VectorDBs · throughput + qualidade por estágio</div>
+        </div>
+        <div style="flex:1">
+          <div class="dec-connector">↓ preciso filtrar por atributos?</div>
+          <div class="dec-node">🔍 <strong>Qual é a seletividade do filtro?</strong></div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.25rem">
+            <div style="flex:1"><div class="dec-connector">↓ &lt;1%</div><div class="dec-node answer" style="font-size:0.78rem">→ <strong>FANNS Pré</strong></div></div>
+            <div style="flex:1"><div class="dec-connector">↓ 1-50%</div><div class="dec-node answer" style="font-size:0.78rem">→ <strong>FANNS Híbrido</strong></div></div>
+            <div style="flex:1"><div class="dec-connector">↓ &gt;50%</div><div class="dec-node answer" style="font-size:0.78rem">→ <strong>FANNS Pós</strong></div></div>
+          </div>
+        </div>
       </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-teal);">RAGPerf</div>
-        <div class="tag t-t" style="font-size:0.6rem; display:table; margin:0 auto;">Medir E2E</div>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-success);">FANNS</div>
-        <div class="tag t-g" style="font-size:0.6rem; display:table; margin:0 auto;">Filtrar</div>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-warning);">IVF-RaBitQ</div>
-        <div class="tag t-y" style="font-size:0.6rem; display:table; margin:0 auto;">Acelerar GPU</div>
-      </div>
-      <div class="gi text-center">
-        <div class="font-bold mb-1" style="font-size:0.72rem; color:var(--mira-purple);">Allan-Poe</div>
-        <div class="tag t-p" style="font-size:0.6rem; display:table; margin:0 auto;">Unificar</div>
+      <div class="dec-node">⚡ <strong>Tenho GPU e preciso de velocidade?</strong></div>
+      <div style="display:flex;gap:1rem;margin:0.25rem 0">
+        <div style="flex:1"><div class="dec-connector">↓ sim · build frequente ou corpus grande</div><div class="dec-node answer">→ <strong>IVF-RaBitQ</strong>: 2,2× vs. CAGRA, 7,7× build mais rápido. Integrado ao NVIDIA cuVS.</div></div>
+        <div style="flex:1"><div class="dec-connector">↓ uso dense + sparse + full-text</div><div class="dec-node answer">→ <strong>Allan-Poe</strong>: grafo híbrido unificado. 1,5-186× throughput. Pesos dinâmicos sem rebuild.</div></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 21 · SÍNTESE — 4 Lições ═══ -->
-<div class="slide" id="slide-21">
+<!-- SLIDE 14 · Mapa Comparativo [D3] -->
+<div class="slide" id="slide-14">
   <div class="card">
     <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="sec-label mb-2">Módulo 10 · Aprendizados</div>
-      <h2 class="text-3xl font-black mb-6">Quatro <span style="color:var(--mira-blue);">Lições de Produção</span></h2>
+      <div class="sec-label mb-2">Síntese · 5 Papers</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Cinco Perspectivas <span style="color:var(--mira-blue)">Complementares</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Cada paper resolve um aspecto distinto — não são concorrentes, são layers de uma stack de produção</p>
     </div>
-    <div class="space-y-4">
-      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(77,180,255,0.15); color:var(--mira-blue); border:1px solid rgba(77,180,255,0.3);">①</div>
-        <div>
-          <div class="font-bold mb-1" style="color:var(--mira-blue);">Benchmark com embeddings modernos — datasets antigos enganam</div>
-          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">VIBE prova que MNIST e SIFT não representam cargas de trabalho RAG reais. Avalie seu índice com embeddings do mesmo modelo que você usa em produção.</p>
-        </div>
-      </div>
-      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(38,198,218,0.15); color:var(--mira-teal); border:1px solid rgba(38,198,218,0.3);">②</div>
-        <div>
-          <div class="font-bold mb-1" style="color:var(--mira-teal);">Recall isolado não captura o bottleneck real do pipeline</div>
-          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">RAGPerf mostra que throughput, latência e utilização de hardware são tão críticos quanto recall. Pipelines com bases dinâmicas (insert/update/remove) têm degradação de performance que benchmarks estáticos escondem.</p>
-        </div>
-      </div>
-      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="240" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(255,213,77,0.15); color:var(--mira-warning); border:1px solid rgba(255,213,77,0.3);">③</div>
-        <div>
-          <div class="font-bold mb-1" style="color:var(--mira-warning);">A estratégia de filtragem depende da seletividade, não da preferência</div>
-          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">FANNS + IVF-RaBitQ demonstram: não existe "melhor método" universal. A seletividade do filtro determina qual abordagem usar — pré, híbrida ou pós-filtragem.</p>
-        </div>
-      </div>
-      <div class="gi flex gap-4 items-start" data-aos="fade-up" data-aos-delay="320" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-        <div class="tl-num flex-shrink-0 font-black text-lg" style="width:2.5rem; height:2.5rem; background:rgba(180,100,255,0.15); color:var(--mira-purple); border:1px solid rgba(180,100,255,0.3);">④</div>
-        <div>
-          <div class="font-bold mb-1" style="color:var(--mira-purple);">Índices híbridos unificados superam a soma das partes</div>
-          <p style="font-size:0.82rem; color:rgba(255,255,255,0.65);">Allan-Poe prova que dense + sparse + full-text num único grafo GPU entrega 1.5×-186× de throughput versus sistemas multi-path separados, com 4-5× menos storage.</p>
-        </div>
-      </div>
+    <div class="d3-wrap mb-5" id="anim-compare10" style="height:220px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.72rem;color:var(--mira-blue)">VIBE</div><span class="tag t-b" style="font-size:0.6rem;display:table;margin:0 auto">Benchmarkar</span></div>
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.72rem;color:var(--mira-teal)">RAGPerf</div><span class="tag t-t" style="font-size:0.6rem;display:table;margin:0 auto">Medir E2E</span></div>
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.72rem;color:var(--mira-success)">FANNS</div><span class="tag t-g" style="font-size:0.6rem;display:table;margin:0 auto">Filtrar</span></div>
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.72rem;color:var(--mira-warning)">IVF-RaBitQ</div><span class="tag t-y" style="font-size:0.6rem;display:table;margin:0 auto">GPU Speed</span></div>
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;margin-bottom:0.25rem;font-size:0.72rem;color:var(--mira-purple)">Allan-Poe</div><span class="tag t-p" style="font-size:0.6rem;display:table;margin:0 auto">Unificar</span></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 22 · PRÓXIMO MÓDULO ═══ -->
-<div class="slide" id="slide-22" style="background:radial-gradient(ellipse 60% 50% at 80% 50%, rgba(77,255,180,0.1) 0%, transparent 55%), var(--mira-bg);">
-  <div class="card" style="border-color:rgba(77,255,180,0.18);">
+<!-- SLIDE 15 · PRINCÍPIOS + FECHAMENTO 4 METÁFORAS -->
+<div class="slide" id="slide-15">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 10 · Princípios Destilados</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:1.25rem">Os 4 Especialistas <span style="color:var(--mira-blue)">com o Mapa Atualizado</span></h2>
+    </div>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:1.7"><strong style="color:var(--mira-blue)">Lembram dos 4 especialistas?</strong> A biblioteca com 1 bilhão de livros (VIBE) finalmente tem benchmarks que representam suas prateleiras reais — não livros de pixel dos anos 90. O catálogo duplo (FANNS) descobriu que a ordem dos catálogos depende de <em>quantos livros passam no filtro</em>: nenhum método domina sempre, a seletividade decide. O depósito por corredores (IVF-RaBitQ) compressa cada etiqueta para 1 bit com garantias teóricas e trouxe 10.000 funcionários GPU para varrer em paralelo — 2,2× mais rápido, 7,7× build mais ágil, sem nunca abrir as caixas originais. E o motor de busca unificado (Allan-Poe) aboliu os 3 mapas separados — um único grafo GPU com pesos dinâmicos entrega até 186× mais throughput e 4-5× menos storage. <strong style="color:var(--mira-blue)">O banco vetorial de produção não é um índice — é uma stack de decisões.</strong></p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.6rem" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-b" style="flex-shrink:0">P1</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Benchmark com embeddings modernos</strong> — MNIST e SIFT não representam cargas RAG reais. Avalie com o mesmo modelo de embedding que você usa em produção.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-t" style="flex-shrink:0">P2</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Recall isolado não captura o bottleneck real</strong> — throughput, latência, insert/update performance e utilização de hardware são tão críticos quanto recall em produção.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-g" style="flex-shrink:0">P3</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Seletividade determina a estratégia de filtragem</strong> — não existe melhor método universal em FANNS. &lt;1% → pré. 1-50% → híbrido. &gt;50% → pós-filtragem.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-p" style="flex-shrink:0">P4</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Índice híbrido unificado supera a soma das partes</strong> — Allan-Poe prova: dense + sparse + full-text no mesmo grafo GPU é 1,5-186× melhor que 3 índices separados.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 16 · PRÓXIMO MÓDULO -->
+<div class="slide" id="slide-16" style="background:radial-gradient(ellipse 60% 50% at 80% 50%,rgba(77,255,180,0.1) 0%,transparent 55%),var(--mira-bg)">
+  <div class="card" style="border-color:rgba(77,255,180,0.18)">
     <div data-aos="fade-up" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="inline-flex items-center gap-2 mb-6" style="background:rgba(77,255,180,0.1); border:1px solid rgba(77,255,180,0.25); border-radius:2rem; padding:0.35rem 0.9rem; font-size:0.7rem; color:var(--mira-success); font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">
-        A Seguir · Módulo 11
-      </div>
-      <h2 style="font-size:clamp(2rem,5vw,3.5rem); font-weight:900; line-height:1.05; letter-spacing:-0.02em; margin-bottom:1rem;">
-        Reranking<br><span style="color:var(--mira-success);">em RAG</span>
-      </h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:0.95rem; margin-bottom:2rem;">Como reordenar os documentos recuperados para maximizar a relevância antes de passar ao LLM — a camada que transforma recall em precision.</p>
+      <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(77,255,180,0.1);border:1px solid rgba(77,255,180,0.25);border-radius:2rem;padding:0.35rem 0.9rem;font-size:0.7rem;color:var(--mira-success);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1.5rem">A Seguir · Módulo 13</div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.05;margin-bottom:1rem">Otimização<br><span style="color:var(--mira-success)">de Pipeline</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.95rem;margin-bottom:2rem">Como otimizar cada etapa do pipeline RAG end-to-end — chunking, retrieval, reranking e geração — para maximizar qualidade e minimizar latência e custo.</p>
     </div>
     <hr class="div mb-6" />
-    <div class="grid grid-cols-3 gap-4 mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-success);">3</div>
-        <div class="stat-lbl">artigos científicos</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-success);">Cross</div>
-        <div class="stat-lbl">encoder rerankers</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color:var(--mira-success);">LLM</div>
-        <div class="stat-lbl">reranking methods</div>
-      </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">4</div><div class="stat-lbl">artigos científicos</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">E2E</div><div class="stat-lbl">otimização end-to-end</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">Latência</div><div class="stat-lbl">vs. qualidade vs. custo</div></div>
     </div>
-    <div class="flex flex-wrap gap-2 mb-6" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <span class="tag t-g">Cross-encoder vs. bi-encoder</span>
-      <span class="tag t-g">LLM-based reranking</span>
-      <span class="tag t-g">Efficiency trade-offs</span>
-    </div>
-    <div data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
-      <a href="../index.html" style="display:inline-flex; align-items:center; gap:0.5rem; color:var(--mira-success); font-weight:600; font-size:0.9rem; text-decoration:none; border:1px solid rgba(77,255,180,0.3); border-radius:0.75rem; padding:0.6rem 1.2rem; background:rgba(77,255,180,0.08);">
-        ← Voltar ao Portal
-      </a>
-    </div>
+    <a href="../index.html" style="display:inline-flex;align-items:center;gap:0.5rem;color:var(--mira-blue);font-weight:600;font-size:0.9rem;text-decoration:none;border:1px solid rgba(77,180,255,0.3);border-radius:0.75rem;padding:0.6rem 1.2rem;background:rgba(77,180,255,0.08)">← Voltar ao Portal</a>
   </div>
 </div>
 
-<!-- ════════════════════════════════════
-     D3 ANIMATIONS
-════════════════════════════════════ -->
 <script>
-/* ── ANIM-FAMILIES: 4 Famílias ANN ── */
+AOS.init({duration:700,once:true,offset:55});
+(function(){
+  var bar=document.getElementById('progress-bar'),btn=document.getElementById('back-btn');
+  window.addEventListener('scroll',function(){
+    bar.style.width=Math.min(100,(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100)+'%';
+    btn.classList.toggle('visible',window.scrollY>300);
+  });
+})();
+
+/* ═══ ANIM 1: 4 Famílias ANN (S3) ═══ */
 (function(){
   window.__famGen=(window.__famGen||0)+1; var myG=window.__famGen;
-  var el=document.getElementById('anim-families'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=200;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-  var families=[
-    {label:'Grafos',sub:'HNSW · SymphonyQG',color:'var(--mira-blue)',icon:'🕸',x:W*0.18,y:H/2},
-    {label:'Clustering',sub:'IVF-PQ · ScaNN',color:'var(--mira-success)',icon:'⚫',x:W*0.38,y:H/2},
-    {label:'Árvores',sub:'Annoy · MRPT',color:'var(--mira-warning)',icon:'🌳',x:W*0.62,y:H/2},
-    {label:'Hashing',sub:'LSH · PUFFINN',color:'var(--mira-purple)',icon:'#',x:W*0.82,y:H/2}
-  ];
-  /* center "ANN" */
-  var cx=W/2, cy=H/2;
-  families.forEach(function(f,i){
+  var el=document.getElementById('anim-families'); if(!el)return; el.innerHTML='';
+  var W=860,H=200;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var fams=[{label:'Grafos',sub:'HNSW · SymphonyQG',color:'#4DB4FF',x:W*.18},{label:'Clustering',sub:'IVF-PQ · ScaNN',color:'#4DFFB4',x:W*.38},{label:'Árvores',sub:'Annoy · MRPT',color:'#FFD54D',x:W*.62},{label:'Hashing',sub:'LSH · PUFFINN',color:'#B464FF',x:W*.82}];
+  var cy=H/2;
+  svg.append('text').attr('x',W/2).attr('y',H*.08).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.2)').attr('font-size',9).text('QPS ↑ Recall ↑ — 4 Famílias de Algoritmos ANN');
+  fams.forEach(function(f,i){
     var g=svg.append('g').attr('opacity',0);
-    var bw=W*0.18, bh=70;
-    g.append('rect').attr('x',f.x-bw/2).attr('y',f.y-bh/2).attr('width',bw).attr('height',bh)
-      .attr('rx',10).attr('fill',f.color+'18').attr('stroke',f.color).attr('stroke-width',1.5);
-    g.append('text').text(f.label).attr('x',f.x).attr('y',f.y-12)
-      .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .attr('fill',f.color).attr('font-size','12px').attr('font-weight','800');
-    g.append('text').text(f.sub).attr('x',f.x).attr('y',f.y+8)
-      .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .attr('fill','rgba(255,255,255,0.55)').attr('font-size','9px');
+    var bw=W*.17,bh=68;
+    g.append('rect').attr('x',f.x-bw/2).attr('y',cy-bh/2).attr('width',bw).attr('height',bh).attr('rx',10).attr('fill',f.color+'18').attr('stroke',f.color).attr('stroke-width',1.5);
+    g.append('text').attr('x',f.x).attr('y',cy-12).attr('text-anchor','middle').attr('fill',f.color).attr('font-size',12).attr('font-weight',800).text(f.label);
+    g.append('text').attr('x',f.x).attr('y',cy+8).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.55)').attr('font-size',8.5).text(f.sub);
     g.transition().duration(500).delay(i*180+600).attr('opacity',1);
   });
-  /* QPS label */
-  svg.append('text').text('QPS ↑ Recall ↑').attr('x',W/2).attr('y',18)
-    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size','10px');
-  /* pulsing */
-  function pulse(){
-    if(window.__famGen!==myG) return;
-    families.forEach(function(f,i){
-      var r=svg.append('circle').attr('cx',f.x).attr('cy',f.y).attr('r',30)
-        .attr('fill','none').attr('stroke',f.color).attr('stroke-width',1.5).attr('opacity',0.6);
-      r.transition().duration(1000).delay(i*150).attr('r',46).attr('opacity',0).remove();
-    });
-    setTimeout(pulse,2400);
-  }
+  function pulse(){if(window.__famGen!==myG) return; fams.forEach(function(f,i){var r=svg.append('circle').attr('cx',f.x).attr('cy',cy).attr('r',30).attr('fill','none').attr('stroke',f.color).attr('stroke-width',1.5).attr('opacity',.6); r.transition().duration(1000).delay(i*150).attr('r',46).attr('opacity',0).remove();}); setTimeout(pulse,2400);}
   setTimeout(pulse,1800);
 })();
 
-/* ── ANIM-RAGPERF: Pipeline E2E ── */
+/* ═══ ANIM 2: Trilemma Banco Vetorial — D3 CONCEITUAL ÚNICO (S5) ═══ */
+(function(){
+  window.__trilGen10=(window.__trilGen10||0)+1; var myG=window.__trilGen10;
+  var el=document.getElementById('anim-trilemma10'); if(!el) return; el.innerHTML='';
+  var W=860,H=240;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var cx=W*.42,cy=H/2;
+  var R=90;
+  var verts=[
+    {x:cx,y:cy-R,label:'Recall',sublabel:'(precisão)',clr:'#4DB4FF'},
+    {x:cx+R*Math.sin(2*Math.PI/3),y:cy-R*Math.cos(2*Math.PI/3),label:'Throughput',sublabel:'(velocidade)',clr:'#4DFFB4'},
+    {x:cx+R*Math.sin(4*Math.PI/3),y:cy-R*Math.cos(4*Math.PI/3),label:'Memória',sublabel:'(footprint)',clr:'#B464FF'}
+  ];
+  svg.append('polygon').attr('points',verts.map(function(v){return v.x+','+v.y;}).join(' ')).attr('fill','rgba(77,180,255,.04)').attr('stroke','rgba(77,180,255,.2)').attr('stroke-width',1.5);
+  verts.forEach(function(v){
+    svg.append('circle').attr('cx',v.x).attr('cy',v.y).attr('r',8).attr('fill',v.clr+'25').attr('stroke',v.clr).attr('stroke-width',1.5);
+    svg.append('text').attr('x',v.x+(v.x>cx+5?12:v.x<cx-5?-12:0)).attr('y',v.y+(v.y<cy?-12:12)).attr('text-anchor',v.x>cx+5?'start':v.x<cx-5?'end':'middle').attr('fill',v.clr).attr('font-size',9).attr('font-weight',700).text(v.label);
+    svg.append('text').attr('x',v.x+(v.x>cx+5?12:v.x<cx-5?-12:0)).attr('y',v.y+(v.y<cy?-1:23)).attr('text-anchor',v.x>cx+5?'start':v.x<cx-5?'end':'middle').attr('fill','rgba(255,255,255,.3)').attr('font-size',7.5).text(v.sublabel);
+  });
+  svg.append('text').attr('x',cx).attr('y',cy+4).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.15)').attr('font-size',8).text('escolha 2 dos 3');
+  function bary(w){return {x:w[0]*verts[0].x+w[1]*verts[1].x+w[2]*verts[2].x,y:w[0]*verts[0].y+w[1]*verts[1].y+w[2]*verts[2].y};}
+  var methods=[
+    {name:'CAGRA',pts:[0.6,0.35,0.05],clr:'#4DB4FF',note:'Recall+QPS\n× build grande'},
+    {name:'IVF-RaBitQ',pts:[0.2,0.7,0.1],clr:'#FFD54D',note:'QPS+Memória\n× menor recall'},
+    {name:'Allan-Poe',pts:[0.5,0.1,0.4],clr:'#B464FF',note:'Recall+Memória\n→ 186× throughput'},
+    {name:'IVF-PQ',pts:[0.25,0.35,0.4],clr:'rgba(255,255,255,.4)',note:'Balanced\n× reranking bruto'}
+  ];
+  var needle=svg.append('circle').attr('cx',verts[0].x).attr('cy',verts[0].y).attr('r',10).attr('fill','rgba(255,213,77,.8)').attr('stroke','#FFD54D').attr('stroke-width',1.5);
+  var methodName=svg.append('text').attr('x',W*.78).attr('y',H*.35).attr('text-anchor','middle').attr('fill','#FFD54D').attr('font-size',11).attr('font-weight',800).attr('opacity',0);
+  var methodNote=[
+    svg.append('text').attr('x',W*.78).attr('y',H*.48).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.45)').attr('font-size',8.5).attr('opacity',0),
+    svg.append('text').attr('x',W*.78).attr('y',H*.59).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.45)').attr('font-size',8.5).attr('opacity',0)
+  ];
+  var cur=0;
+  function moveTo(si){
+    if(window.__trilGen10!==myG) return;
+    var m=methods[si]; var pos=bary(m.pts);
+    needle.transition().duration(1200).ease(d3.easeCubicInOut).attr('cx',pos.x).attr('cy',pos.y).attr('fill',m.clr+'CC');
+    methodName.attr('opacity',0).transition().delay(600).duration(300).attr('opacity',1).text(m.name).attr('fill',m.clr);
+    var lines=m.note.split('\n');
+    methodNote[0].attr('opacity',0).transition().delay(700).duration(300).attr('opacity',1).text(lines[0]);
+    methodNote[1].attr('opacity',0).transition().delay(800).duration(300).attr('opacity',1).text(lines[1]);
+    cur=(si+1)%methods.length; setTimeout(function(){moveTo(cur);},2200);
+  }
+  setTimeout(function(){moveTo(0);},800);
+})();
+
+/* ═══ ANIM 3: RAGPerf Pipeline (S4) ═══ */
 (function(){
   window.__rpGen=(window.__rpGen||0)+1; var myG=window.__rpGen;
-  var el=document.getElementById('anim-ragperf'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=180;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-  var stages=[
-    {label:'Embedding',color:'var(--mira-purple)'},
-    {label:'Vector DB',color:'var(--mira-blue)'},
-    {label:'Retrieval',color:'var(--mira-teal)'},
-    {label:'Reranking',color:'var(--mira-warning)'},
-    {label:'LLM Gen',color:'var(--mira-success)'}
-  ];
-  var n=stages.length, sw=(W-60)/(n+1), cy=H/2, sh=50, bw=sw*0.85;
-  stages.forEach(function(s,i){
-    var sx=30+sw*(i+0.5);
-    if(i<n-1){
-      svg.append('line').attr('x1',sx+bw/2+2).attr('y1',cy).attr('x2',sx+sw-bw/2-2).attr('y2',cy)
-        .attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1.5)
-        .attr('marker-end','url(#arr2)');
-    }
-    svg.append('rect').attr('x',sx-bw/2).attr('y',cy-sh/2).attr('width',bw).attr('height',sh)
-      .attr('rx',8).attr('fill',s.color+'18').attr('stroke',s.color).attr('stroke-width',1.3)
-      .attr('opacity',0).transition().duration(400).delay(i*200+400).attr('opacity',1);
-    svg.append('text').text(s.label).attr('x',sx).attr('y',cy)
-      .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .attr('fill',s.color).attr('font-size','10px').attr('font-weight','700')
-      .attr('opacity',0).transition().duration(400).delay(i*200+500).attr('opacity',1);
-  });
+  var el=document.getElementById('anim-ragperf'); if(!el) return; el.innerHTML='';
+  var W=860,H=180;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var stages=[{label:'Embedding',color:'#B464FF'},{label:'Vector DB',color:'#4DB4FF'},{label:'Retrieval',color:'#26C6DA'},{label:'Reranking',color:'#FFD54D'},{label:'LLM Gen',color:'#4DFFB4'}];
+  var n=stages.length,sw=(W-60)/(n+1),cy=H/2,sh=50,bw=sw*.85;
   var defs=svg.append('defs');
-  defs.append('marker').attr('id','arr2').attr('markerWidth',7).attr('markerHeight',7)
-    .attr('refX',5).attr('refY',3).attr('orient','auto')
-    .append('path').attr('d','M0,0 L0,6 L7,3 z').attr('fill','rgba(255,255,255,0.2)');
-  /* metrics label */
-  svg.append('text').text('Métricas coletadas em cada estágio →').attr('x',W/2).attr('y',H-12)
-    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.3)').attr('font-size','9px');
-  /* animated dot */
-  var dot=svg.append('circle').attr('r',5).attr('fill','var(--mira-primary)').attr('opacity',0);
-  function animDot(){
-    if(window.__rpGen!==myG) return;
-    var xs=stages.map(function(s,i){ return 30+sw*(i+0.5); });
-    dot.attr('cx',xs[0]).attr('cy',cy).attr('opacity',0.9);
-    stages.forEach(function(s,i){
-      if(i>0) dot.transition().duration(400).delay((i-1)*500+200).attr('cx',xs[i]);
-    });
-    setTimeout(animDot,3200);
-  }
+  defs.append('marker').attr('id','arr2').attr('markerWidth',7).attr('markerHeight',7).attr('refX',5).attr('refY',3).attr('orient','auto').append('path').attr('d','M0,0 L0,6 L7,3 z').attr('fill','rgba(255,255,255,.2)');
+  stages.forEach(function(s,i){
+    var sx=30+sw*(i+.5);
+    if(i<n-1) svg.append('line').attr('x1',sx+bw/2+2).attr('y1',cy).attr('x2',sx+sw-bw/2-2).attr('y2',cy).attr('stroke','rgba(255,255,255,.15)').attr('stroke-width',1.5).attr('marker-end','url(#arr2)');
+    svg.append('rect').attr('x',sx-bw/2).attr('y',cy-sh/2).attr('width',bw).attr('height',sh).attr('rx',8).attr('fill',s.color+'18').attr('stroke',s.color).attr('stroke-width',1.3).attr('opacity',0).transition().duration(400).delay(i*200+400).attr('opacity',1);
+    svg.append('text').attr('x',sx).attr('y',cy).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill',s.color).attr('font-size',10).attr('font-weight',700).attr('opacity',0).transition().duration(400).delay(i*200+500).attr('opacity',1).text(s.label);
+  });
+  svg.append('text').attr('x',W/2).attr('y',H-10).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.25)').attr('font-size',8.5).text('Métricas coletadas em cada estágio — Q + I + U + R operações');
+  var dot=svg.append('circle').attr('r',5).attr('fill','#FF904D').attr('opacity',0);
+  function animDot(){if(window.__rpGen!==myG) return; var xs=stages.map(function(s,i){return 30+sw*(i+.5);}); dot.attr('cx',xs[0]).attr('cy',cy).attr('opacity',.9); stages.forEach(function(s,i){if(i>0) dot.transition().duration(400).delay((i-1)*500+200).attr('cx',xs[i]);}); setTimeout(animDot,3400);}
   setTimeout(animDot,1400);
 })();
 
-/* ── ANIM-FANNS: Selectivity vs Strategy ── */
+/* ═══ ANIM 4: FANNS Selectivity (S7) ═══ */
 (function(){
   window.__fannsGen=(window.__fannsGen||0)+1; var myG=window.__fannsGen;
-  var el=document.getElementById('anim-fanns'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=180;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-  /* axis */
-  var px=50, py=20, pw=W-px-20, ph=H-py-40;
-  svg.append('line').attr('x1',px).attr('y1',py).attr('x2',px).attr('y2',py+ph)
-    .attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5);
-  svg.append('line').attr('x1',px).attr('y1',py+ph).attr('x2',px+pw).attr('y2',py+ph)
-    .attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5);
-  svg.append('text').text('Eficiência').attr('x',px-8).attr('y',py+ph/2)
-    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.5)').attr('font-size','10px')
-    .attr('transform','rotate(-90,'+(px-8)+','+(py+ph/2)+')');
-  svg.append('text').text('Seletividade do filtro →').attr('x',px+pw/2).attr('y',py+ph+18)
-    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size','10px');
-  svg.append('text').text('baixa').attr('x',px+5).attr('y',py+ph+18)
-    .attr('fill','rgba(255,255,255,0.35)').attr('font-size','9px');
-  svg.append('text').text('alta').attr('x',px+pw-20).attr('y',py+ph+18)
-    .attr('fill','rgba(255,255,255,0.35)').attr('font-size','9px');
-  /* zones */
-  var zones=[
-    {label:'Pré-Filtragem',x:px,w:pw*0.33,color:'var(--mira-blue)',peak:0.1},
-    {label:'Índice Híbrido',x:px+pw*0.33,w:pw*0.34,color:'var(--mira-warning)',peak:0.5},
-    {label:'Pós/In-Filtragem',x:px+pw*0.67,w:pw*0.33,color:'var(--mira-teal)',peak:0.9}
-  ];
+  var el=document.getElementById('anim-fanns'); if(!el) return; el.innerHTML='';
+  var W=860,H=190;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var px=52,py=18,pw=W-px-20,ph=H-py-42;
+  svg.append('line').attr('x1',px).attr('y1',py).attr('x2',px).attr('y2',py+ph).attr('stroke','rgba(255,255,255,.2)').attr('stroke-width',1.5);
+  svg.append('line').attr('x1',px).attr('y1',py+ph).attr('x2',px+pw).attr('y2',py+ph).attr('stroke','rgba(255,255,255,.2)').attr('stroke-width',1.5);
+  svg.append('text').attr('x',px-10).attr('y',py+ph/2).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.4)').attr('font-size',9.5).attr('transform','rotate(-90,'+(px-10)+','+(py+ph/2)+')').text('Eficiência');
+  svg.append('text').attr('x',px+pw/2).attr('y',py+ph+22).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',9.5).text('← Seletividade do Filtro →  (baixa → alta)');
+  var zones=[{label:'Pré-Filtragem',x:px,w:pw*.33,color:'#4DB4FF',peak:.85},{label:'Índice Híbrido',x:px+pw*.33,w:pw*.34,color:'#FFD54D',peak:.6},{label:'Pós/In-Filtragem',x:px+pw*.67,w:pw*.33,color:'#26C6DA',peak:.85}];
   zones.forEach(function(z,i){
-    var cx2=z.x+z.w/2, peakY=py+ph*(1-z.peak*0.7);
-    /* curve via quadratic bezier */
-    var path='M '+(z.x)+','+(py+ph)+' Q '+(cx2)+','+(peakY)+' '+(z.x+z.w)+','+(py+ph);
-    var p=svg.append('path').attr('d',path).attr('fill',z.color+'30').attr('stroke',z.color).attr('stroke-width',1.5)
-      .attr('opacity',0);
-    p.transition().duration(500).delay(i*300+600).attr('opacity',1);
-    svg.append('text').text(z.label).attr('x',cx2).attr('y',peakY-8)
-      .attr('text-anchor','middle').attr('fill',z.color).attr('font-size','9.5px').attr('font-weight','700')
-      .attr('opacity',0).transition().duration(400).delay(i*300+900).attr('opacity',1);
+    var cx2=z.x+z.w/2,peakY=py+ph*(1-z.peak*.75);
+    var path='M '+z.x+','+(py+ph)+' Q '+cx2+','+peakY+' '+(z.x+z.w)+','+(py+ph);
+    svg.append('path').attr('d',path).attr('fill',z.color+'30').attr('stroke',z.color).attr('stroke-width',1.5).attr('opacity',0).transition().duration(500).delay(i*300+600).attr('opacity',1);
+    svg.append('text').attr('x',cx2).attr('y',peakY-8).attr('text-anchor','middle').attr('fill',z.color).attr('font-size',9.5).attr('font-weight',700).attr('opacity',0).transition().duration(400).delay(i*300+900).attr('opacity',1).text(z.label);
   });
+  // Needle
+  var needle=svg.append('line').attr('x1',px+pw*.1).attr('y1',py).attr('x2',px+pw*.1).attr('y2',py+ph).attr('stroke','rgba(255,213,77,.5)').attr('stroke-width',1.5).attr('opacity',0);
+  needle.transition().duration(300).delay(1800).attr('opacity',1);
+  function scanNeedle(){if(window.__fannsGen!==myG) return; needle.transition().duration(2000).ease(d3.easeLinear).attr('x1',px+pw*.9).attr('x2',px+pw*.9).transition().duration(200).attr('x1',px+pw*.1).attr('x2',px+pw*.1).on('end',function(){setTimeout(scanNeedle,400);});}
+  setTimeout(scanNeedle,2200);
 })();
 
-/* ── ANIM-IVF: IVF-RaBitQ Pipeline ── */
+/* ═══ ANIM 5: IVF-RaBitQ Pipeline (S9) ═══ */
 (function(){
   window.__ivfGen=(window.__ivfGen||0)+1; var myG=window.__ivfGen;
-  var el=document.getElementById('anim-ivf'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=200;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-  /* IVF clusters on left */
-  var clusterColors=['var(--mira-blue)','var(--mira-teal)','var(--mira-success)'];
-  var clusters=[{cx:80,cy:60},{cx:80,cy:130},{cx:130,cy:95}];
-  clusters.forEach(function(c,i){
-    svg.append('circle').attr('cx',c.cx).attr('cy',c.cy).attr('r',28)
-      .attr('fill',clusterColors[i]+'18').attr('stroke',clusterColors[i]).attr('stroke-width',1.3)
-      .attr('opacity',0).transition().duration(400).delay(i*200+400).attr('opacity',1);
-    svg.append('text').text('C'+(i+1)).attr('x',c.cx).attr('y',c.cy)
-      .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .attr('fill',clusterColors[i]).attr('font-size','11px').attr('font-weight','800')
-      .attr('opacity',0).transition().duration(400).delay(i*200+500).attr('opacity',1);
-  });
-  svg.append('text').text('IVF Clusters').attr('x',100).attr('y',H-10)
-    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.4)').attr('font-size','9px');
-  /* Arrow */
-  svg.append('line').attr('x1',170).attr('y1',H/2).attr('x2',215).attr('y2',H/2)
-    .attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5).attr('marker-end','url(#arr3)');
+  var el=document.getElementById('anim-ivf'); if(!el) return; el.innerHTML='';
+  var W=860,H=200;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var defs=svg.append('defs');
-  defs.append('marker').attr('id','arr3').attr('markerWidth',7).attr('markerHeight',7)
-    .attr('refX',5).attr('refY',3).attr('orient','auto')
-    .append('path').attr('d','M0,0 L0,6 L7,3 z').attr('fill','rgba(255,255,255,0.25)');
-  /* RaBitQ phases */
-  var phases=[
-    {label:'1-bit\nRaBitQ',sub:'Filtro rápido',x:270,y:H/2,color:'var(--mira-warning)',w:80},
-    {label:'Ex-Code\nRefinement',sub:'Candidatos',x:380,y:H/2,color:'var(--mira-purple)',w:80},
-    {label:'Top-K\nResults',sub:'GPU kernel',x:490,y:H/2,color:'var(--mira-success)',w:80}
-  ];
-  phases.forEach(function(p,i){
-    if(i>0){
-      svg.append('line').attr('x1',phases[i-1].x+phases[i-1].w/2+2).attr('y1',H/2)
-        .attr('x2',p.x-p.w/2-2).attr('y2',H/2)
-        .attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1.2);
-    }
-    svg.append('rect').attr('x',p.x-p.w/2).attr('y',H/2-30).attr('width',p.w).attr('height',60)
-      .attr('rx',8).attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.3)
-      .attr('opacity',0).transition().duration(400).delay(i*250+900).attr('opacity',1);
-    var ls=p.label.split('\n');
-    ls.forEach(function(l,j){
-      svg.append('text').text(l).attr('x',p.x).attr('y',H/2-7+(j*14))
-        .attr('text-anchor','middle').attr('dominant-baseline','middle')
-        .attr('fill',p.color).attr('font-size','10px').attr('font-weight','700')
-        .attr('opacity',0).transition().duration(400).delay(i*250+1000).attr('opacity',1);
-    });
-    svg.append('text').text(p.sub).attr('x',p.x).attr('y',H/2+20)
-      .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .attr('fill','rgba(255,255,255,0.45)').attr('font-size','8px')
-      .attr('opacity',0).transition().duration(400).delay(i*250+1050).attr('opacity',1);
+  defs.append('marker').attr('id','arr3').attr('markerWidth',7).attr('markerHeight',7).attr('refX',5).attr('refY',3).attr('orient','auto').append('path').attr('d','M0,0 L0,6 L7,3 z').attr('fill','rgba(255,255,255,.25)');
+  var clusterColors=['#4DB4FF','#26C6DA','#4DFFB4'];
+  [{cx:80,cy:60},{cx:80,cy:130},{cx:130,cy:95}].forEach(function(c,i){
+    svg.append('circle').attr('cx',c.cx).attr('cy',c.cy).attr('r',28).attr('fill',clusterColors[i]+'18').attr('stroke',clusterColors[i]).attr('stroke-width',1.3).attr('opacity',0).transition().duration(400).delay(i*200+400).attr('opacity',1);
+    svg.append('text').attr('x',c.cx).attr('y',c.cy).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill',clusterColors[i]).attr('font-size',11).attr('font-weight',800).attr('opacity',0).transition().duration(400).delay(i*200+500).attr('opacity',1).text('C'+(i+1));
   });
-  /* GPU label */
-  svg.append('text').text('⚡ GPU Warp-Level Parallelism').attr('x',380).attr('y',H-10)
-    .attr('text-anchor','middle').attr('fill','rgba(255,213,77,0.5)').attr('font-size','9px').attr('font-weight','600');
-  /* animated query dot */
-  var qdot=svg.append('circle').attr('r',5).attr('fill','var(--mira-primary)').attr('opacity',0);
-  function animQuery(){
-    if(window.__ivfGen!==myG) return;
-    qdot.attr('cx',170).attr('cy',H/2).attr('opacity',0.9);
-    qdot.transition().duration(400).delay(0).attr('cx',215)
-      .transition().duration(400).attr('cx',270)
-      .transition().duration(400).attr('cx',380)
-      .transition().duration(400).attr('cx',490)
-      .transition().duration(300).attr('opacity',0)
-      .on('end',function(){ setTimeout(animQuery,800); });
-  }
-  setTimeout(animQuery,1600);
+  svg.append('text').attr('x',100).attr('y',H-10).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',8.5).text('IVF Clusters');
+  svg.append('line').attr('x1',170).attr('y1',H/2).attr('x2',215).attr('y2',H/2).attr('stroke','rgba(255,255,255,.2)').attr('stroke-width',1.5).attr('marker-end','url(#arr3)');
+  var phases=[{label:'1-bit\nRaBitQ',sub:'Filtro rápido',x:270,color:'#FFD54D',w:80},{label:'Ex-Code\nRefinement',sub:'Candidatos',x:380,color:'#B464FF',w:80},{label:'Top-K\nResults',sub:'GPU kernel',x:490,color:'#4DFFB4',w:80}];
+  phases.forEach(function(p,i){
+    if(i>0) svg.append('line').attr('x1',phases[i-1].x+phases[i-1].w/2+2).attr('y1',H/2).attr('x2',p.x-p.w/2-2).attr('y2',H/2).attr('stroke','rgba(255,255,255,.15)').attr('stroke-width',1.2);
+    svg.append('rect').attr('x',p.x-p.w/2).attr('y',H/2-30).attr('width',p.w).attr('height',60).attr('rx',8).attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.3).attr('opacity',0).transition().duration(400).delay(i*250+900).attr('opacity',1);
+    p.label.split('\n').forEach(function(l,j){ svg.append('text').attr('x',p.x).attr('y',H/2-7+j*14).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill',p.color).attr('font-size',10).attr('font-weight',700).attr('opacity',0).transition().duration(400).delay(i*250+1000).attr('opacity',1).text(l);});
+    svg.append('text').attr('x',p.x).attr('y',H/2+20).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,.4)').attr('font-size',8).attr('opacity',0).transition().duration(400).delay(i*250+1050).attr('opacity',1).text(p.sub);
+  });
+  svg.append('text').attr('x',380).attr('y',H-10).attr('text-anchor','middle').attr('fill','rgba(255,213,77,.5)').attr('font-size',9).attr('font-weight',600).text('⚡ GPU Warp-Level Parallelism — Kernels Fusionados');
+  var qdot=svg.append('circle').attr('r',5).attr('fill','#FF904D').attr('opacity',0);
+  function animQ(){if(window.__ivfGen!==myG) return; qdot.attr('cx',170).attr('cy',H/2).attr('opacity',.9); qdot.transition().duration(400).attr('cx',215).transition().duration(400).attr('cx',270).transition().duration(400).attr('cx',380).transition().duration(400).attr('cx',490).transition().duration(300).attr('opacity',0).on('end',function(){setTimeout(animQ,800);}); }
+  setTimeout(animQ,1600);
 })();
 
-/* ── ANIM-ALLANPOE: Hybrid Graph Index ── */
+/* ═══ ANIM 6: Allan-Poe (S11) ═══ */
 (function(){
   window.__apGen=(window.__apGen||0)+1; var myG=window.__apGen;
-  var el=document.getElementById('anim-allanpoe'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=210;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-  /* inputs */
-  var inputs=[
-    {label:'Dense\nVector',y:35,color:'var(--mira-blue)'},
-    {label:'Sparse\nVector',y:H/2,color:'var(--mira-teal)'},
-    {label:'Full-text\nSearch',y:H-35,color:'var(--mira-warning)'}
-  ];
-  var cx=W/2, cy=H/2;
+  var el=document.getElementById('anim-allanpoe'); if(!el) return; el.innerHTML='';
+  var W=860,H=210;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var inputs=[{label:'Dense\nVector',y:35,color:'#4DB4FF'},{label:'Sparse\nVector',y:H/2,color:'#26C6DA'},{label:'Full-text\nSearch',y:H-35,color:'#FFD54D'}];
+  var cx=W/2,cy=H/2;
   inputs.forEach(function(inp,i){
-    svg.append('rect').attr('x',10).attr('y',inp.y-22).attr('width',80).attr('height',44)
-      .attr('rx',8).attr('fill',inp.color+'18').attr('stroke',inp.color).attr('stroke-width',1.3)
-      .attr('opacity',0).transition().duration(400).delay(i*180+400).attr('opacity',1);
-    inp.label.split('\n').forEach(function(l,j){
-      svg.append('text').text(l).attr('x',50).attr('y',inp.y+(j-0.3)*14)
-        .attr('text-anchor','middle').attr('dominant-baseline','middle')
-        .attr('fill',inp.color).attr('font-size','9.5px').attr('font-weight','700')
-        .attr('opacity',0).transition().duration(400).delay(i*180+520).attr('opacity',1);
-    });
-    svg.append('line').attr('x1',90).attr('y1',inp.y).attr('x2',cx-45).attr('y2',cy)
-      .attr('stroke',inp.color).attr('stroke-width',1.2).attr('opacity',0.35).attr('stroke-dasharray','5,4');
+    svg.append('rect').attr('x',10).attr('y',inp.y-22).attr('width',80).attr('height',44).attr('rx',8).attr('fill',inp.color+'18').attr('stroke',inp.color).attr('stroke-width',1.3).attr('opacity',0).transition().duration(400).delay(i*180+400).attr('opacity',1);
+    inp.label.split('\n').forEach(function(l,j){ svg.append('text').attr('x',50).attr('y',inp.y+(j-.3)*14).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill',inp.color).attr('font-size',9.5).attr('font-weight',700).attr('opacity',0).transition().duration(400).delay(i*180+520).attr('opacity',1).text(l);});
+    svg.append('line').attr('x1',90).attr('y1',inp.y).attr('x2',cx-45).attr('y2',cy).attr('stroke',inp.color).attr('stroke-width',1.2).attr('opacity',.35).attr('stroke-dasharray','5,4');
   });
-  /* Center graph index */
-  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',44)
-    .attr('fill','rgba(77,180,255,0.08)').attr('stroke','var(--mira-blue)').attr('stroke-width',2)
-    .attr('opacity',0).transition().duration(600).delay(900).attr('opacity',1);
-  svg.append('text').text('Allan-Poe').attr('x',cx).attr('y',cy-8)
-    .attr('text-anchor','middle').attr('dominant-baseline','middle')
-    .attr('fill','var(--mira-blue)').attr('font-size','11px').attr('font-weight','800')
-    .attr('opacity',0).transition().duration(400).delay(1000).attr('opacity',1);
-  svg.append('text').text('Graph Index').attr('x',cx).attr('y',cy+8)
-    .attr('text-anchor','middle').attr('dominant-baseline','middle')
-    .attr('fill','rgba(255,255,255,0.6)').attr('font-size','9px')
-    .attr('opacity',0).transition().duration(400).delay(1050).attr('opacity',1);
-  /* GPU label */
-  svg.append('text').text('⚡ GPU').attr('x',cx).attr('y',cy+22)
-    .attr('text-anchor','middle').attr('fill','rgba(255,213,77,0.5)').attr('font-size','8.5px').attr('font-weight','700')
-    .attr('opacity',0).transition().duration(400).delay(1100).attr('opacity',1);
-  /* output */
-  svg.append('rect').attr('x',W-100).attr('y',cy-22).attr('width',90).attr('height',44)
-    .attr('rx',8).attr('fill','rgba(77,255,180,0.12)').attr('stroke','var(--mira-success)').attr('stroke-width',1.5)
-    .attr('opacity',0).transition().duration(400).delay(1200).attr('opacity',1);
-  svg.append('text').text('Results').attr('x',W-55).attr('y',cy-5)
-    .attr('text-anchor','middle').attr('dominant-baseline','middle')
-    .attr('fill','var(--mira-success)').attr('font-size','10px').attr('font-weight','800')
-    .attr('opacity',0).transition().duration(400).delay(1280).attr('opacity',1);
-  svg.append('text').text('Top-K').attr('x',W-55).attr('y',cy+9)
-    .attr('text-anchor','middle').attr('dominant-baseline','middle')
-    .attr('fill','rgba(255,255,255,0.5)').attr('font-size','8.5px')
-    .attr('opacity',0).transition().duration(400).delay(1290).attr('opacity',1);
-  svg.append('line').attr('x1',cx+45).attr('y1',cy).attr('x2',W-102).attr('y2',cy)
-    .attr('stroke','var(--mira-success)').attr('stroke-width',1.5).attr('opacity',0.5).attr('stroke-dasharray','6,4');
-  /* pulse center */
-  function pulseCtr(){
-    if(window.__apGen!==myG) return;
-    var r=svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',44)
-      .attr('fill','none').attr('stroke','var(--mira-blue)').attr('stroke-width',2).attr('opacity',0.7);
-    r.transition().duration(1200).attr('r',62).attr('opacity',0).remove();
-    setTimeout(pulseCtr,2000);
-  }
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',44).attr('fill','rgba(180,100,255,.08)').attr('stroke','#B464FF').attr('stroke-width',2).attr('opacity',0).transition().duration(600).delay(900).attr('opacity',1);
+  svg.append('text').attr('x',cx).attr('y',cy-8).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','#B464FF').attr('font-size',11).attr('font-weight',800).attr('opacity',0).transition().duration(400).delay(1000).attr('opacity',1).text('Allan-Poe');
+  svg.append('text').attr('x',cx).attr('y',cy+8).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,.6)').attr('font-size',9).attr('opacity',0).transition().duration(400).delay(1050).attr('opacity',1).text('Graph Index ⚡ GPU');
+  svg.append('rect').attr('x',W-100).attr('y',cy-22).attr('width',90).attr('height',44).attr('rx',8).attr('fill','rgba(77,255,180,.12)').attr('stroke','#4DFFB4').attr('stroke-width',1.5).attr('opacity',0).transition().duration(400).delay(1200).attr('opacity',1);
+  ['Results','Top-K'].forEach(function(t,j){ svg.append('text').attr('x',W-55).attr('y',cy+(j*-.5)*14+(j===0?-5:9)).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill',j===0?'#4DFFB4':'rgba(255,255,255,.5)').attr('font-size',j===0?10:8.5).attr('font-weight',j===0?800:400).attr('opacity',0).transition().duration(400).delay(1280+j*30).attr('opacity',1).text(t);});
+  svg.append('line').attr('x1',cx+45).attr('y1',cy).attr('x2',W-102).attr('y2',cy).attr('stroke','#4DFFB4').attr('stroke-width',1.5).attr('opacity',.5).attr('stroke-dasharray','6,4');
+  function pulseCtr(){if(window.__apGen!==myG) return; var r=svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',44).attr('fill','none').attr('stroke','#B464FF').attr('stroke-width',2).attr('opacity',.7); r.transition().duration(1200).attr('r',62).attr('opacity',0).remove(); setTimeout(pulseCtr,2000);}
   setTimeout(pulseCtr,1500);
 })();
 
-/* ── ANIM-COMPARE10: 5 Papers Mapa ── */
+/* ═══ ANIM 7: Mapa 5 Papers (S14) ═══ */
 (function(){
   window.__c10Gen=(window.__c10Gen||0)+1; var myG=window.__c10Gen;
-  var el=document.getElementById('anim-compare10'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=220;
-  var cx=W/2, cy=H/2;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',28)
-    .attr('fill','rgba(255,255,255,0.05)').attr('stroke','rgba(255,255,255,0.2)').attr('stroke-width',1.5);
-  svg.append('text').text('Banco').attr('x',cx).attr('y',cy-6)
-    .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,0.6)').attr('font-size','8.5px').attr('font-weight','700');
-  svg.append('text').text('Vetorial').attr('x',cx).attr('y',cy+6)
-    .attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,0.6)').attr('font-size','8.5px').attr('font-weight','700');
-  var papers=[
-    {label:'VIBE',role:'Benchmarkar',x:cx,y:22,color:'var(--mira-blue)'},
-    {label:'RAGPerf',role:'Medir E2E',x:cx*0.25,y:H*0.35,color:'var(--mira-teal)'},
-    {label:'FANNS',role:'Filtrar',x:cx*0.25,y:H*0.72,color:'var(--mira-success)'},
-    {label:'IVF-RaBitQ',role:'GPU Speed',x:W*0.78,y:H*0.3,color:'var(--mira-warning)'},
-    {label:'Allan-Poe',role:'Unificar',x:W*0.78,y:H*0.75,color:'var(--mira-purple)'}
-  ];
+  var el=document.getElementById('anim-compare10'); if(!el) return; el.innerHTML='';
+  var W=860,H=220;
+  var cx=W/2,cy=H/2;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',28).attr('fill','rgba(255,255,255,.05)').attr('stroke','rgba(255,255,255,.2)').attr('stroke-width',1.5);
+  ['Banco','Vetorial'].forEach(function(t,j){ svg.append('text').attr('x',cx).attr('y',cy+(j-.5)*14).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,.6)').attr('font-size',8.5).attr('font-weight',700).text(t);});
+  var papers=[{label:'VIBE',role:'Benchmarkar',x:cx,y:22,color:'#4DB4FF'},{label:'RAGPerf',role:'Medir E2E',x:cx*.25,y:H*.35,color:'#26C6DA'},{label:'FANNS',role:'Filtrar',x:cx*.25,y:H*.72,color:'#4DFFB4'},{label:'IVF-RaBitQ',role:'GPU Speed',x:W*.78,y:H*.3,color:'#FFD54D'},{label:'Allan-Poe',role:'Unificar',x:W*.78,y:H*.75,color:'#B464FF'}];
   papers.forEach(function(p,i){
-    svg.append('line').attr('x1',p.x).attr('y1',p.y).attr('x2',cx).attr('y2',cy)
-      .attr('stroke',p.color).attr('stroke-width',1).attr('opacity',0.25).attr('stroke-dasharray','5,4');
-    svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',26)
-      .attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.5)
-      .attr('opacity',0).transition().duration(450).delay(i*180+600).attr('opacity',1);
-    svg.append('text').text(p.label).attr('x',p.x).attr('y',p.y-5)
-      .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .attr('fill',p.color).attr('font-size','8.5px').attr('font-weight','800')
-      .attr('opacity',0).transition().duration(400).delay(i*180+720).attr('opacity',1);
-    svg.append('text').text(p.role).attr('x',p.x).attr('y',p.y+7)
-      .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .attr('fill','rgba(255,255,255,0.55)').attr('font-size','7.5px')
-      .attr('opacity',0).transition().duration(400).delay(i*180+780).attr('opacity',1);
+    svg.append('line').attr('x1',p.x).attr('y1',p.y).attr('x2',cx).attr('y2',cy).attr('stroke',p.color).attr('stroke-width',1).attr('opacity',.25).attr('stroke-dasharray','5,4');
+    svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',26).attr('fill',p.color+'18').attr('stroke',p.color).attr('stroke-width',1.5).attr('opacity',0).transition().duration(450).delay(i*180+600).attr('opacity',1);
+    svg.append('text').attr('x',p.x).attr('y',p.y-5).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill',p.color).attr('font-size',8.5).attr('font-weight',800).attr('opacity',0).transition().duration(400).delay(i*180+720).attr('opacity',1).text(p.label);
+    svg.append('text').attr('x',p.x).attr('y',p.y+7).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,.5)').attr('font-size',7.5).attr('opacity',0).transition().duration(400).delay(i*180+780).attr('opacity',1).text(p.role);
   });
-  function pulse(){
-    if(window.__c10Gen!==myG) return;
-    papers.forEach(function(p,i){
-      var r=svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',26)
-        .attr('fill','none').attr('stroke',p.color).attr('stroke-width',1.5).attr('opacity',0.7);
-      r.transition().duration(1000).delay(i*120).attr('r',40).attr('opacity',0).remove();
-    });
-    setTimeout(pulse,2600);
-  }
+  function pulse(){if(window.__c10Gen!==myG) return; papers.forEach(function(p,i){var r=svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',26).attr('fill','none').attr('stroke',p.color).attr('stroke-width',1.5).attr('opacity',.7); r.transition().duration(1000).delay(i*120).attr('r',40).attr('opacity',0).remove();}); setTimeout(pulse,2600);}
   setTimeout(pulse,1600);
 })();
-</script>
-
-<script>
-  AOS.init({ duration: 700, once: true, offset: 55 });
-  lucide.createIcons();
-  window.addEventListener('scroll', function(){
-    var s=window.scrollY||document.documentElement.scrollTop;
-    var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
-    document.getElementById('progress-bar').style.width=(h>0?Math.round(s/h*100):0)+'%';
-    var b=document.getElementById('back-btn');
-    if(s>320) b.classList.add('visible'); else b.classList.remove('visible');
-  });
-  var slides=document.querySelectorAll('.slide'), cur=0;
-  document.addEventListener('keydown',function(e){
-    if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='PageDown'){ cur=Math.min(cur+1,slides.length-1); slides[cur].scrollIntoView({behavior:'smooth'}); }
-    if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='PageUp'){ cur=Math.max(cur-1,0); slides[cur].scrollIntoView({behavior:'smooth'}); }
-  });
 </script>
 </body>
 </html>
