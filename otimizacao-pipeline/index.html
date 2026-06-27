@@ -1,1126 +1,546 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Módulo 13 — Otimização de Pipeline RAG</title>
-<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<style>
-:root {
-  --mira-bg: #000000;
-  --mira-surface: #0a0a0a;
-  --mira-surface2: #111111;
-  --mira-primary: #FF904D;
-  --mira-success: #4DFFB4;
-  --mira-warning: #FFD54D;
-  --mira-error: #FF6464;
-  --mira-blue: #4DB4FF;
-  --mira-purple: #B464FF;
-  --mira-teal: #26C6DA;
-  --mira-text: #FFFFFF;
-  --mira-text-muted: rgba(255,255,255,0.55);
-  --mira-border: rgba(255,255,255,0.08);
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:var(--mira-bg); color:var(--mira-text); font-family:system-ui,-apple-system,'Segoe UI',sans-serif; line-height:1.6; }
-.slide { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:60px 24px; }
-.slide-inner { width:100%; max-width:860px; }
-
-.slide-capa { background:radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255,100,100,0.11) 0%, transparent 70%); text-align:center; }
-.modulo-badge { display:inline-block; background:rgba(255,100,100,0.12); border:1px solid rgba(255,100,100,0.35); color:var(--mira-error); padding:6px 18px; border-radius:999px; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:32px; }
-.capa-title { font-size:clamp(2.1rem,5vw,3.4rem); font-weight:800; line-height:1.1; margin-bottom:20px; }
-.capa-title .accent { color:var(--mira-error); }
-.capa-sub { font-size:1.08rem; color:var(--mira-text-muted); max-width:560px; margin:0 auto 40px; }
-.stats-row { display:flex; justify-content:center; gap:40px; flex-wrap:wrap; }
-.stat-item { text-align:center; }
-.stat-num { font-size:2.2rem; font-weight:800; color:var(--mira-error); display:block; }
-.stat-label { font-size:0.75rem; color:var(--mira-text-muted); text-transform:uppercase; letter-spacing:0.08em; }
-
-.card { background:var(--mira-surface); border:1px solid var(--mira-border); border-radius:16px; padding:32px 36px; margin-bottom:14px; }
-.card-accent { border-left:4px solid var(--mira-error); }
-.section-label { font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--mira-error); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
-.section-label svg { width:14px; height:14px; }
-h2.slide-title { font-size:clamp(1.5rem,3vw,2.1rem); font-weight:800; line-height:1.2; margin-bottom:8px; }
-h2.slide-title .accent { color:var(--mira-error); }
-.slide-desc { font-size:0.97rem; color:var(--mira-text-muted); margin-bottom:22px; }
-
-.metaphor-box { background:linear-gradient(135deg,rgba(255,100,100,0.08) 0%,rgba(255,100,100,0.02) 100%); border:1px solid rgba(255,100,100,0.25); border-radius:16px; padding:30px 34px; margin-bottom:18px; }
-.metaphor-icon { font-size:2.8rem; margin-bottom:14px; }
-.metaphor-title { font-size:1.4rem; font-weight:700; color:var(--mira-error); margin-bottom:10px; }
-.metaphor-text { font-size:0.94rem; color:var(--mira-text-muted); line-height:1.75; }
-
-.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-.grid-item { background:var(--mira-surface2); border:1px solid var(--mira-border); border-radius:12px; padding:18px 20px; }
-.grid-item-title { font-size:0.9rem; font-weight:700; margin-bottom:5px; }
-.grid-item-text { font-size:0.8rem; color:var(--mira-text-muted); line-height:1.55; }
-
-.d3-container { background:var(--mira-surface2); border:1px solid var(--mira-border); border-radius:12px; padding:14px; min-height:260px; }
-
-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
-th { text-align:left; padding:9px 13px; border-bottom:1px solid var(--mira-border); color:var(--mira-error); font-weight:700; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.05em; }
-td { padding:9px 13px; border-bottom:1px solid rgba(255,255,255,0.04); color:var(--mira-text-muted); }
-td:first-child { color:var(--mira-text); font-weight:500; }
-tr:last-child td { border-bottom:none; }
-.highlight-row td { color:var(--mira-error) !important; }
-
-.results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:18px; }
-.result-card { background:var(--mira-surface2); border:1px solid var(--mira-border); border-radius:12px; padding:20px; text-align:center; }
-.result-big { font-size:2.5rem; font-weight:800; color:var(--mira-error); line-height:1; }
-.result-label { font-size:0.78rem; color:var(--mira-text-muted); margin-top:6px; }
-
-.quote-box { border-left:3px solid var(--mira-error); padding:14px 18px; background:rgba(255,100,100,0.04); border-radius:0 8px 8px 0; margin:14px 0; }
-.quote-text { font-size:0.98rem; font-style:italic; color:var(--mira-text); line-height:1.65; }
-.quote-source { font-size:0.75rem; color:var(--mira-error); margin-top:7px; }
-
-.steps { list-style:none; }
-.step-item { display:flex; align-items:flex-start; gap:13px; margin-bottom:14px; }
-.step-num { width:26px; height:26px; border-radius:50%; background:rgba(255,100,100,0.12); border:1px solid rgba(255,100,100,0.38); color:var(--mira-error); font-size:0.74rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
-.step-content-title { font-weight:600; font-size:0.88rem; margin-bottom:2px; }
-.step-content-text { font-size:0.8rem; color:var(--mira-text-muted); line-height:1.5; }
-
-.tag { display:inline-block; padding:3px 9px; border-radius:999px; font-size:0.7rem; font-weight:600; border:1px solid; }
-.tag-red { background:rgba(255,100,100,0.1); border-color:rgba(255,100,100,0.3); color:var(--mira-error); }
-.tag-blue { background:rgba(77,180,255,0.1); border-color:rgba(77,180,255,0.3); color:var(--mira-blue); }
-.tag-green { background:rgba(77,255,180,0.1); border-color:rgba(77,255,180,0.3); color:var(--mira-success); }
-.tag-warn { background:rgba(255,213,77,0.1); border-color:rgba(255,213,77,0.3); color:var(--mira-warning); }
-
-.next-module { background:linear-gradient(135deg,rgba(38,198,218,0.1) 0%,rgba(38,198,218,0.03) 100%); border:1px solid rgba(38,198,218,0.3); border-radius:16px; padding:30px 34px; text-align:center; }
-.next-label { font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--mira-teal); margin-bottom:8px; }
-.next-title { font-size:1.55rem; font-weight:800; color:var(--mira-teal); margin-bottom:8px; }
-.next-desc { font-size:0.88rem; color:var(--mira-text-muted); }
-
-@media (max-width:640px) { .grid-2,.grid-3,.results-grid { grid-template-columns:1fr; } .card { padding:22px 18px; } }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Módulo 13 · Otimização de Pipeline RAG — RAG Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root{--mira-primary:#FF904D;--mira-bg:#000000;--mira-success:#4DFFB4;--mira-warning:#FFD54D;--mira-error:#FF6464;--mira-blue:#4DB4FF;--mira-purple:#B464FF;--mira-teal:#26C6DA;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflow-x:hidden}
+    #progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--mira-error);z-index:9999;width:0%;transition:width 0.2s ease}
+    #back-btn{position:fixed;bottom:2rem;right:2rem;width:3rem;height:3rem;border-radius:50%;background:var(--mira-error);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;z-index:100;box-shadow:0 4px 24px rgba(255,100,100,0.45)}
+    #back-btn.visible{opacity:1}
+    .slide{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:4rem 1.5rem;position:relative}
+    .slide-hero{background:radial-gradient(ellipse 65% 55% at 15% 55%,rgba(255,100,100,0.1) 0%,transparent 60%),var(--mira-bg)}
+    .card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,100,100,0.14);border-radius:1.5rem;backdrop-filter:blur(10px);max-width:900px;width:100%;padding:2.75rem}
+    .module-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,100,100,0.12);border:1px solid rgba(255,100,100,0.3);color:var(--mira-error);border-radius:2rem;padding:0.4rem 1rem;font-size:0.76rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase}
+    .hero-title{font-size:clamp(2.8rem,7vw,5rem);font-weight:900;line-height:1.0;letter-spacing:-0.03em}
+    .hero-accent{color:var(--mira-error)}
+    .sec-label{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.25);border-radius:2rem;padding:0.3rem 0.9rem;font-size:0.7rem;color:var(--mira-error);font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
+    .metaphor-box{background:rgba(255,100,100,0.05);border:1px solid rgba(255,100,100,0.18);border-radius:1rem;padding:1.5rem}
+    .metaphor-icon{width:3.5rem;height:3.5rem;border-radius:50%;background:rgba(255,100,100,0.14);border:1px solid rgba(255,100,100,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.4rem}
+    .stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:1rem;padding:1.5rem;text-align:center}
+    .stat-num{font-size:2.6rem;font-weight:900;line-height:1}
+    .stat-lbl{font-size:0.74rem;color:rgba(255,255,255,0.45);margin-top:0.4rem;font-weight:500}
+    .gi{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:1.2rem}
+    .tag{display:inline-flex;align-items:center;gap:0.3rem;padding:0.22rem 0.65rem;border-radius:1rem;font-size:0.7rem;font-weight:600}
+    .t-r{background:rgba(255,100,100,0.15);color:var(--mira-error);border:1px solid rgba(255,100,100,0.3)}
+    .t-b{background:rgba(77,180,255,0.15);color:var(--mira-blue);border:1px solid rgba(77,180,255,0.3)}
+    .t-g{background:rgba(77,255,180,0.15);color:var(--mira-success);border:1px solid rgba(77,255,180,0.3)}
+    .t-y{background:rgba(255,213,77,0.15);color:var(--mira-warning);border:1px solid rgba(255,213,77,0.3)}
+    .t-p{background:rgba(180,100,255,0.15);color:var(--mira-purple);border:1px solid rgba(180,100,255,0.3)}
+    .d3-wrap{width:100%;border-radius:1rem;overflow:hidden;background:rgba(255,255,255,0.02)}
+    table{width:100%;border-collapse:collapse}
+    th{background:rgba(255,100,100,0.1);color:var(--mira-error);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:0.7rem 1rem;text-align:left}
+    td{padding:0.65rem 1rem;font-size:0.83rem;border-bottom:1px solid rgba(255,255,255,0.05);color:rgba(255,255,255,0.8)}
+    tr:last-child td{border-bottom:none}
+    td.hi{color:var(--mira-success)!important;font-weight:700}
+    .alert-r{background:rgba(255,100,100,0.07);border:1px solid rgba(255,100,100,0.2);border-left:4px solid var(--mira-error);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-b{background:rgba(77,180,255,0.07);border:1px solid rgba(77,180,255,0.2);border-left:4px solid var(--mira-blue);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-g{background:rgba(77,255,180,0.07);border:1px solid rgba(77,255,180,0.2);border-left:4px solid var(--mira-success);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .accent-bar{width:2.5rem;height:3px;background:var(--mira-error);border-radius:2px}
+    hr.div{border:none;border-top:1px solid rgba(255,255,255,0.07)}
+    .tl-num{width:2.2rem;height:2.2rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;flex-shrink:0}
+    .dec-node{background:rgba(255,255,255,0.04);border:1px solid rgba(255,100,100,0.2);border-radius:0.75rem;padding:0.9rem 1.2rem;font-size:0.83rem}
+    .dec-node.answer{background:rgba(255,100,100,0.07);border-color:rgba(255,100,100,0.3);color:var(--mira-error);font-weight:700}
+    .dec-connector{text-align:center;color:rgba(255,255,255,0.3);font-size:0.75rem;padding:0.2rem 0}
+  </style>
 </head>
 <body>
 
-<!-- SLIDE 1: CAPA -->
-<section class="slide slide-capa">
-  <div class="slide-inner">
-    <div data-aos="fade-down" data-aos-duration="700"><span class="modulo-badge">Módulo 13 · Otimização de Pipeline</span></div>
-    <h1 class="capa-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <span class="accent">Otimização</span> de<br>Pipeline RAG
-    </h1>
-    <p class="capa-sub" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      Config por query, Pareto multi-objetivo, HPO eficiente e melhores práticas — como fazer RAG mais rápido, mais barato e mais preciso ao mesmo tempo.
-    </p>
-    <div class="stats-row" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
-      <div class="stat-item"><span class="stat-num">4</span><span class="stat-label">Artigos</span></div>
-      <div class="stat-item"><span class="stat-num">22</span><span class="stat-label">Slides</span></div>
-      <div class="stat-item"><span class="stat-num">6</span><span class="stat-label">Animações D3</span></div>
-      <div class="stat-item"><span class="stat-num">3</span><span class="stat-label">Metáforas</span></div>
+<div id="progress-bar"></div>
+<button id="back-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<!-- SLIDE 1 · CAPA -->
+<div class="slide slide-hero" id="slide-1">
+  <div class="card" style="border-color:rgba(255,100,100,0.22);max-width:960px">
+    <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="module-badge mb-6">Módulo 13 · RAG Studio</div>
+      <h1 class="hero-title mb-4">Otimização de<br><span class="hero-accent">Pipeline RAG</span></h1>
+      <p style="color:rgba(255,255,255,0.5);font-size:1rem" class="mb-8">Config adaptativa por query · Pareto multi-objetivo · HPO Greedy-M · Best Practices — como fazer RAG mais rápido, mais barato e mais preciso</p>
+    </div>
+    <hr class="div mb-8" />
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-error)">2.54×</div><div class="stat-lbl">METIS menos latência vs. AdaptiveRAG</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-error)">4.5×</div><div class="stat-lbl">METIS throughput vs. vLLM SOTA</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-error)">63%</div><div class="stat-lbl">Greedy-M supera grid search (61%)</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-error)">15%</div><div class="stat-lbl">mais qualidade vs. melhor config estática</div></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-r">METIS · U Chicago+Princeton · SOSP 2025</span>
+      <span class="tag t-b">Multi-Obj HPO · Trustwise+NYU · ICLR 2025</span>
+      <span class="tag t-g">IBM HPO · IBM Research · AAAI 2026</span>
+      <span class="tag t-y">Best Practices · Fudan · Jul 2024</span>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 2: METÁFORA 1 — RECEITA DE BOLO VS. CHEF ADAPTATIVO -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="lightbulb"></i> Metáfora de Abertura</div>
-    <div class="metaphor-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <div class="metaphor-icon">👨‍🍳</div>
-      <div class="metaphor-title">Receita Fixa vs. Chef Adaptativo</div>
-      <p class="metaphor-text">
-        Um RAG com configuração estática é como seguir sempre a mesma receita: "retrieval de 10 chunks, sumarize cada um separado". Para uma pergunta simples ("Em que ano nasceu Einstein?") é como fazer bolo de casamento para uma lanche rápida — <strong style="color:var(--mira-error)">caro, lento e desnecessário</strong>.<br><br>
-        O METIS é o chef experiente: <strong style="color:var(--mira-error)">adapta a receita para cada pedido</strong>. Pergunta simples → 1 chunk, resposta direta. Pergunta complexa ("Compare os custos operacionais da NVIDIA nos três últimos trimestres") → 5 chunks, leitura conjunta, sumarização intermediária. <strong style="color:var(--mira-error)">Mesma qualidade, tempo ideal para cada prato</strong>.
-      </p>
+<!-- SLIDE 2 · METÁFORA 1 — CHEF ADAPTATIVO -->
+<div class="slide" id="slide-2">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · METIS (SOSP 2025)</div>
     </div>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:rgba(255,100,100,0.7)">Config Estática (Receita Fixa)</div>
-        <div class="grid-item-text" style="margin-top:6px">Mesmos parâmetros para todas as queries. Simples ficam lentas (excesso de contexto), complexas ficam pobres (poucos chunks). Latência desnecessária ou qualidade degradada.</div>
-      </div>
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-error)">Config Adaptativa METIS</div>
-        <div class="grid-item-text" style="margin-top:6px">LLM profiler estima complexidade → seleciona configuração do espaço podado. 12-15% mais qualidade, 1.64-2.54× menos latência vs. melhor config estática.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SLIDE 3: METIS — POR QUE CONFIG ESTÁTICA FALHA -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="alert-triangle"></i> Ray et al. · U Chicago + Princeton · SOSP 2025</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Por Que a <span class="accent">Config Estática</span> Falha</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Queries diferem em complexidade — e a configuração ótima varia drasticamente.</p>
-    <div class="quote-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="quote-text">"Choosing the per-query configuration allows up to 3× delay saving compared to the static configuration that is the closest in quality. Every single static configuration that achieves comparable delay has at least a 10% quality drop."</div>
-      <div class="quote-source">— Ray et al., METIS: Fast Quality-Aware RAG Systems with Configuration Adaptation, SOSP 2025</div>
-    </div>
-    <div class="grid-3" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
-      <div class="grid-item">
-        <div style="font-size:1.5rem;margin-bottom:8px">🟢</div>
-        <div class="grid-item-title">Q1 · Simples</div>
-        <div class="grid-item-text" style="margin-top:4px">"Em que condado nasceu William Blair?" → 1 chunk, map_rerank basta. Mais chunks = 2× delay SEM melhora.</div>
-      </div>
-      <div class="grid-item">
-        <div style="font-size:1.5rem;margin-bottom:8px">🔵</div>
-        <div class="grid-item-title">Q2 · Média</div>
-        <div class="grid-item-text" style="margin-top:4px">"Alison, Diane e Rachel são do mesmo país?" → 3-5 chunks, leitura conjunta (+35% qualidade vs. map_rerank).</div>
-      </div>
-      <div class="grid-item">
-        <div style="font-size:1.5rem;margin-bottom:8px">🔴</div>
-        <div class="grid-item-title">Q3 · Complexa</div>
-        <div class="grid-item-text" style="margin-top:4px">"Voyager 1 detectou tempestades em Netuno quando?" → 10+ chunks, map_reduce necessário para síntese.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SLIDE 4: D3: METIS QUALITY × LATENCY -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="zap"></i> Visualização Animada</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">METIS: <span class="accent">Qualidade × Latência</span></h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Melhor qualidade E menor latência — canto superior esquerdo é o ideal.</p>
-    <div id="anim-metis" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:280px"></div>
-  </div>
-</section>
-
-<!-- SLIDE 5: METIS — 3 KNOBS E QUERY PROFILING -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="sliders"></i> Arquitetura METIS</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">3 <span class="accent">Knobs</span> + Query Profiling</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">METIS controla 3 parâmetros-chave que afetam simultaneamente qualidade e latência.</p>
-    <div class="grid-3" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item" style="border-top:2px solid var(--mira-error)">
-        <div style="font-size:1.6rem;margin-bottom:8px">🔢</div>
-        <div class="grid-item-title" style="color:var(--mira-error)">Knob 1: num_chunks</div>
-        <div class="grid-item-text" style="margin-top:4px">Quantos chunks recuperar. Simples: 1-2. Complexas: 5-15. Mais chunks = mais contexto mas mais GPU e delay.</div>
-      </div>
-      <div class="grid-item" style="border-top:2px solid var(--mira-error)">
-        <div style="font-size:1.6rem;margin-bottom:8px">🔀</div>
-        <div class="grid-item-title" style="color:var(--mira-error)">Knob 2: synthesis_method</div>
-        <div class="grid-item-text" style="margin-top:4px"><strong>stuff</strong>: concatena tudo. <strong>map_rerank</strong>: lê separado, pega melhor. <strong>map_reduce</strong>: resume cada + sintetiza. Custo: stuff &lt; rerank &lt; reduce.</div>
-      </div>
-      <div class="grid-item" style="border-top:2px solid var(--mira-error)">
-        <div style="font-size:1.6rem;margin-bottom:8px">📏</div>
-        <div class="grid-item-title" style="color:var(--mira-error)">Knob 3: intermediate_length</div>
-        <div class="grid-item-text" style="margin-top:4px">Tamanho do resumo intermediário no map_reduce (1-100 palavras). Simples: 10-20. Complexas: 70-100.</div>
-      </div>
-    </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
-      <div style="font-size:0.88rem;color:var(--mira-text-muted)">
-        <strong style="color:var(--mira-error)">Query Profiler LLM</strong>: Analisa a query (quantas peças de informação são necessárias?) → gera <em>query profile</em> → poda espaço de configuração para conjunto menor mas promissor → scheduler seleciona config otimizando latência dentro do espaço podado.
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SLIDE 6: D3: 3 KNOBS EM AÇÃO -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="activity"></i> Visualização Animada</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Impacto dos <span class="accent">3 Knobs</span> por Complexidade</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Qualidade varia com synthesis_method conforme a complexidade da query.</p>
-    <div id="anim-knobs" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:300px"></div>
-  </div>
-</section>
-
-<!-- SLIDE 7: RESULTADOS METIS -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="trending-up"></i> Resultados · METIS · SOSP 2025</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">1.64–2.54× Menos <span class="accent">Latência</span></h2>
-    <div class="results-grid" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="result-card">
-        <div class="result-big">2.54×</div>
-        <div class="result-label">redução de latência vs. AdaptiveRAG (mesma qualidade)</div>
-      </div>
-      <div class="result-card">
-        <div class="result-big">4.5×</div>
-        <div class="result-label">maior throughput vs. vLLM (SOTA serving engine)</div>
-      </div>
-      <div class="result-card">
-        <div class="result-big">15%</div>
-        <div class="result-label">mais qualidade vs. melhor config estática (mesma latência)</div>
-      </div>
-    </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
-      <table>
-        <thead><tr><th>Sistema</th><th>F1 Score</th><th>Delay Médio</th></tr></thead>
-        <tbody>
-          <tr><td>vLLM (SOTA serving)</td><td>~0.42</td><td>~2.5s</td></tr>
-          <tr><td>Parrot (OSDI 2024)</td><td>~0.52</td><td>~1.5s</td></tr>
-          <tr><td>AdaptiveRAG (ACL 2024)</td><td>~0.63</td><td>~1.2s</td></tr>
-          <tr class="highlight-row"><td>METIS (Ours)</td><td>~0.65</td><td>~0.5s</td></tr>
-        </tbody>
-      </table>
-      <div style="font-size:0.75rem;color:var(--mira-text-muted);margin-top:8px">Avaliado no KG RAG FinSec dataset. METIS fica no canto superior esquerdo (melhor) do gráfico quality × delay.</div>
-    </div>
-  </div>
-</section>
-
-<!-- SLIDE 8: METÁFORA 2 — COMPRA DE CARRO POR PARETO -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="lightbulb"></i> Metáfora · Multi-Objetivo HPO</div>
-    <div class="metaphor-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <div class="metaphor-icon">🚗</div>
-      <div class="metaphor-title">Compra de Carro pela Fronteira de Pareto</div>
-      <p class="metaphor-text">
-        Ao comprar um carro, você quer o mais rápido, o mais econômico, o mais seguro E o mais barato. Mas <strong style="color:var(--mira-error)">nenhum carro domina todos os outros em todos os critérios ao mesmo tempo</strong>.<br><br>
-        A <strong style="color:var(--mira-error)">Fronteira de Pareto</strong> é a lista dos "melhores compromissos possíveis": o carro mais rápido dado um orçamento, ou o mais econômico dada uma velocidade mínima. Nenhum carro fora da fronteira é ótimo — há sempre um dentro que é melhor em tudo.<br><br>
-        O Multi-Obj HPO aplica esse raciocínio ao RAG: encontra configurações onde <strong style="color:var(--mira-error)">melhorar custo não piora qualidade, e melhorar latência não compromete safety</strong>.
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- SLIDE 9: MULTI-OBJ HPO — 4 OBJETIVOS -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="target"></i> Barker et al. · Trustwise AI + NYU · ICLR 2025 Workshop</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Multi-Obj HPO: <span class="accent">4 Objetivos</span> Simultâneos</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Primeiro framework de HPO multi-objetivo para RAG — sem priorizar nenhum eixo a priori.</p>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-error)">4 Objetivos de Otimização</div>
-        <div style="margin-top:10px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:0.85rem"><span style="color:var(--mira-error)">⚡</span> <strong>Custo</strong> — tokens por query × preço do LLM</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:0.85rem"><span style="color:var(--mira-blue)">⏱️</span> <strong>Latência</strong> — tempo de resposta end-to-end</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:0.85rem"><span style="color:var(--mira-success)">🛡️</span> <strong>Safety</strong> — risco de alucinação / conteúdo indevido</div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:0.85rem"><span style="color:var(--mira-warning)">🎯</span> <strong>Alignment</strong> — utilidade / helpfulness da resposta</div>
-        </div>
-      </div>
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-error)">Parâmetros Otimizados (15+)</div>
-        <div class="grid-item-text" style="margin-top:8px">
-          <span class="tag tag-red" style="margin:2px">LLM model</span>
-          <span class="tag tag-blue" style="margin:2px">Embedding model</span>
-          <span class="tag tag-green" style="margin:2px">Chunk size</span>
-          <span class="tag tag-warn" style="margin:2px">Chunk overlap</span>
-          <span class="tag tag-red" style="margin:2px">Num chunks</span>
-          <span class="tag tag-blue" style="margin:2px">Temperature</span>
-          <span class="tag tag-green" style="margin:2px">Top-k</span>
-          <span class="tag tag-warn" style="margin:2px">Rerank threshold</span>
-          <div style="margin-top:8px;font-size:0.8rem;color:var(--mira-text-muted)">Bayesian Optimization com qLogNEHVI (hypervolume indicator) — robusto a avaliações ruidosas.</div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">👨‍🍳</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-error)">Receita Fixa vs. Chef Adaptativo</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Um RAG com configuração estática é como seguir sempre a mesma receita: <em>"retrieval de 10 chunks, sumarize com map_reduce"</em>. Para uma pergunta simples — "Em que ano nasceu Einstein?" — é como fazer bolo de casamento para um lanche rápido: <strong style="color:var(--mira-error)">caro, lento e desnecessário</strong>.<br><br>O <strong style="color:var(--mira-error)">METIS</strong> é o chef experiente: <em>adapta a receita para cada pedido</em>. Pergunta simples → 1 chunk, map_rerank, resposta em 0,3s. Pergunta complexa → 10 chunks, map_reduce, sumarização intermediária. <strong style="color:var(--mira-error)">Mesma cozinha, cada prato preparado na medida certa.</strong></p>
         </div>
       </div>
     </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
-      <div style="font-size:0.86rem;color:var(--mira-text-muted)">
-        <strong style="color:var(--mira-error)">Descoberta crítica — Task Dependence</strong>: Configuração ótima para FinancialQA ≠ MedicalQA. <strong style="color:var(--mira-error)">Objective Dependence</strong>: melhorar safety pode piorar alignment. Configurações não generalizam entre tarefas e objetivos.
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="font-size:0.85rem;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:0.4rem">Config Estática (Receita Fixa)</div><p style="font-size:0.8rem;color:rgba(255,255,255,0.55);line-height:1.55">Mesmos parâmetros para todas as queries. Simples ficam lentas (excesso de contexto), complexas ficam rasas (poucos chunks). Latência desnecessária ou qualidade degradada.</p></div>
+      <div class="gi" style="border-color:rgba(255,100,100,0.25)"><div style="font-size:0.85rem;font-weight:700;color:var(--mira-error);margin-bottom:0.4rem">Config Adaptativa METIS</div><p style="font-size:0.8rem;color:rgba(255,255,255,0.65);line-height:1.55">LLM profiler estima complexidade → seleciona config do espaço podado → scheduler otimiza latência. 15% mais qualidade com 2,54× menos latência vs. melhor config estática.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 10: D3: FRONTEIRA DE PARETO -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="git-branch"></i> Visualização Animada</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100"><span class="accent">Fronteira de Pareto</span> em RAG</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Custo × Qualidade — configurações dominadas vs. ótimas.</p>
-    <div id="anim-pareto" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:300px"></div>
-  </div>
-</section>
-
-<!-- SLIDE 11: TASK E OBJECTIVE DEPENDENCE -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="alert-circle"></i> Nuances Críticas · Multi-Obj HPO</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Config Ótima Não <span class="accent">Generaliza</span></h2>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="card" style="padding:22px;border-top:2px solid var(--mira-error)">
-        <div class="grid-item-title" style="color:var(--mira-error);margin-bottom:10px">Task Dependence</div>
-        <p style="font-size:0.84rem;color:var(--mira-text-muted);line-height:1.6">A configuração Pareto-ótima para <strong style="color:var(--mira-text)">FinancialQA</strong> (modelo maior, chunk grande, reranking) pode ser sub-ótima para <strong style="color:var(--mira-text)">MedicalQA</strong> (termos técnicos precisam de embedding especializado, chunk menor).<br><br>Implicação prática: calibre HPO <em>por domínio</em>, não uma vez para tudo.</p>
-      </div>
-      <div class="card" style="padding:22px;border-top:2px solid var(--mira-blue)">
-        <div class="grid-item-title" style="color:var(--mira-blue);margin-bottom:10px">Objective Dependence</div>
-        <p style="font-size:0.84rem;color:var(--mira-text-muted);line-height:1.6">Safety e Alignment seguem tendências <em>opostas</em> para algumas configurações: o modelo mais "safety-aligned" gera respostas mais curtas e recusa mais, reduzindo helpfulness.<br><br>Implicação prática: defina pesos explícitos entre objetivos antes da otimização.</p>
-      </div>
+<!-- SLIDE 3 · METIS — FAILURE OF STATIC CONFIG -->
+<div class="slide" id="slide-3">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">METIS · Ray et al. · U Chicago + Princeton · SOSP 2025</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Por Que a Config Estática <span style="color:var(--mira-error)">Sempre Perde</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Cada query tem uma configuração ótima diferente — forçar um único template é um desperdício estrutural</p>
     </div>
-    <div class="quote-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
-      <div class="quote-text">"Optimal configurations may not generalize across tasks and objectives — highlighting nuances such as how optimal configurations may not generalize across tasks and objectives."</div>
-      <div class="quote-source">— Barker et al., Faster, Cheaper, Better, ICLR 2025 Workshop</div>
+    <div class="alert-r mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.88rem;color:rgba(255,255,255,0.85);line-height:1.6"><em>"Choosing the per-query configuration allows up to <strong style="color:var(--mira-error)">3× delay saving</strong> compared to the static configuration that is closest in quality. Every single static configuration that achieves comparable delay has at least a <strong style="color:var(--mira-error)">10% quality drop</strong>."</em><br><span style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:0.35rem;display:block">— Ray et al., METIS: Fast Quality-Aware RAG Systems with Configuration Adaptation, SOSP 2025</span></p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="margin-bottom:0.4rem;font-size:0.85rem;font-weight:700;color:var(--mira-success)">Q1 · Simples</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.6);line-height:1.5">"Em que condado nasceu William Blair?" → 1 chunk, map_rerank. Mais chunks = 2× delay SEM melhora de qualidade.</p></div>
+      <div class="gi"><div style="margin-bottom:0.4rem;font-size:0.85rem;font-weight:700;color:var(--mira-warning)">Q2 · Média</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.6);line-height:1.5">"Alison, Diane e Rachel são do mesmo país?" → 3-5 chunks, leitura conjunta (+35% qualidade vs. map_rerank).</p></div>
+      <div class="gi"><div style="margin-bottom:0.4rem;font-size:0.85rem;font-weight:700;color:var(--mira-error)">Q3 · Complexa</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.6);line-height:1.5">"Voyager 1 detectou tempestades em Netuno quando?" → 10+ chunks, map_reduce. Sem ele: qualidade cai 40%.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 12: METÁFORA 3 — DETETIVE GREEDY -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="lightbulb"></i> Metáfora · HPO Greedy</div>
-    <div class="metaphor-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <div class="metaphor-icon">🕵️</div>
-      <div class="metaphor-title">O Detetive Greedy — Evidência Mais Valiosa Primeiro</div>
-      <p class="metaphor-text">
-        Um bom detetive não examina todas as pistas em ordem de aparição — começa pela <strong style="color:var(--mira-error)">mais reveladora</strong>. Se as impressões digitais já identificam o culpado, perder tempo medindo as pegadas é desperdício.<br><br>
-        O HPO Greedy para RAG funciona igual: em vez de otimizar parâmetros na ordem do pipeline (chunking → embedding → retrieval → geração), começa pelo <strong style="color:var(--mira-error)">modelo generativo e embedding</strong> — que têm o maior impacto na qualidade. Depois ajusta chunk size, overlap e top-k.<br><br>
-        Resultado: <strong style="color:var(--mira-error)">convergência 2-3× mais rápida</strong> com desempenho superior ao TPE e random search.
-      </p>
+<!-- SLIDE 4 · D3 CONCEITUAL ÚNICO — O Profiler em Ação -->
+<div class="slide" id="slide-4">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Animação Conceitual · O Profiler de Complexidade METIS</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Query Entra — Config <span style="color:var(--mira-error)">Nasce na Hora</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">O LLM profiler classifica a complexidade da query e seleciona automaticamente os 3 knobs ótimos — sem intervenção humana</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-profiler" style="height:230px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="text-align:center"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-success);margin-bottom:0.25rem">Knob 1: num_chunks</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">Simples: 1-2 · Médio: 3-5 · Complexo: 8-15</p></div>
+      <div class="gi" style="text-align:center"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-warning);margin-bottom:0.25rem">Knob 2: synthesis_method</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">stuff → map_rerank → map_reduce (custo crescente)</p></div>
+      <div class="gi" style="text-align:center"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-error);margin-bottom:0.25rem">Knob 3: summary_length</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">map_reduce: 10-20 palavras (simples) · 70-100 (complexo)</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 13: IBM HPO — 162 CONFIGURAÇÕES, 5 ALGORITMOS -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="database"></i> Orbach et al. · IBM Research · AAAI 2026</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">162 Configurações, <span class="accent">5 Algoritmos</span> HPO</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Maior estudo HPO para RAG com full grid-search como upper bound. 5 datasets, 3 métricas.</p>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
+<!-- SLIDE 5 · METIS — RESULTADOS COM BASELINES -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Resultados · METIS · KG RAG FinSec Dataset</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">2.54× Menos Latência com <span style="color:var(--mira-error)">Mesma Qualidade</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Posição Pareto-ótima: canto superior esquerdo — máxima qualidade, mínimo delay</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">2.54×</div><div class="stat-lbl">menos latência vs. AdaptiveRAG (mesma qualidade)</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">4.5×</div><div class="stat-lbl">maior throughput vs. vLLM SOTA serving</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">15%</div><div class="stat-lbl">mais qualidade vs. melhor config estática (mesma latência)</div></div>
+    </div>
+    <div style="overflow-x:auto" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
       <table>
-        <thead><tr><th>Hiperparâmetro</th><th>Valores</th><th>Etapa RAG</th></tr></thead>
+        <thead><tr><th>Sistema (baseline)</th><th>F1 Score</th><th>Delay Médio</th><th>vs. METIS</th></tr></thead>
         <tbody>
-          <tr><td>Chunk Size</td><td>256 / 384 / 512 tokens</td><td>Chunking</td></tr>
-          <tr><td>Chunk Overlap</td><td>0% / 25%</td><td>Chunking</td></tr>
-          <tr><td>Embedding Model</td><td>multilingual-e5 / bge-large / granite-125M</td><td>Embedding</td></tr>
-          <tr><td>Top-K</td><td>3 / 5 / 10 chunks</td><td>Retrieval</td></tr>
-          <tr class="highlight-row"><td>Generative Model</td><td>Llama-3.1-8B / Mistral-Nemo / Granite-3.1-8B</td><td>Geração</td></tr>
+          <tr><td>vLLM (SOTA serving)</td><td>~0.42</td><td>~2.5s</td><td style="color:rgba(255,100,100,0.6)">4.5× mais lento, -35% qualidade</td></tr>
+          <tr><td>Parrot (OSDI 2024)</td><td>~0.52</td><td>~1.5s</td><td style="color:rgba(255,100,100,0.6)">3× mais lento</td></tr>
+          <tr><td>AdaptiveRAG (ACL 2024)</td><td>~0.63</td><td>~1.2s</td><td style="color:rgba(255,100,100,0.6)">2,54× mais lento</td></tr>
+          <tr><td>Config Estática Melhor</td><td>~0.57</td><td>~0.5s</td><td style="color:rgba(255,100,100,0.6)">-15% qualidade</td></tr>
+          <tr><td class="hi">METIS (per-query)</td><td class="hi">~0.65</td><td class="hi">~0.5s</td><td class="hi">Pareto-ótimo ↑</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-error)">5 Datasets</div>
-        <div class="grid-item-text" style="margin-top:4px">AIArxiv (papers ML) · BioASQ (biomédico) · MiniWiki (Wikipedia) · ClapNQ (NQ longo) · WatsonxQA (enterprise IBM)</div>
+  </div>
+</div>
+
+<!-- SLIDE 6 · METÁFORA 2 — FRONTEIRA DE PARETO -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · Multi-Obj HPO (ICLR 2025)</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">🚗</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-blue)">Comprar Carro pela Fronteira de Pareto</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Ao comprar um carro, você quer o mais rápido, o mais econômico, o mais seguro e o mais barato. Mas <strong style="color:var(--mira-blue)">nenhum carro domina todos os outros em todos os critérios ao mesmo tempo</strong>. A <em>Fronteira de Pareto</em> lista os melhores compromissos possíveis: o mais rápido dado um orçamento, o mais econômico dada uma velocidade mínima. Nenhum carro fora da fronteira é uma escolha inteligente — há sempre um dentro que é melhor em tudo.<br><br>O <strong style="color:var(--mira-blue)">Multi-Obj HPO</strong> aplica isso ao RAG: encontra configs onde melhorar custo não piora qualidade, e melhorar safety não compromete alignment. Você escolhe onde quer estar na fronteira — o algoritmo a mapeia toda.</p>
+        </div>
       </div>
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-error)">3 Métricas</div>
-        <div class="grid-item-text" style="margin-top:4px">Context Correctness (MRR) · Answer Faithfulness (Lexical-FF) · Answer Correctness (Lexical-AC + LLMaaJ-AC)</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="text-align:center"><div style="font-size:0.8rem;font-weight:700;color:var(--mira-error);margin-bottom:0.25rem">Custo</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">tokens × preço LLM por query</p></div>
+      <div class="gi" style="text-align:center"><div style="font-size:0.8rem;font-weight:700;color:var(--mira-blue);margin-bottom:0.25rem">Latência</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">tempo end-to-end por resposta</p></div>
+      <div class="gi" style="text-align:center"><div style="font-size:0.8rem;font-weight:700;color:var(--mira-success);margin-bottom:0.25rem">Safety</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">risco de alucinação ou conteúdo indevido</p></div>
+      <div class="gi" style="text-align:center"><div style="font-size:0.8rem;font-weight:700;color:var(--mira-warning);margin-bottom:0.25rem">Alignment</div><p style="font-size:0.72rem;color:rgba(255,255,255,0.5)">utilidade / helpfulness da resposta</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7 · Multi-Obj HPO — Pareto [D3] -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Multi-Obj HPO · Barker et al. · Trustwise AI + NYU · ICLR 2025</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Bayesian Opt: <span style="color:var(--mira-blue)">Fronteira de Pareto</span> em RAG</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">qLogNEHVI (hypervolume indicator) — robusto a avaliações ruidosas · 15+ hiperparâmetros otimizados</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-pareto" style="height:240px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="alert-b" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-blue)">Task Dependence:</strong> config Pareto-ótima para FinancialQA ≠ MedicalQA — calibre HPO por domínio. <strong style="color:var(--mira-blue)">Objective Dependence:</strong> Safety vs. Alignment frequentemente conflitam — modelo mais "safe" recusa mais, reduzindo helpfulness. Defina pesos antes de otimizar.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8 · METÁFORA 3 — DETETIVE GREEDY -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · IBM HPO (AAAI 2026)</div>
+    </div>
+    <div class="metaphor-box mb-6" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">🕵️</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-success)">O Detetive Greedy — Evidência Mais Valiosa Primeiro</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Um bom detetive não examina todas as pistas na ordem em que aparecem — começa pela <strong style="color:var(--mira-success)">mais reveladora</strong>. Se as impressões digitais já identificam o culpado, medir as pegadas é desperdício puro.<br><br>O <strong style="color:var(--mira-success)">HPO Greedy-M</strong> para RAG funciona igual: em vez de otimizar na ordem do pipeline (chunking → embedding → retrieval → geração), começa pelo <em>modelo generativo e embedding</em> — que têm o maior impacto. O IBM provou isso com 162 configurações: Greedy-M <strong style="color:var(--mira-success)">alcança 63% de Answer Correctness — superando o próprio Grid Search com apenas 10-20 iterações</strong>.</p>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">162</div><div class="stat-lbl">configurações avaliadas (full grid)</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">5</div><div class="stat-lbl">algoritmos HPO comparados</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">10-20</div><div class="stat-lbl">iterações já atingem 90%+ do ótimo</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9 · IBM HPO — 5 Algoritmos [D3] -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">IBM HPO · Orbach et al. · IBM Research · AAAI 2026</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Greedy-M Vence: <span style="color:var(--mira-success)">Modelo Primeiro!</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">5 datasets · AIArxiv · BioASQ · MiniWiki · ClapNQ · WatsonxQA — 3 métricas: Context Correctness, Faithfulness, Answer Correctness</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-hpo" style="height:210px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="border-color:rgba(77,255,180,0.25)"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-success);margin-bottom:0.4rem">Greedy-M (Modelo Primeiro) — VENCEDOR</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.65);line-height:1.55">Ordem: Gen. Model → Embedding → Chunk Size → Overlap → Top-K. Lógica: modelo generativo domina qualidade — fixá-lo primeiro acelera convergência dos demais parâmetros.</p></div>
+      <div class="gi"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:0.4rem">Greedy-R (Retrieval Primeiro) — Sub-ótimo</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.45);line-height:1.55">Ordem natural do pipeline RAG. Intuitivo mas míope — otimizar embedding sem saber o modelo final é como escolher acompanhamentos antes de saber o prato principal.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10 · BEST PRACTICES — PIPELINE COMPLETO -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Best Practices · Wang et al. · Fudan University · Jul 2024</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">8 Escolhas <span style="color:var(--mira-warning)">Validadas por Componente</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Estudo sistemático de combinações por módulo — quick wins sem retraining</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-pipeline" style="height:180px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><div class="tl-num" style="background:rgba(255,100,100,0.12);color:var(--mira-error);font-size:0.75rem">1</div><div><div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Query Classification</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.5)">BERT-based (0.95 F1) — filtra queries que o LLM já sabe responder</p></div></div>
+        <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><div class="tl-num" style="background:rgba(255,100,100,0.12);color:var(--mira-error);font-size:0.75rem">2</div><div><div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Chunking: Small2Big</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Chunk pequeno para retrieval, chunk grande para contexto + Sliding Windows</p></div></div>
+        <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><div class="tl-num" style="background:rgba(255,100,100,0.12);color:var(--mira-error);font-size:0.75rem">3</div><div><div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Embedding: bge-large-en-v1.5</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Melhor geral. LLM-Embedder para domain-specific. Treine contrastivamente.</p></div></div>
+        <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><div class="tl-num" style="background:rgba(255,100,100,0.12);color:var(--mira-error);font-size:0.75rem">4</div><div><div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Retrieval: HyDE + Hybrid Search</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Melhor combinação. HyDE gera doc hipotético antes de buscar — melhora recall.</p></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><div class="tl-num" style="background:rgba(255,100,100,0.12);color:var(--mira-error);font-size:0.75rem">5</div><div><div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Reranking: monoT5</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Melhor equilíbrio qualidade × velocidade. TILDE para latência extrema.</p></div></div>
+        <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><div class="tl-num" style="background:rgba(255,100,100,0.12);color:var(--mira-error);font-size:0.75rem">6</div><div><div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Repacking: Estratégia "Sides"</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Docs relevantes no início E no fim — combate o "lost-in-the-middle" do LLM.</p></div></div>
+        <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><div class="tl-num" style="background:rgba(255,100,100,0.12);color:var(--mira-error);font-size:0.75rem">7</div><div><div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Summarization: Recomp</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Extractive — bom equilíbrio qualidade/custo. SelectiveContext para contextos longos.</p></div></div>
+        <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><div class="tl-num" style="background:rgba(255,100,100,0.12);color:var(--mira-error);font-size:0.75rem">8</div><div><div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Multimodal: "Retrieval as Generation"</div><p style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Gera texto descritivo da imagem → indexa texto → recupera normal. Sem modelo multimodal.</p></div></div>
       </div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 14: D3: 5 ALGORITMOS HPO -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="bar-chart-2"></i> Visualização Animada</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">5 Algoritmos HPO: <span class="accent">Quem Vence?</span></h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Comparação por convergência e performance final em 10 iterações.</p>
-    <div id="anim-hpo" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:300px"></div>
-  </div>
-</section>
-
-<!-- SLIDE 15: IBM HPO — GREEDY-M VENCE -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="award"></i> Descobertas · IBM HPO</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Greedy-M Vence: <span class="accent">Modelo Primeiro!</span></h2>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="card" style="padding:22px;border-left:4px solid var(--mira-error)">
-        <div class="grid-item-title" style="color:var(--mira-error);margin-bottom:8px">Greedy-M (Modelo Primeiro)</div>
-        <p style="font-size:0.84rem;color:var(--mira-text-muted);line-height:1.6">Otimiza: Generative Model → Embedding Model → Chunk Size → Chunk Overlap → Top-K.<br><br>Lógica: modelo generativo domina qualidade. Fixando-o primeiro, os demais parâmetros convergem mais rápido.</p>
-        <div style="margin-top:10px;color:var(--mira-error);font-size:0.82rem;font-weight:600">✓ Melhor desempenho médio em todos os datasets</div>
+<!-- SLIDE 11 · O DEBATE -->
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Tensão Conceitual · O Debate</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Adaptar <span style="color:var(--mira-error)">por Query</span> ou Otimizar <span style="color:var(--mira-success)">Globalmente?</span></h2>
+      <div class="accent-bar mb-5"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="background:rgba(255,100,100,0.06);border:1px solid rgba(255,100,100,0.2);border-radius:1rem;padding:1.4rem">
+        <div style="font-weight:700;margin-bottom:0.5rem;color:var(--mira-error);font-size:0.9rem">🍳 METIS (Per-Query Adaptation)</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.55">Tese: cada query merece sua própria receita. O profiler LLM adiciona uma chamada extra, mas os ganhos de latência e qualidade compensam: 2,54× menos latência, 15% mais F1 vs. qualquer config estática. Custo do profiler é amortizado pela eficiência per-query.</p>
+        <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(255,100,100,0.1);border-radius:0.5rem;font-size:0.75rem;color:var(--mira-error)">F1 0.65 · Delay 0.5s · overhead do profiler: ~50ms</div>
       </div>
-      <div class="card" style="padding:22px;border-left:4px solid rgba(255,255,255,0.1)">
-        <div class="grid-item-title" style="color:var(--mira-text-muted);margin-bottom:8px">Greedy-R (Retrieval Primeiro)</div>
-        <p style="font-size:0.84rem;color:var(--mira-text-muted);line-height:1.6">Otimiza: Embedding → Chunk Size → Chunk Overlap → Generative Model → Top-K.<br><br>Segue a ordem natural do pipeline RAG. Intuitivo, mas sub-ótimo — retrieval sem saber o modelo final é míope.</p>
-        <div style="margin-top:10px;color:rgba(255,255,255,0.3);font-size:0.82rem">✗ Converge mais lento, desempenho inferior</div>
+      <div style="background:rgba(77,255,180,0.06);border:1px solid rgba(77,255,180,0.2);border-radius:1rem;padding:1.4rem">
+        <div style="font-weight:700;margin-bottom:0.5rem;color:var(--mira-success);font-size:0.9rem">🕵️ IBM Greedy-M (Global HPO)</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.55">Tese: uma boa configuração global, encontrada de forma eficiente, é suficiente para a maioria dos casos. Greedy-M com 10-20 iterações alcança 63% de Answer Correctness — sem overhead de profiling por query. Mais previsível em produção, sem dependência de LLM intermediário.</p>
+        <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(77,255,180,0.1);border-radius:0.5rem;font-size:0.75rem;color:var(--mira-success)">63% AC · supera grid search · 10-20 iterações</div>
       </div>
     </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
-      <div style="font-size:0.86rem;color:var(--mira-text-muted)">
-        <strong style="color:var(--mira-error)">Random Search surpresa:</strong> significativamente melhor que grid search nas primeiras iterações — a randomização evita padrões que travam em mínimos locais. HPO com apenas 10-20 iterações já alcança 90%+ do ótimo grid.
-      </div>
+    <div class="alert-b" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-blue)">Síntese:</strong> Não são opostos — são layers. Use Greedy-M primeiro para encontrar a melhor config base (10-20 iterações, offline). Depois, se latência ou qualidade ainda variam muito entre queries, adicione o profiler METIS como camada de adaptação dinâmica em cima. O custo do profiler (~50ms) compensa quando a variação de complexidade é alta. Se o corpus é homogêneo, Greedy-M sozinho é suficiente.</p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 16: BEST PRACTICES — WORKFLOW COMPLETO -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="check-square"></i> Wang et al. · Fudan University · Jul 2024</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Melhores Práticas por <span class="accent">Módulo</span> RAG</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Estudo sistemático de combinações por componente — de Query Classification a Fine-tuning.</p>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div>
-        <ol class="steps">
-          <li class="step-item">
-            <span class="step-num">1</span>
-            <div>
-              <div class="step-content-title">Query Classification</div>
-              <div class="step-content-text">BERT-based classifier (0.95 F1) decide se retrieval é necessário. Evita overhead para queries que o LLM já sabe responder.</div>
-            </div>
-          </li>
-          <li class="step-item">
-            <span class="step-num">2</span>
-            <div>
-              <div class="step-content-title">Chunking Best Practice</div>
-              <div class="step-content-text">Small2Big (chunk pequeno para retrieval, chunk grande para contexto) + Sliding Windows para documentos longos.</div>
-            </div>
-          </li>
-          <li class="step-item">
-            <span class="step-num">3</span>
-            <div>
-              <div class="step-content-title">Embedding</div>
-              <div class="step-content-text">bge-large-en-v1.5 (BAAI/bge) melhor geral. LLM-Embedder para casos domain-specific. Treinar contrastivamente quando possível.</div>
-            </div>
-          </li>
-          <li class="step-item">
-            <span class="step-num">4</span>
-            <div>
-              <div class="step-content-title">Retrieval</div>
-              <div class="step-content-text">HyDE (Hypothetical Document Embeddings) + Hybrid Search melhor combinação. Query Rewriting melhora casos ambíguos.</div>
-            </div>
-          </li>
-        </ol>
-      </div>
-      <div>
-        <ol class="steps">
-          <li class="step-item">
-            <span class="step-num">5</span>
-            <div>
-              <div class="step-content-title">Reranking</div>
-              <div class="step-content-text">monoT5 melhor equilíbrio qualidade × velocidade. TILDE (precomputed) para latência extrema. DLM-based para máxima qualidade.</div>
-            </div>
-          </li>
-          <li class="step-item">
-            <span class="step-num">6</span>
-            <div>
-              <div class="step-content-title">Repacking (Ordering)</div>
-              <div class="step-content-text">Estratégia "Sides" vence: docs relevantes no início E no fim — combate o "lost-in-the-middle" do LLM.</div>
-            </div>
-          </li>
-          <li class="step-item">
-            <span class="step-num">7</span>
-            <div>
-              <div class="step-content-title">Summarization</div>
-              <div class="step-content-text">Recomp (extractive) bom equilíbrio qualidade/custo. SelectiveContext para contextos muito longos.</div>
-            </div>
-          </li>
-          <li class="step-item">
-            <span class="step-num">8</span>
-            <div>
-              <div class="step-content-title">Multimodal — "Retrieval as Generation"</div>
-              <div class="step-content-text">Para conteúdo visual: gerar texto descritivo a partir de imagem → indexar texto → recuperar normal. Sem modelo multimodal necessário.</div>
-            </div>
-          </li>
-        </ol>
-      </div>
+<!-- SLIDE 12 · QUANDO USAR -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Guia Prático · Quando Usar Cada Abordagem</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Por Onde <span style="color:var(--mira-error)">Começar</span> a Otimizar</h2>
+      <div class="accent-bar mb-5"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="dec-node">🔧 <strong>Quero quick wins sem retraining (custo zero)?</strong></div>
+      <div class="dec-connector">↓ sim</div>
+      <div class="dec-node answer">→ <strong>Best Practices</strong>: Query Classification + HyDE + Sides repacking + bge-large. Ganhos imediatos de engenharia.</div>
+      <div class="dec-node">🔬 <strong>Quero encontrar a melhor configuração geral com budget limitado?</strong></div>
+      <div class="dec-connector">↓ sim (10-20 avaliações)</div>
+      <div class="dec-node answer">→ <strong>IBM Greedy-M</strong>: começa pelo modelo generativo + embedding. Random search nas 5 primeiras iterações. Supera Grid Search e TPE.</div>
+      <div class="dec-node">⚡ <strong>Minha base tem alta variação de complexidade entre queries?</strong></div>
+      <div class="dec-connector">↓ sim (FAQ simples misturado com análise financeira complexa)</div>
+      <div class="dec-node answer">→ <strong>METIS</strong>: profiler LLM + 3 knobs adaptativos. 2.54× menos latência, 15% mais qualidade vs. melhor config estática.</div>
+      <div class="dec-node">🎯 <strong>Tenho múltiplos stakeholders com objetivos conflitantes (custo vs. safety vs. qualidade)?</strong></div>
+      <div class="dec-connector">↓ sim</div>
+      <div class="dec-node answer">→ <strong>Multi-Obj HPO</strong>: Bayesian Opt com qLogNEHVI · 4 objetivos simultâneos · Calibre por domínio (FinancialQA ≠ MedicalQA).</div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 17: D3: PIPELINE BEST PRACTICES -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="layers"></i> Visualização Animada</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Pipeline <span class="accent">Best Practices</span> Completo</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Fluxo completo com as escolhas vencedoras por módulo.</p>
-    <div id="anim-pipeline" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:300px"></div>
-  </div>
-</section>
-
-<!-- SLIDE 18: BEST PRACTICES — INSIGHTS FINAIS -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="star"></i> Insights · Best Practices</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">4 Insights que <span class="accent">Surpreendem</span></h2>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item" style="border-left:3px solid var(--mira-error)">
-        <div class="grid-item-title" style="color:var(--mira-error)">Nem toda query precisa de RAG</div>
-        <div class="grid-item-text" style="margin-top:6px">Query Classification (BERT 0.95 F1) filtra queries que o LLM já sabe responder. Retrieval desnecessário adiciona latência sem ganho de qualidade.</div>
-      </div>
-      <div class="grid-item" style="border-left:3px solid var(--mira-blue)">
-        <div class="grid-item-title" style="color:var(--mira-blue)">Lost-in-the-middle é real e solucionável</div>
-        <div class="grid-item-text" style="margin-top:6px">LLMs ignoram docs no meio do contexto. Repacking "Sides" (relevante no início E fim) combate o problema — sem custo adicional de compute.</div>
-      </div>
-      <div class="grid-item" style="border-left:3px solid var(--mira-success)">
-        <div class="grid-item-title" style="color:var(--mira-success)">HyDE vale o custo extra</div>
-        <div class="grid-item-text" style="margin-top:6px">Gerar documento hipotético antes de buscar melhora recall significativamente. O overhead de 1 chamada LLM extra é compensado pela melhora de retrieval.</div>
-      </div>
-      <div class="grid-item" style="border-left:3px solid var(--mira-warning)">
-        <div class="grid-item-title" style="color:var(--mira-warning)">Fine-tuning conjunto retriever+gerador</div>
-        <div class="grid-item-text" style="margin-top:6px">Fine-tuning holístico (retriever e gerador juntos) supera ajuste de módulos isolados — mas aumenta complexidade. Use somente quando qualidade é crítica.</div>
-      </div>
+<!-- SLIDE 13 · Mapa 4 Papers [D3] -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Síntese · 4 Papers</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Quatro <span style="color:var(--mira-error)">Layers de Otimização</span> Complementares</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Complexidade de implementação vs. impacto na performance — onde cada paper se posiciona</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-compare13" style="height:230px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;font-size:0.72rem;color:var(--mira-warning);margin-bottom:0.25rem">Best Practices</div><span class="tag t-y" style="font-size:0.6rem;display:table;margin:0 auto">Quick Wins</span></div>
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;font-size:0.72rem;color:var(--mira-success);margin-bottom:0.25rem">IBM Greedy-M</div><span class="tag t-g" style="font-size:0.6rem;display:table;margin:0 auto">HPO Eficiente</span></div>
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;font-size:0.72rem;color:var(--mira-blue);margin-bottom:0.25rem">Multi-Obj HPO</div><span class="tag t-b" style="font-size:0.6rem;display:table;margin:0 auto">Pareto 4-obj</span></div>
+      <div class="gi" style="text-align:center;padding:0.9rem 0.5rem"><div style="font-weight:700;font-size:0.72rem;color:var(--mira-error);margin-bottom:0.25rem">METIS</div><span class="tag t-r" style="font-size:0.6rem;display:table;margin:0 auto">Per-Query</span></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 19: D3: COMPARATIVO 4 PAPERS -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="map"></i> Comparativo Visual</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Landscape: <span class="accent">4 Abordagens</span> de Otimização</h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">Posicionamento por foco de otimização × aplicabilidade prática.</p>
-    <div id="anim-compare13" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:300px"></div>
-  </div>
-</section>
-
-<!-- SLIDE 20: SÍNTESE — 5 LIÇÕES -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="book-open"></i> Síntese do Módulo 13</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">5 Lições sobre <span class="accent">Otimização de Pipeline</span></h2>
-    <div class="card card-accent" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      <ol class="steps">
-        <li class="step-item">
-          <span class="step-num">1</span>
-          <div>
-            <div class="step-content-title">Config por query > config estática</div>
-            <div class="step-content-text">METIS: adaptar 3 knobs por query alcança 15% mais qualidade E 2.54× menos latência vs. melhor config fixa. Não existe um-tamanho-para-todos.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">2</span>
-          <div>
-            <div class="step-content-title">HPO multi-objetivo tem compromissos inevitáveis</div>
-            <div class="step-content-text">Não existe a melhor config: existe a fronteira de Pareto. Safety vs. alignment podem conflitar. Defina pesos explícitos entre objetivos antes de otimizar.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">3</span>
-          <div>
-            <div class="step-content-title">Otimize o modelo primeiro</div>
-            <div class="step-content-text">IBM: Greedy-M (modelo generativo + embedding primeiro) converge mais rápido e atinge melhor resultado. 10-20 iterações HPO são suficientes.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">4</span>
-          <div>
-            <div class="step-content-title">Pipeline tem quick wins sem custo</div>
-            <div class="step-content-text">Best Practices: Query Classification evita retrieval desnecessário; Sides repacking combate lost-in-the-middle; HyDE melhora recall — ganhos de engenharia sem retraining.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">5</span>
-          <div>
-            <div class="step-content-title">Config ótima não generaliza entre domínios</div>
-            <div class="step-content-text">FinancialQA ≠ MedicalQA ≠ enterprise docs. Execute HPO por domínio. Random search nas primeiras iterações é surpreendentemente eficaz.</div>
-          </div>
-        </li>
-      </ol>
+<!-- SLIDE 14 · PRINCÍPIOS + FECHAMENTO 3 METÁFORAS -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 13 · Princípios Destilados</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:1.25rem">Os 3 Especialistas em <span style="color:var(--mira-error)">Calibração Finalmente de Acordo</span></h2>
+    </div>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:1.7"><strong style="color:var(--mira-error)">Lembram dos 3 especialistas?</strong> O Chef Adaptativo (METIS) provou que receita por query é 2,54× mais eficiente — não existe almoço bom com o mesmo setup para jantar. A Fronteira de Pareto (HPO Multi-Obj) mapeou os compromissos inevitáveis entre custo, latência, safety e alignment — você escolhe onde quer estar, ela encontra o ponto. O Detetive Greedy (IBM) descobriu que inspecionar o modelo primeiro acelera a convergência e <em>supera o próprio Grid Search</em> com apenas 10-20 investigações. <strong style="color:var(--mira-error)">Conclusão unânime: pipeline ideal = Greedy-M para base (offline) + fronteira de Pareto para calibrar objetivos + METIS para adaptar em runtime.</strong></p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.6rem" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-r" style="flex-shrink:0">P1</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Config por query supera config estática</strong> — METIS prova: qualquer config estática que iguala latência de METIS tem ≥10% queda de qualidade. O overhead do profiler (~50ms) compensa com alta variação de complexidade.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-b" style="flex-shrink:0">P2</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Não existe a melhor configuração — existe a fronteira de Pareto</strong> — HPO Multi-Obj: Safety vs. Alignment conflitam, FinancialQA ≠ MedicalQA. Defina pesos por domínio antes de otimizar.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-g" style="flex-shrink:0">P3</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Otimize o modelo generativo primeiro</strong> — IBM Greedy-M bate Grid Search com 10-20 iterações. Random search supera TPE nas primeiras 5. Ordem importa mais que algoritmo de busca.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-y" style="flex-shrink:0">P4</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Quick wins de engenharia são gratuitos e imediatos</strong> — Query Classification + HyDE + Sides repacking não exigem retraining. Implemente primeiro antes de qualquer HPO.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- SLIDE 21: GUIA DE DECISÃO -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700"><i data-lucide="compass"></i> Guia Prático de Otimização</div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">Por Onde <span class="accent">Começar</span> a Otimizar?</h2>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="padding:28px">
-      <ol class="steps">
-        <li class="step-item">
-          <span class="step-num">1</span>
-          <div>
-            <div class="step-content-title" style="color:var(--mira-error)">Quick wins de engenharia (custo: zero)</div>
-            <div class="step-content-text">Implementar Query Classification, Sides repacking, HyDE para retrieval. Ganhos imediatos sem custo de treinamento.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">2</span>
-          <div>
-            <div class="step-content-title" style="color:var(--mira-error)">HPO greedy (10-20 iterações)</div>
-            <div class="step-content-text">Testar 3 modelos generativos × 3 embeddings primeiro (Greedy-M). Depois chunk size e top-k. Random search nas primeiras 5 iterações.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">3</span>
-          <div>
-            <div class="step-content-title" style="color:var(--mira-error)">Config adaptativa por query (se latência é crítica)</div>
-            <div class="step-content-text">Implementar profiler de complexidade de query. Criar espaço de configurações por tier (simples/médio/complexo). Monitorar tradeoffs quality × latency.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">4</span>
-          <div>
-            <div class="step-content-title" style="color:var(--mira-error)">MOO Pareto (se múltiplos stakeholders)</div>
-            <div class="step-content-text">Definir objetivos com pesos. BO com qLogNEHVI. Escolher ponto da fronteira de Pareto alinhado com prioridades do negócio.</div>
-          </div>
-        </li>
-      </ol>
+<!-- SLIDE 15 · PRÓXIMO MÓDULO -->
+<div class="slide" id="slide-15" style="background:radial-gradient(ellipse 60% 50% at 80% 50%,rgba(77,180,255,0.1) 0%,transparent 55%),var(--mira-bg)">
+  <div class="card" style="border-color:rgba(77,180,255,0.18)">
+    <div data-aos="fade-up" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(77,180,255,0.1);border:1px solid rgba(77,180,255,0.25);border-radius:2rem;padding:0.35rem 0.9rem;font-size:0.7rem;color:var(--mira-blue);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1.5rem">A Seguir · Módulo 16</div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.05;margin-bottom:1rem">RAG sobre Dados<br><span style="color:var(--mira-blue)">Estruturados</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.95rem;margin-bottom:2rem">Como construir RAG sobre tabelas, bancos de dados relacionais e dados semiestruturados — Text-to-SQL, Table RAG e hibridização vetorial-relacional.</p>
     </div>
+    <hr class="div mb-6" />
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">4</div><div class="stat-lbl">artigos científicos</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">SQL</div><div class="stat-lbl">Text-to-SQL + RAG híbrido</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-blue)">Tables</div><div class="stat-lbl">RAG sobre dados tabulares</div></div>
+    </div>
+    <a href="../index.html" style="display:inline-flex;align-items:center;gap:0.5rem;color:var(--mira-blue);font-weight:600;font-size:0.9rem;text-decoration:none;border:1px solid rgba(77,180,255,0.3);border-radius:0.75rem;padding:0.6rem 1.2rem;background:rgba(77,180,255,0.08)">← Voltar ao Portal</a>
   </div>
-</section>
-
-<!-- SLIDE 22: PRÓXIMO MÓDULO -->
-<section class="slide">
-  <div class="slide-inner" style="text-align:center">
-    <div class="section-label" style="justify-content:center" data-aos="fade-down" data-aos-duration="700"><i data-lucide="arrow-right-circle"></i> Próxima Parada</div>
-    <div class="next-module" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <div class="next-label">Módulo 14</div>
-      <div class="next-title">Avaliação em Tarefa Real</div>
-      <p class="next-desc" style="margin-top:8px">Como avaliar RAG em condições reais: benchmarks especializados, métricas além do RAGAS, avaliação com casos de uso industriais e nuances que os benchmarks sintéticos não capturam.</p>
-    </div>
-    <div class="stats-row" style="margin-top:32px" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="stat-item"><span class="stat-num" style="color:var(--mira-teal)">13</span><span class="stat-label">Módulos Completos</span></div>
-      <div class="stat-item"><span class="stat-num" style="color:var(--mira-teal)">339</span><span class="stat-label">Slides Totais</span></div>
-      <div class="stat-item"><span class="stat-num" style="color:var(--mira-teal)">131</span><span class="stat-label">Animações D3</span></div>
-      <div class="stat-item"><span class="stat-num" style="color:var(--mira-teal)">68</span><span class="stat-label">Artigos Científicos</span></div>
-    </div>
-  </div>
-</section>
+</div>
 
 <script>
-AOS.init({ duration:700, once:true, offset:55 });
-lucide.createIcons();
-</script>
-
-<!-- D3: anim-metis — Quality × Latency scatter -->
-<script>
+AOS.init({duration:700,once:true,offset:55});
 (function(){
-  window.__metisGen=(window.__metisGen||0)+1; var myG=window.__metisGen;
-  var el=document.getElementById('anim-metis'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700,H=280;
-  var m={top:30,right:50,bottom:55,left:70};
-  var iw=W-m.left-m.right, ih=H-m.top-m.bottom;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-  var g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
-
-  var systems=[
-    {name:'vLLM',x:2.5,y:0.42,r:12,col:'rgba(255,255,255,0.3)',marker:'×'},
-    {name:'Parrot',x:1.5,y:0.52,r:12,col:'rgba(255,255,255,0.3)',marker:'×'},
-    {name:'AdaptiveRAG',x:1.2,y:0.63,r:12,col:'rgba(255,144,77,0.7)',marker:'★'},
-    {name:'Config Estática Típica',x:1.8,y:0.55,r:9,col:'rgba(255,213,77,0.5)',marker:'●'},
-    {name:'METIS',x:0.5,y:0.65,r:16,col:'#FF6464',marker:'●'},
-  ];
-
-  var xSc=d3.scaleLinear().domain([0,3.2]).range([0,iw]);
-  var ySc=d3.scaleLinear().domain([0.35,0.72]).range([ih,0]);
-
-  [0.45,0.55,0.65].forEach(v=>{
-    g.append('line').attr('x1',0).attr('x2',iw).attr('y1',ySc(v)).attr('y2',ySc(v)).attr('stroke','rgba(255,255,255,0.05)');
+  var bar=document.getElementById('progress-bar'),btn=document.getElementById('back-btn');
+  window.addEventListener('scroll',function(){
+    bar.style.width=Math.min(100,(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100)+'%';
+    btn.classList.toggle('visible',window.scrollY>300);
   });
-  [0.5,1,1.5,2,2.5,3].forEach(v=>{
-    g.append('line').attr('x1',xSc(v)).attr('y1',0).attr('x2',xSc(v)).attr('y2',ih).attr('stroke','rgba(255,255,255,0.05)');
-  });
-
-  g.append('g').attr('transform','translate(0,'+ih+')')
-    .call(d3.axisBottom(xSc).ticks(5).tickFormat(d=>d+'s'))
-    .selectAll('text').style('fill','rgba(255,255,255,0.4)').style('font-size','9px');
-  g.append('g').call(d3.axisLeft(ySc).ticks(5).tickFormat(d=>(d*100).toFixed(0)+'%'))
-    .selectAll('text').style('fill','rgba(255,255,255,0.4)').style('font-size','9px');
-  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,0.1)');
-
-  g.append('text').attr('x',iw/2).attr('y',ih+46).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.32)').style('font-size','9.5px').text('← Delay Médio (menos é melhor)');
-  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-52).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.32)').style('font-size','9.5px').text('↑ F1 Score (mais é melhor)');
-
-  // "Better" arrow
-  g.append('text').attr('x',20).attr('y',22).style('fill','rgba(255,100,100,0.5)').style('font-size','9px').text('← Melhor →');
-
-  systems.forEach((d,i)=>{
-    var sg=g.append('g');
-    sg.append('circle').attr('cx',xSc(d.x)).attr('cy',ySc(d.y))
-      .attr('r',0).attr('fill',d.col).attr('fill-opacity',d.name==='METIS'?0.25:0.15)
-      .attr('stroke',d.col).attr('stroke-width',d.name==='METIS'?2:1.5)
-      .transition().delay(400+i*200).duration(600).attr('r',d.r);
-    sg.append('text').attr('x',xSc(d.x)+(d.name==='METIS'?d.r+6:-d.r-6)).attr('y',ySc(d.y)+3)
-      .attr('text-anchor',d.name==='METIS'?'start':'end')
-      .style('fill',d.col).style('font-size','8.5px').style('font-weight','700')
-      .style('opacity',0).text(d.name)
-      .transition().delay(700+i*200).duration(400).style('opacity',1);
-  });
-
-  function pulse(){
-    if(window.__metisGen!==myG) return;
-    g.selectAll('circle').filter((d,i)=>d3.select(g.selectAll('circle')._groups[0][i].parentNode).select('text').text()==='METIS')
-      .transition().duration(700).attr('r',20).attr('fill-opacity',0.4)
-      .transition().duration(700).attr('r',16).attr('fill-opacity',0.25);
-    // simpler: pulse all
-    setTimeout(pulse,2800);
-  }
-  // Pulse the METIS circle
-  function pulseMetis(){
-    if(window.__metisGen!==myG) return;
-    g.selectAll('circle').transition().duration(700)
-      .attr('r',(d,i)=>{ var r=[12,12,12,9,16][i]; return r+3; })
-      .transition().duration(700)
-      .attr('r',(d,i)=>{ return [12,12,12,9,16][i]; });
-    setTimeout(pulseMetis,2600);
-  }
-  setTimeout(pulseMetis,1900);
 })();
-</script>
 
-<!-- D3: anim-knobs — 3 Knobs Impact by Query Complexity -->
-<script>
+/* ═══ ANIM 1 — D3 CONCEITUAL ÚNICO: O Profiler em Ação (S4) ═══ */
 (function(){
-  window.__knobsGen=(window.__knobsGen||0)+1; var myG=window.__knobsGen;
-  var el=document.getElementById('anim-knobs'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700,H=300;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
-  // 3 groups: Simple, Medium, Complex
-  // Show synthesis_method quality comparison
+  window.__profGen=(window.__profGen||0)+1; var myG=window.__profGen;
+  var el=document.getElementById('anim-profiler'); if(!el) return; el.innerHTML='';
+  var W=860,H=230;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var queries=[
-    {label:'Q1 Simples',methods:[
-      {m:'map_rerank',q:0.72,col:'#4DB4FF'},
-      {m:'stuff',q:0.70,col:'#FFD54D'},
-      {m:'map_reduce',q:0.71,col:'#4DFFB4'},
-    ]},
-    {label:'Q2 Média',methods:[
-      {m:'map_rerank',q:0.52,col:'#4DB4FF'},
-      {m:'stuff',q:0.58,col:'#FFD54D'},
-      {m:'map_reduce',q:0.70,col:'#4DFFB4'},
-    ]},
-    {label:'Q3 Complexa',methods:[
-      {m:'map_rerank',q:0.38,col:'#4DB4FF'},
-      {m:'stuff',q:0.42,col:'#FFD54D'},
-      {m:'map_reduce',q:0.78,col:'#4DFFB4'},
-    ]},
+    {text:'"Em que condado nasceu Blair?"',complexity:0.15,label:'Simples',clr:'#4DFFB4',chunks:1,method:'map_rerank',sum:'10 words'},
+    {text:'"Alice e Bob são do mesmo país?"',complexity:0.5,label:'Média',clr:'#FFD54D',chunks:4,method:'stuff',sum:'30 words'},
+    {text:'"Compare os custos da NVIDIA nos 3 últimos trimestres."',complexity:0.9,label:'Complexa',clr:'#FF6464',chunks:12,method:'map_reduce',sum:'80 words'}
   ];
-
-  var gW=(W-40)/3, barW=gW/4, pad=20;
-  var ySc=d3.scaleLinear().domain([0,0.9]).range([H-60,30]);
-
-  queries.forEach((q,qi)=>{
-    var gx=pad+qi*gW;
-    // Group label
-    svg.append('text').attr('x',gx+gW/2).attr('y',H-8).attr('text-anchor','middle')
-      .style('fill','rgba(255,255,255,0.55)').style('font-size','9px').style('opacity',0)
-      .text(q.label).transition().delay(300+qi*200).duration(400).style('opacity',1);
-
-    q.methods.forEach((meth,mi)=>{
-      var bx=gx+mi*(barW+4)+6;
-      // Bar
-      svg.append('rect')
-        .attr('x',bx).attr('y',H-60).attr('width',barW).attr('height',0)
-        .attr('fill',meth.col).attr('fill-opacity',0.75).attr('rx',3)
-        .transition().delay(500+qi*200+mi*120).duration(600)
-        .attr('y',ySc(meth.q)).attr('height',(H-60)-ySc(meth.q));
-
-      // Value label
-      svg.append('text').attr('x',bx+barW/2).attr('y',ySc(meth.q)-4).attr('text-anchor','middle')
-        .style('fill',meth.col).style('font-size','7.5px').style('font-weight','700').style('opacity',0)
-        .text((meth.q*100).toFixed(0)+'%')
-        .transition().delay(800+qi*200+mi*120).duration(400).style('opacity',1);
-    });
-  });
-
-  // Legend
-  var methods=['map_rerank','stuff','map_reduce'];
-  var cols=['#4DB4FF','#FFD54D','#4DFFB4'];
-  methods.forEach((m,i)=>{
-    svg.append('rect').attr('x',pad+i*110).attr('y',12).attr('width',10).attr('height',10)
-      .attr('fill',cols[i]).attr('fill-opacity',0.75).attr('rx',2)
-      .style('opacity',0).transition().delay(300+i*100).duration(400).style('opacity',1);
-    svg.append('text').attr('x',pad+i*110+14).attr('y',21)
-      .style('fill','rgba(255,255,255,0.55)').style('font-size','8.5px')
-      .style('opacity',0).text(m)
-      .transition().delay(300+i*100).duration(400).style('opacity',1);
-  });
-
-  // Axis label
-  svg.append('text').attr('x',12).attr('y',H/2).attr('transform','rotate(-90,12,'+H/2+')')
-    .attr('text-anchor','middle').style('fill','rgba(255,255,255,0.3)').style('font-size','9px').text('Qualidade F1 →');
-
-  // Highlight winner per query
-  function highlightWinner(){
-    if(window.__knobsGen!==myG) return;
-    queries.forEach((q,qi)=>{
-      var best=q.methods.reduce((a,b)=>a.q>b.q?a:b);
-      var mi=q.methods.indexOf(best);
-      var gx=pad+qi*gW;
-      var bx=gx+mi*(barW+4)+6;
-      svg.append('rect').attr('x',bx-2).attr('y',ySc(best.q)-4).attr('width',barW+4).attr('height',4)
-        .attr('fill',best.col).attr('opacity',0.8).attr('rx',2)
-        .transition().duration(400).attr('opacity',0).remove();
-    });
-    setTimeout(highlightWinner,2800);
+  var barW=W*0.28, barX=W*0.38, gaugeH=H*0.55, gaugeY=H*0.2;
+  svg.append('text').attr('x',W*.18).attr('y',H*0.08).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',9.5).text('Query');
+  svg.append('text').attr('x',W*.5).attr('y',H*0.08).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',9.5).text('Complexidade Estimada');
+  svg.append('text').attr('x',W*.82).attr('y',H*0.08).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.35)').attr('font-size',9.5).text('Config Selecionada');
+  // Static gauge track
+  svg.append('rect').attr('x',W*.38).attr('y',gaugeY).attr('width',barW).attr('height',gaugeH).attr('rx',6).attr('fill','rgba(255,255,255,.06)').attr('stroke','rgba(255,255,255,.12)').attr('stroke-width',1);
+  [0.33,0.66].forEach(function(v){svg.append('line').attr('x1',W*.38+barW*v).attr('y1',gaugeY).attr('x2',W*.38+barW*v).attr('y2',gaugeY+gaugeH).attr('stroke','rgba(255,255,255,.12)').attr('stroke-width',1).attr('stroke-dasharray','3,3');});
+  svg.append('text').attr('x',W*.38+barW*.17).attr('y',gaugeY+gaugeH+14).attr('text-anchor','middle').attr('fill','#4DFFB4').attr('font-size',8).text('Simples');
+  svg.append('text').attr('x',W*.38+barW*.5).attr('y',gaugeY+gaugeH+14).attr('text-anchor','middle').attr('fill','#FFD54D').attr('font-size',8).text('Média');
+  svg.append('text').attr('x',W*.38+barW*.83).attr('y',gaugeY+gaugeH+14).attr('text-anchor','middle').attr('fill','#FF6464').attr('font-size',8).text('Complexa');
+  var fill=svg.append('rect').attr('x',W*.38).attr('y',gaugeY).attr('width',0).attr('height',gaugeH).attr('rx',6).attr('fill','rgba(255,255,255,.1)');
+  var queryTxt=svg.append('text').attr('x',W*.18).attr('y',H*.45).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.7)').attr('font-size',9).attr('font-weight',600);
+  var cfgLines=[
+    svg.append('text').attr('x',W*.82).attr('y',H*.38).attr('text-anchor','middle').attr('font-size',9).attr('font-weight',700),
+    svg.append('text').attr('x',W*.82).attr('y',H*.5).attr('text-anchor','middle').attr('font-size',9),
+    svg.append('text').attr('x',W*.82).attr('y',H*.62).attr('text-anchor','middle').attr('font-size',9)
+  ];
+  var cur=0;
+  function runQuery(){
+    if(window.__profGen!==myG) return;
+    var q=queries[cur];
+    queryTxt.text(q.text.length>30?q.text.slice(0,27)+'…':q.text).attr('fill',q.clr);
+    fill.transition().duration(1200).attr('width',barW*q.complexity).attr('fill',q.clr+'55');
+    cfgLines[0].attr('opacity',0).transition().delay(1300).duration(300).attr('opacity',1).attr('fill',q.clr).text('chunks: '+q.chunks);
+    cfgLines[1].attr('opacity',0).transition().delay(1400).duration(300).attr('opacity',1).attr('fill','rgba(255,255,255,.5)').text('method: '+q.method);
+    cfgLines[2].attr('opacity',0).transition().delay(1500).duration(300).attr('opacity',1).attr('fill','rgba(255,255,255,.35)').text('summary: '+q.sum);
+    cur=(cur+1)%queries.length; setTimeout(runQuery,2800);
   }
-  setTimeout(highlightWinner,2000);
+  setTimeout(runQuery,600);
 })();
-</script>
 
-<!-- D3: anim-pareto — Pareto Frontier -->
-<script>
+/* ═══ ANIM 2 — Pareto Frontier (S7) ═══ */
 (function(){
   window.__paretoGen=(window.__paretoGen||0)+1; var myG=window.__paretoGen;
-  var el=document.getElementById('anim-pareto'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700,H=300;
-  var m={top:30,right:50,bottom:55,left:65};
-  var iw=W-m.left-m.right, ih=H-m.top-m.bottom;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+  var el=document.getElementById('anim-pareto'); if(!el) return; el.innerHTML='';
+  var W=860,H=240;
+  var m={top:28,right:45,bottom:52,left:62};
+  var iw=W-m.left-m.right,ih=H-m.top-m.bottom;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
-
-  // All configs as dots
-  var configs=[];
-  for(var i=0;i<30;i++){
-    configs.push({x:0.1+Math.random()*0.85, y:0.3+Math.random()*0.55, pareto:false});
-  }
-  // Pareto frontier points
-  var paretoPoints=[
-    {x:0.92,y:0.38},{x:0.78,y:0.52},{x:0.61,y:0.63},{x:0.42,y:0.72},{x:0.22,y:0.81},{x:0.08,y:0.88}
-  ];
-  paretoPoints.forEach(p=>{configs.push({...p,pareto:true});});
-
-  // Mark dominated: any config where a pareto point has lower cost AND higher quality
-  configs.forEach(c=>{
-    if(!c.pareto){
-      var dominated=paretoPoints.some(p=>p.x<=c.x && p.y>=c.y);
-      c.dominated=dominated;
-    }
-  });
-
   var xSc=d3.scaleLinear().domain([0,1]).range([0,iw]);
   var ySc=d3.scaleLinear().domain([0.25,0.95]).range([ih,0]);
-
-  g.append('g').attr('transform','translate(0,'+ih+')')
-    .call(d3.axisBottom(xSc).ticks(4).tickFormat(d=>['Barato','','','Caro'][Math.round(d*3)]||''))
-    .selectAll('text').style('fill','rgba(255,255,255,0.4)').style('font-size','9px');
-  g.append('g').call(d3.axisLeft(ySc).ticks(4).tickFormat(d=>(d*100).toFixed(0)+'%'))
-    .selectAll('text').style('fill','rgba(255,255,255,0.4)').style('font-size','9px');
-  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,0.1)');
-
-  g.append('text').attr('x',iw/2).attr('y',ih+46).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Custo por Query →');
-  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-50).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('↑ Qualidade (F1)');
-
-  // Dominated configs
-  configs.filter(c=>!c.pareto).forEach((c,i)=>{
-    g.append('circle').attr('cx',xSc(c.x)).attr('cy',ySc(c.y)).attr('r',0)
-      .attr('fill',c.dominated?'rgba(255,255,255,0.15)':'rgba(77,180,255,0.3)')
-      .attr('stroke',c.dominated?'rgba(255,255,255,0.2)':'rgba(77,180,255,0.5)').attr('stroke-width',1)
-      .transition().delay(300+i*30).duration(400).attr('r',5);
+  g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(xSc).ticks(4).tickFormat(function(d){return d===0?'Barato':d===1?'Caro':'';})).selectAll('text').style('fill','rgba(255,255,255,.35)').style('font-size','9px');
+  g.append('g').call(d3.axisLeft(ySc).ticks(4).tickFormat(function(d){return (d*100).toFixed(0)+'%';})).selectAll('text').style('fill','rgba(255,255,255,.35)').style('font-size','9px');
+  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,.08)');
+  g.append('text').attr('x',iw/2).attr('y',ih+43).attr('text-anchor','middle').style('fill','rgba(255,255,255,.28)').style('font-size','9px').text('Custo por Query →');
+  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-48).attr('text-anchor','middle').style('fill','rgba(255,255,255,.28)').style('font-size','9px').text('↑ Qualidade (F1)');
+  var configs=[];
+  for(var i=0;i<28;i++) configs.push({x:0.1+Math.random()*.85,y:0.3+Math.random()*.55});
+  var paretoPoints=[{x:0.92,y:0.38},{x:0.78,y:0.52},{x:0.61,y:0.63},{x:0.42,y:0.72},{x:0.22,y:0.81},{x:0.08,y:0.88}];
+  configs.forEach(function(c,i){
+    g.append('circle').attr('cx',xSc(c.x)).attr('cy',ySc(c.y)).attr('r',0).attr('fill','rgba(255,255,255,.14)').attr('stroke','rgba(255,255,255,.2)').attr('stroke-width',1).transition().delay(200+i*30).duration(400).attr('r',5);
   });
-
-  // Pareto frontier line
-  var sorted=[...paretoPoints].sort((a,b)=>a.x-b.x);
-  g.append('path').datum(sorted)
-    .attr('fill','none').attr('stroke','rgba(255,100,100,0.6)').attr('stroke-width',2).attr('stroke-dasharray','6 3')
-    .attr('d',d3.line().x(d=>xSc(d.x)).y(d=>ySc(d.y)))
-    .attr('stroke-dashoffset',1000).attr('stroke-dasharray','1000')
-    .transition().delay(1200).duration(1000).attr('stroke-dashoffset',0);
-
-  // Pareto points
-  paretoPoints.forEach((p,i)=>{
-    g.append('circle').attr('cx',xSc(p.x)).attr('cy',ySc(p.y)).attr('r',0)
-      .attr('fill','#FF6464').attr('fill-opacity',0.85).attr('stroke','#FF6464').attr('stroke-width',1.5)
-      .transition().delay(1400+i*120).duration(500).attr('r',8);
+  var sorted=[...paretoPoints].sort(function(a,b){return a.x-b.x;});
+  g.append('path').datum(sorted).attr('fill','none').attr('stroke','#FF6464').attr('stroke-width',2).attr('stroke-dasharray','5,3').attr('d',d3.line().x(function(d){return xSc(d.x);}).y(function(d){return ySc(d.y);})).attr('stroke-dashoffset',500).attr('stroke-dasharray','500').transition().delay(1100).duration(900).attr('stroke-dashoffset',0);
+  paretoPoints.forEach(function(p,i){
+    g.append('circle').attr('cx',xSc(p.x)).attr('cy',ySc(p.y)).attr('r',0).attr('fill','#FF6464').attr('fill-opacity',.85).attr('stroke','#FF6464').attr('stroke-width',1.5).transition().delay(1300+i*110).duration(450).attr('r',8);
   });
-
-  // Legend
-  g.append('circle').attr('cx',10).attr('cy',8).attr('r',5).attr('fill','rgba(255,100,100,0.85)').attr('stroke','#FF6464');
-  g.append('text').attr('x',20).attr('y',12).style('fill','#FF6464').style('font-size','8.5px').text('Fronteira de Pareto (ótimas)');
-  g.append('circle').attr('cx',10).attr('cy',24).attr('r',5).attr('fill','rgba(255,255,255,0.15)').attr('stroke','rgba(255,255,255,0.2)');
-  g.append('text').attr('x',20).attr('y',28).style('fill','rgba(255,255,255,0.45)').style('font-size','8.5px').text('Configurações dominadas (sub-ótimas)');
-
-  function pulse(){
-    if(window.__paretoGen!==myG) return;
-    g.selectAll('circle').filter(function(){ return d3.select(this).attr('fill')==='#FF6464'; })
-      .transition().duration(600).attr('r',11).attr('fill-opacity',1)
-      .transition().duration(600).attr('r',8).attr('fill-opacity',0.85);
-    setTimeout(pulse,2600);
-  }
+  g.append('circle').attr('cx',8).attr('cy',8).attr('r',5).attr('fill','#FF6464');
+  g.append('text').attr('x',18).attr('y',12).style('fill','rgba(255,100,100,.8)').style('font-size','8.5px').text('Fronteira de Pareto (ótimas)');
+  g.append('circle').attr('cx',8).attr('cy',22).attr('r',5).attr('fill','rgba(255,255,255,.14)').attr('stroke','rgba(255,255,255,.2)');
+  g.append('text').attr('x',18).attr('y',26).style('fill','rgba(255,255,255,.4)').style('font-size','8.5px').text('Configurações dominadas');
+  function pulse(){if(window.__paretoGen!==myG) return; g.selectAll('circle').filter(function(){return d3.select(this).attr('fill')==='#FF6464';}).transition().duration(600).attr('r',11).transition().duration(600).attr('r',8); setTimeout(pulse,2400);}
   setTimeout(pulse,2200);
 })();
-</script>
 
-<!-- D3: anim-hpo — 5 HPO Algorithms Comparison -->
-<script>
+/* ═══ ANIM 3 — IBM HPO 5 Algoritmos (S9) ═══ */
 (function(){
   window.__hpoGen=(window.__hpoGen||0)+1; var myG=window.__hpoGen;
-  var el=document.getElementById('anim-hpo'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700,H=300;
-  var m={top:30,right:30,bottom:55,left:100};
-  var iw=W-m.left-m.right, ih=H-m.top-m.bottom;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+  var el=document.getElementById('anim-hpo'); if(!el) return; el.innerHTML='';
+  var W=860,H=210;
+  var m={top:22,right:20,bottom:50,left:100};
+  var iw=W-m.left-m.right,ih=H-m.top-m.bottom;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
-
-  var algs=[
-    {name:'Grid Search',score:0.61,col:'rgba(255,255,255,0.3)',label:'Upper bound (impraticável)'},
-    {name:'Random',score:0.58,col:'#4DB4FF',label:'Surpreendentemente bom'},
-    {name:'TPE',score:0.56,col:'#FFD54D',label:'Standard HPO'},
-    {name:'Greedy-R',score:0.57,col:'#4DFFB4',label:'Retrieval-first'},
-    {name:'Greedy-M',score:0.63,col:'#FF6464',label:'Modelo-first — VENCE'},
-  ];
-
-  var xSc=d3.scaleLinear().domain([0,0.7]).range([0,iw]);
-  var barH=ih/algs.length-8;
-
-  algs.forEach((a,i)=>{
-    var y=i*(barH+8);
-    g.append('text').attr('x',-8).attr('y',y+barH/2+4).attr('text-anchor','end')
-      .style('fill','rgba(255,255,255,0.65)').style('font-size','9px').text(a.name);
-
-    g.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',barH).attr('rx',4)
-      .attr('fill',a.col).attr('fill-opacity',0.8)
-      .transition().delay(400+i*150).duration(700).attr('width',xSc(a.score));
-
-    g.append('text').attr('x',xSc(a.score)+6).attr('y',y+barH/2+4)
-      .style('fill',a.col).style('font-size','8.5px').style('opacity',0)
-      .text((a.score*100).toFixed(0)+'% — '+a.label)
-      .transition().delay(800+i*150).duration(400).style('opacity',1);
+  var algs=[{name:'Grid Search',score:0.61,col:'rgba(255,255,255,.3)',lbl:'upper bound (impraticável)'},{name:'TPE',score:0.56,col:'#4DB4FF',lbl:'standard HPO'},{name:'Random Search',score:0.58,col:'#FFD54D',lbl:'surpreendentemente bom'},{name:'Greedy-R',score:0.57,col:'#26C6DA',lbl:'retrieval primeiro'},{name:'Greedy-M',score:0.63,col:'#4DFFB4',lbl:'modelo primeiro — VENCE'}];
+  var xSc=d3.scaleLinear().domain([0,.7]).range([0,iw]);
+  var barH=ih/algs.length-6;
+  algs.forEach(function(a,i){
+    var y=i*(barH+6);
+    g.append('text').attr('x',-8).attr('y',y+barH/2+4).attr('text-anchor','end').style('fill','rgba(255,255,255,.65)').style('font-size','9px').text(a.name);
+    g.append('rect').attr('x',0).attr('y',y).attr('width',0).attr('height',barH).attr('rx',4).attr('fill',a.col).attr('fill-opacity',.8).transition().delay(350+i*140).duration(700).attr('width',xSc(a.score));
+    g.append('text').attr('x',xSc(a.score)+6).attr('y',y+barH/2+4).style('fill',a.col).style('font-size','8.5px').style('opacity',0).text((a.score*100).toFixed(0)+'% — '+a.lbl).transition().delay(750+i*140).duration(400).style('opacity',1);
   });
-
-  g.append('g').attr('transform','translate(0,'+ih+')')
-    .call(d3.axisBottom(xSc).ticks(5).tickFormat(d=>(d*100).toFixed(0)+'%'))
-    .selectAll('text').style('fill','rgba(255,255,255,0.4)').style('font-size','9px');
-  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,0.1)');
-
-  g.append('text').attr('x',iw/2).attr('y',ih+46).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Answer Correctness (médio, 5 datasets)');
-
-  function pulse(){
-    if(window.__hpoGen!==myG) return;
-    g.selectAll('rect').filter((d,i)=>i===4)
-      .transition().duration(500).attr('fill-opacity',1)
-      .transition().duration(500).attr('fill-opacity',0.8);
-    setTimeout(pulse,2400);
-  }
+  g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(xSc).ticks(5).tickFormat(function(d){return (d*100).toFixed(0)+'%';})).selectAll('text').style('fill','rgba(255,255,255,.35)').style('font-size','9px');
+  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,.08)');
+  g.append('text').attr('x',iw/2).attr('y',ih+42).attr('text-anchor','middle').style('fill','rgba(255,255,255,.28)').style('font-size','9px').text('Answer Correctness (médio · 5 datasets)');
+  function pulse(){if(window.__hpoGen!==myG) return; var lastBar=g.selectAll('rect').filter(function(d,i){return i===4;}); lastBar.transition().duration(500).attr('fill-opacity',1).transition().duration(500).attr('fill-opacity',.8); setTimeout(pulse,2400);}
   setTimeout(pulse,1800);
 })();
-</script>
 
-<!-- D3: anim-pipeline — Best Practices Pipeline -->
-<script>
+/* ═══ ANIM 4 — Best Practices Pipeline (S10) ═══ */
 (function(){
   window.__pipeGen=(window.__pipeGen||0)+1; var myG=window.__pipeGen;
-  var el=document.getElementById('anim-pipeline'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700,H=300;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
-  var steps=[
-    {id:'classify',label:'Query\nClassifier',best:'BERT · 0.95 F1',x:0.07,y:0.5,col:'#FFD54D'},
-    {id:'chunk',label:'Chunking',best:'Small2Big\n+ Sliding Win',x:0.24,y:0.5,col:'#FF6464'},
-    {id:'embed',label:'Embedding',best:'bge-large\n-en-v1.5',x:0.41,y:0.5,col:'#4DB4FF'},
-    {id:'ret',label:'Retrieval',best:'HyDE +\nHybrid Search',x:0.58,y:0.5,col:'#4DFFB4'},
-    {id:'rerank',label:'Reranking',best:'monoT5\n(balanced)',x:0.75,y:0.5,col:'#B464FF'},
-    {id:'gen',label:'Repacking\n+ Geração',best:'Sides →\nLLM',x:0.9,y:0.5,col:'#FF6464'},
-  ];
-
-  var nW=W,nH=H;
-  function nx(d){return d.x*nW;} function ny(d){return d.y*nH;}
-
-  // Arrows
-  for(var i=0;i<steps.length-1;i++){
-    var s=steps[i],t=steps[i+1];
-    svg.append('line').attr('x1',nx(s)+46).attr('y1',ny(s)).attr('x2',nx(t)-46).attr('y2',ny(t))
-      .attr('stroke','rgba(255,255,255,0.15)').attr('stroke-width',1.5)
-      .style('opacity',0).transition().delay(600+i*130).duration(400).style('opacity',1);
-    svg.append('polygon')
-      .attr('points',(nx(t)-46)+','+ny(t)+' '+(nx(t)-52)+','+(ny(t)-4)+' '+(nx(t)-52)+','+(ny(t)+4))
-      .attr('fill','rgba(255,255,255,0.2)').style('opacity',0)
-      .transition().delay(700+i*130).duration(300).style('opacity',1);
-  }
-
-  // Nodes
-  steps.forEach((d,i)=>{
-    var g2=svg.append('g').attr('transform','translate('+nx(d)+','+ny(d)+')').style('opacity',0);
-    var h=70,w2=88;
-    g2.append('rect').attr('x',-w2/2).attr('y',-h/2).attr('width',w2).attr('height',h).attr('rx',8)
-      .attr('fill','rgba(0,0,0,0.8)').attr('stroke',d.col).attr('stroke-width',1.5);
-    d.label.split('\n').forEach((ln,li,a)=>{
-      g2.append('text').attr('text-anchor','middle').attr('y',-16+(li-a.length/2+0.5)*13)
-        .style('fill',d.col).style('font-size','9px').style('font-weight','700').text(ln);
-    });
-    d.best.split('\n').forEach((ln,li)=>{
-      g2.append('text').attr('text-anchor','middle').attr('y',10+li*10)
-        .style('fill','rgba(255,255,255,0.45)').style('font-size','7px').text(ln);
-    });
-    g2.transition().delay(250+i*150).duration(500).style('opacity',1);
-  });
-
-  // Animated packet
-  function animPkt(){
-    if(window.__pipeGen!==myG) return;
-    var step=0;
-    function mv(){
-      if(window.__pipeGen!==myG||step>=steps.length-1) return;
-      var s=steps[step],t=steps[step+1];
-      svg.append('circle').attr('r',5).attr('fill','rgba(255,100,100,0.9)')
-        .attr('cx',nx(s)).attr('cy',ny(s))
-        .transition().duration(700).attr('cx',nx(t)).attr('cy',ny(t))
-        .transition().duration(0).remove();
-      step++; setTimeout(mv,750);
+  var el=document.getElementById('anim-pipeline'); if(!el) return; el.innerHTML='';
+  var W=860,H=180;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var steps=[{label:'Query\nClassify',best:'BERT 0.95 F1',x:.07,clr:'#FFD54D'},{label:'Chunking',best:'Small2Big',x:.24,clr:'#FF6464'},{label:'Embed',best:'bge-large',x:.41,clr:'#4DB4FF'},{label:'Retrieval',best:'HyDE+Hybrid',x:.58,clr:'#4DFFB4'},{label:'Rerank',best:'monoT5',x:.75,clr:'#B464FF'},{label:'Repack\n+Gen',best:'"Sides"',x:.91,clr:'#FF904D'}];
+  var cy=H/2;
+  var defs=svg.append('defs');
+  defs.append('marker').attr('id','arrPipe').attr('markerWidth',7).attr('markerHeight',7).attr('refX',5).attr('refY',3).attr('orient','auto').append('path').attr('d','M0,0 L0,6 L7,3 z').attr('fill','rgba(255,255,255,.18)');
+  steps.forEach(function(d,i){
+    var nx=d.x*W;
+    if(i<steps.length-1){
+      var nx2=steps[i+1].x*W;
+      svg.append('line').attr('x1',nx+44).attr('y1',cy).attr('x2',nx2-44).attr('y2',cy).attr('stroke','rgba(255,255,255,.15)').attr('stroke-width',1.5).attr('marker-end','url(#arrPipe)');
     }
-    mv();
-    setTimeout(animPkt,3600);
-  }
-  setTimeout(animPkt,1800);
+    svg.append('rect').attr('x',nx-44).attr('y',cy-32).attr('width',88).attr('height',64).attr('rx',8).attr('fill','rgba(0,0,0,.8)').attr('stroke',d.clr).attr('stroke-width',1.5).attr('opacity',0).transition().duration(400).delay(200+i*150).attr('opacity',1);
+    d.label.split('\n').forEach(function(l,j,a){svg.append('text').attr('x',nx).attr('y',cy-8+(j-a.length/2+0.5)*14).attr('text-anchor','middle').attr('fill',d.clr).attr('font-size',9.5).attr('font-weight',700).attr('opacity',0).transition().duration(400).delay(300+i*150).attr('opacity',1).text(l);});
+    svg.append('text').attr('x',nx).attr('y',cy+16).attr('text-anchor','middle').attr('fill','rgba(255,255,255,.4)').attr('font-size',8).attr('opacity',0).transition().duration(400).delay(350+i*150).attr('opacity',1).text(d.best);
+  });
+  var dot=svg.append('circle').attr('r',5).attr('fill','#FF904D').attr('opacity',0);
+  function animDot(){if(window.__pipeGen!==myG) return; var xs=steps.map(function(s){return s.x*W;}); dot.attr('cx',xs[0]).attr('cy',cy).attr('opacity',.9); var t=dot; xs.slice(1).forEach(function(x,i){t=t.transition().duration(450).delay(0).attr('cx',x);}); t.transition().duration(300).attr('opacity',0).on('end',function(){setTimeout(animDot,800);}); }
+  setTimeout(animDot,1500);
 })();
-</script>
 
-<!-- D3: anim-compare13 — Landscape 4 Papers Otimização -->
-<script>
+/* ═══ ANIM 5 — Landscape 4 Papers (S13) ═══ */
 (function(){
   window.__comp13Gen=(window.__comp13Gen||0)+1; var myG=window.__comp13Gen;
-  var el=document.getElementById('anim-compare13'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700,H=300;
-  var m={top:40,right:50,bottom:60,left:90};
-  var iw=W-m.left-m.right, ih=H-m.top-m.bottom;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+  var el=document.getElementById('anim-compare13'); if(!el) return; el.innerHTML='';
+  var W=860,H=230;
+  var m={top:36,right:45,bottom:52,left:88};
+  var iw=W-m.left-m.right,ih=H-m.top-m.bottom;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
-
-  var papers=[
-    {name:'METIS\n(SOSP 2025)',x:0.82,y:0.8,r:18,col:'#FF6464',desc:'Per-query adapt.'},
-    {name:'Multi-Obj HPO\n(ICLR 2025)',x:0.55,y:0.65,r:17,col:'#4DB4FF',desc:'Pareto 4 objetivos'},
-    {name:'IBM HPO\n(AAAI 2026)',x:0.35,y:0.55,r:19,col:'#4DFFB4',desc:'Greedy-M 162 configs'},
-    {name:'Best Practices\n(Fudan 2024)',x:0.15,y:0.72,r:16,col:'#FFD54D',desc:'Pipeline completo'},
-  ];
-
   var xSc=d3.scaleLinear().domain([0,1]).range([0,iw]);
   var ySc=d3.scaleLinear().domain([0,1]).range([ih,0]);
-
-  [0.25,0.5,0.75].forEach(v=>{
-    g.append('line').attr('x1',xSc(v)).attr('y1',0).attr('x2',xSc(v)).attr('y2',ih).attr('stroke','rgba(255,255,255,0.05)');
-    g.append('line').attr('x1',0).attr('y1',ySc(v)).attr('x2',iw).attr('y2',ySc(v)).attr('stroke','rgba(255,255,255,0.05)');
+  [0.25,.5,.75].forEach(function(v){g.append('line').attr('x1',xSc(v)).attr('y1',0).attr('x2',xSc(v)).attr('y2',ih).attr('stroke','rgba(255,255,255,.05)');g.append('line').attr('x1',0).attr('y1',ySc(v)).attr('x2',iw).attr('y2',ySc(v)).attr('stroke','rgba(255,255,255,.05)');});
+  g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(xSc).ticks(3).tickFormat(function(d){return {0:'Simples',0.5:'Médio',1:'Complexo'}[d]||'';})).selectAll('text').style('fill','rgba(255,255,255,.35)').style('font-size','9px');
+  g.append('g').call(d3.axisLeft(ySc).ticks(3).tickFormat(function(d){return {0:'Baixo',0.5:'Médio',1:'Alto Impact'}[d]||'';})).selectAll('text').style('fill','rgba(255,255,255,.35)').style('font-size','9px');
+  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,.07)');
+  g.append('text').attr('x',iw/2).attr('y',ih+44).attr('text-anchor','middle').style('fill','rgba(255,255,255,.25)').style('font-size','9px').text('Complexidade de Implementação →');
+  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-66).attr('text-anchor','middle').style('fill','rgba(255,255,255,.25)').style('font-size','9px').text('↑ Impacto na Performance');
+  var papers=[{name:'Best\nPractices',x:.12,y:.7,r:18,col:'#FFD54D',desc:'Quick Wins grátis'},{name:'IBM\nGreedy-M',x:.38,y:.82,r:19,col:'#4DFFB4',desc:'HPO eficiente 10-20 iter'},{name:'Multi-Obj\nHPO',x:.62,y:.62,r:17,col:'#4DB4FF',desc:'Pareto 4 objetivos'},{name:'METIS',x:.85,y:.9,r:18,col:'#FF6464',desc:'Per-query adapt.'}];
+  papers.forEach(function(d,i){
+    g.append('circle').attr('cx',xSc(d.x)).attr('cy',ySc(d.y)).attr('r',0).attr('fill',d.col).attr('fill-opacity',.16).attr('stroke',d.col).attr('stroke-width',1.5).transition().delay(350+i*180).duration(600).attr('r',d.r);
+    d.name.split('\n').forEach(function(ln,li,a){g.append('text').attr('x',xSc(d.x)).attr('y',ySc(d.y)+(li-a.length/2+0.4)*12).attr('text-anchor','middle').style('fill',d.col).style('font-size','8px').style('font-weight','700').style('opacity',0).text(ln).transition().delay(640+i*180).duration(400).style('opacity',1);});
+    g.append('text').attr('x',xSc(d.x)).attr('y',ySc(d.y)+d.r+13).attr('text-anchor','middle').style('fill','rgba(255,255,255,.35)').style('font-size','7.5px').style('opacity',0).text(d.desc).transition().delay(820+i*180).duration(400).style('opacity',1);
   });
-
-  g.append('g').attr('transform','translate(0,'+ih+')')
-    .call(d3.axisBottom(xSc).ticks(3).tickFormat(d=>({0:'Simples',0.5:'Médio',1:'Complexo'}[d]||'')))
-    .selectAll('text').style('fill','rgba(255,255,255,0.38)').style('font-size','9px');
-  g.append('g').call(d3.axisLeft(ySc).ticks(3).tickFormat(d=>({0:'Low',0.5:'Medium',1:'High Impact'}[d]||'')))
-    .selectAll('text').style('fill','rgba(255,255,255,0.38)').style('font-size','9px');
-  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,0.08)');
-
-  g.append('text').attr('x',iw/2).attr('y',ih+52).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Complexidade de Implementação →');
-  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-68).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('↑ Impacto na Performance');
-
-  papers.forEach((d,i)=>{
-    var pg=g.append('g');
-    pg.append('circle').attr('cx',xSc(d.x)).attr('cy',ySc(d.y))
-      .attr('r',0).attr('fill',d.col).attr('fill-opacity',0.16).attr('stroke',d.col).attr('stroke-width',1.5)
-      .transition().delay(400+i*190).duration(600).attr('r',d.r);
-    d.name.split('\n').forEach((ln,li,a)=>{
-      g.append('text').attr('x',xSc(d.x)).attr('y',ySc(d.y)+(li-a.length/2+0.4)*12)
-        .attr('text-anchor','middle').style('fill',d.col).style('font-size','8px').style('font-weight','700')
-        .style('opacity',0).text(ln).transition().delay(700+i*190).duration(400).style('opacity',1);
-    });
-    g.append('text').attr('x',xSc(d.x)).attr('y',ySc(d.y)+d.r+13)
-      .attr('text-anchor','middle').style('fill','rgba(255,255,255,0.38)').style('font-size','7.5px')
-      .style('opacity',0).text(d.desc).transition().delay(900+i*190).duration(400).style('opacity',1);
-  });
-
-  function pulse(){
-    if(window.__comp13Gen!==myG) return;
-    g.selectAll('circle').transition().duration(700).attr('fill-opacity',0.32).attr('stroke-width',2.5)
-      .transition().duration(700).attr('fill-opacity',0.16).attr('stroke-width',1.5);
-    setTimeout(pulse,2700);
-  }
-  setTimeout(pulse,2100);
+  function pulse(){if(window.__comp13Gen!==myG) return; g.selectAll('circle').transition().duration(700).attr('fill-opacity',.3).attr('stroke-width',2.5).transition().duration(700).attr('fill-opacity',.16).attr('stroke-width',1.5); setTimeout(pulse,2600);}
+  setTimeout(pulse,2000);
 })();
 </script>
-
 </body>
 </html>
