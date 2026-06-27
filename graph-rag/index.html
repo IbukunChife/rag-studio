@@ -1,1347 +1,571 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Módulo 12 — GraphRAG: Quando o Grafo Supera o Vetor</title>
-<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<style>
-:root {
-  --mira-bg: #000000;
-  --mira-surface: #0a0a0a;
-  --mira-surface2: #111111;
-  --mira-primary: #FF904D;
-  --mira-success: #4DFFB4;
-  --mira-warning: #FFD54D;
-  --mira-error: #FF6464;
-  --mira-blue: #4DB4FF;
-  --mira-purple: #B464FF;
-  --mira-teal: #26C6DA;
-  --mira-text: #FFFFFF;
-  --mira-text-muted: rgba(255,255,255,0.55);
-  --mira-border: rgba(255,255,255,0.08);
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  background: var(--mira-bg);
-  color: var(--mira-text);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  line-height: 1.6;
-}
-.slide {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 24px;
-}
-.slide-inner { width: 100%; max-width: 860px; }
-
-/* Capa */
-.slide-capa {
-  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255,213,77,0.11) 0%, transparent 70%);
-  text-align: center;
-}
-.modulo-badge {
-  display: inline-block;
-  background: rgba(255,213,77,0.12);
-  border: 1px solid rgba(255,213,77,0.35);
-  color: var(--mira-warning);
-  padding: 6px 18px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: 32px;
-}
-.capa-title {
-  font-size: clamp(2.2rem, 5vw, 3.6rem);
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 20px;
-}
-.capa-title .accent { color: var(--mira-warning); }
-.capa-sub {
-  font-size: 1.1rem;
-  color: var(--mira-text-muted);
-  max-width: 560px;
-  margin: 0 auto 40px;
-}
-.stats-row { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
-.stat-item { text-align: center; }
-.stat-num { font-size: 2.2rem; font-weight: 800; color: var(--mira-warning); display: block; }
-.stat-label { font-size: 0.75rem; color: var(--mira-text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
-
-/* Genéricos */
-.card {
-  background: var(--mira-surface);
-  border: 1px solid var(--mira-border);
-  border-radius: 16px;
-  padding: 32px 36px;
-  margin-bottom: 14px;
-}
-.card-accent { border-left: 4px solid var(--mira-warning); }
-.section-label {
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--mira-warning);
-  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
-}
-.section-label svg { width: 14px; height: 14px; }
-h2.slide-title {
-  font-size: clamp(1.55rem, 3vw, 2.15rem);
-  font-weight: 800; line-height: 1.2; margin-bottom: 8px;
-}
-h2.slide-title .accent { color: var(--mira-warning); }
-.slide-desc { font-size: 0.98rem; color: var(--mira-text-muted); margin-bottom: 24px; }
-
-/* Metáfora */
-.metaphor-box {
-  background: linear-gradient(135deg, rgba(255,213,77,0.08) 0%, rgba(255,213,77,0.02) 100%);
-  border: 1px solid rgba(255,213,77,0.25);
-  border-radius: 16px; padding: 30px 34px; margin-bottom: 18px;
-}
-.metaphor-icon { font-size: 2.8rem; margin-bottom: 14px; }
-.metaphor-title { font-size: 1.4rem; font-weight: 700; color: var(--mira-warning); margin-bottom: 10px; }
-.metaphor-text { font-size: 0.95rem; color: var(--mira-text-muted); line-height: 1.75; }
-
-/* Grids */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.grid-item {
-  background: var(--mira-surface2); border: 1px solid var(--mira-border);
-  border-radius: 12px; padding: 18px 20px;
-}
-.grid-item-icon { color: var(--mira-warning); margin-bottom: 8px; }
-.grid-item-title { font-size: 0.92rem; font-weight: 700; margin-bottom: 5px; }
-.grid-item-text { font-size: 0.8rem; color: var(--mira-text-muted); line-height: 1.55; }
-
-/* D3 */
-.d3-container {
-  background: var(--mira-surface2); border: 1px solid var(--mira-border);
-  border-radius: 12px; padding: 14px; min-height: 260px;
-}
-
-/* Tabela */
-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
-th {
-  text-align: left; padding: 9px 13px;
-  border-bottom: 1px solid var(--mira-border);
-  color: var(--mira-warning); font-weight: 700;
-  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
-}
-td { padding: 9px 13px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--mira-text-muted); }
-td:first-child { color: var(--mira-text); font-weight: 500; }
-tr:last-child td { border-bottom: none; }
-.highlight-row td { color: var(--mira-warning) !important; }
-
-/* Tags */
-.tag { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; border: 1px solid; }
-.tag-warn { background: rgba(255,213,77,0.1); border-color: rgba(255,213,77,0.3); color: var(--mira-warning); }
-.tag-blue { background: rgba(77,180,255,0.1); border-color: rgba(77,180,255,0.3); color: var(--mira-blue); }
-.tag-green { background: rgba(77,255,180,0.1); border-color: rgba(77,255,180,0.3); color: var(--mira-success); }
-.tag-purple { background: rgba(180,100,255,0.1); border-color: rgba(180,100,255,0.3); color: var(--mira-purple); }
-.tag-red { background: rgba(255,100,100,0.1); border-color: rgba(255,100,100,0.3); color: var(--mira-error); }
-
-/* Resultados */
-.results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; }
-.result-card {
-  background: var(--mira-surface2); border: 1px solid var(--mira-border);
-  border-radius: 12px; padding: 20px; text-align: center;
-}
-.result-big { font-size: 2.6rem; font-weight: 800; color: var(--mira-warning); line-height: 1; }
-.result-label { font-size: 0.78rem; color: var(--mira-text-muted); margin-top: 6px; }
-
-/* Quote */
-.quote-box {
-  border-left: 3px solid var(--mira-warning);
-  padding: 14px 18px; background: rgba(255,213,77,0.04);
-  border-radius: 0 8px 8px 0; margin: 14px 0;
-}
-.quote-text { font-size: 1rem; font-style: italic; color: var(--mira-text); line-height: 1.65; }
-.quote-source { font-size: 0.76rem; color: var(--mira-warning); margin-top: 7px; }
-
-/* Steps */
-.steps { list-style: none; }
-.step-item { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 14px; }
-.step-num {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: rgba(255,213,77,0.12); border: 1px solid rgba(255,213,77,0.38);
-  color: var(--mira-warning); font-size: 0.74rem; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
-}
-.step-content-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 2px; }
-.step-content-text { font-size: 0.8rem; color: var(--mira-text-muted); line-height: 1.5; }
-
-/* Próximo módulo */
-.next-module {
-  background: linear-gradient(135deg, rgba(180,100,255,0.1) 0%, rgba(180,100,255,0.03) 100%);
-  border: 1px solid rgba(180,100,255,0.3);
-  border-radius: 16px; padding: 30px 34px; text-align: center;
-}
-.next-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mira-purple); margin-bottom: 8px; }
-.next-title { font-size: 1.55rem; font-weight: 800; color: var(--mira-purple); margin-bottom: 8px; }
-.next-desc { font-size: 0.88rem; color: var(--mira-text-muted); }
-
-@media (max-width: 640px) {
-  .grid-2, .grid-3, .results-grid { grid-template-columns: 1fr; }
-  .card { padding: 22px 18px; }
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Módulo 12 · GraphRAG — RAG Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root{--mira-primary:#FF904D;--mira-bg:#000000;--mira-success:#4DFFB4;--mira-warning:#FFD54D;--mira-error:#FF6464;--mira-blue:#4DB4FF;--mira-purple:#B464FF;--mira-teal:#26C6DA;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflow-x:hidden}
+    #progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--mira-warning);z-index:9999;width:0%;transition:width 0.2s ease}
+    #back-btn{position:fixed;bottom:2rem;right:2rem;width:3rem;height:3rem;border-radius:50%;background:var(--mira-warning);border:none;color:#000;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;z-index:100;box-shadow:0 4px 24px rgba(255,213,77,0.45)}
+    #back-btn.visible{opacity:1}
+    .slide{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:4rem 1.5rem;position:relative}
+    .slide-hero{background:radial-gradient(ellipse 65% 55% at 50% 40%,rgba(255,213,77,0.1) 0%,transparent 60%),var(--mira-bg)}
+    .card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:1.5rem;backdrop-filter:blur(10px);max-width:900px;width:100%;padding:2.75rem}
+    .module-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,213,77,0.12);border:1px solid rgba(255,213,77,0.3);color:var(--mira-warning);border-radius:2rem;padding:0.4rem 1rem;font-size:0.76rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase}
+    .hero-title{font-size:clamp(2.8rem,7vw,5rem);font-weight:900;line-height:1.0;letter-spacing:-0.03em}
+    .hero-accent{color:var(--mira-warning)}
+    .sec-label{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,213,77,0.1);border:1px solid rgba(255,213,77,0.25);border-radius:2rem;padding:0.3rem 0.9rem;font-size:0.7rem;color:var(--mira-warning);font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
+    .metaphor-box{background:rgba(255,213,77,0.04);border:1px solid rgba(255,213,77,0.18);border-radius:1rem;padding:1.5rem}
+    .metaphor-icon{width:3.5rem;height:3.5rem;border-radius:50%;background:rgba(255,213,77,0.14);border:1px solid rgba(255,213,77,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.4rem}
+    .stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:1rem;padding:1.5rem;text-align:center}
+    .stat-num{font-size:2.6rem;font-weight:900;line-height:1}
+    .stat-lbl{font-size:0.74rem;color:rgba(255,255,255,0.45);margin-top:0.4rem;font-weight:500}
+    .gi{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:1.2rem}
+    .tag{display:inline-flex;align-items:center;gap:0.3rem;padding:0.22rem 0.65rem;border-radius:1rem;font-size:0.7rem;font-weight:600}
+    .t-y{background:rgba(255,213,77,0.15);color:var(--mira-warning);border:1px solid rgba(255,213,77,0.3)}
+    .t-b{background:rgba(77,180,255,0.15);color:var(--mira-blue);border:1px solid rgba(77,180,255,0.3)}
+    .t-g{background:rgba(77,255,180,0.15);color:var(--mira-success);border:1px solid rgba(77,255,180,0.3)}
+    .t-p{background:rgba(255,144,77,0.15);color:var(--mira-primary);border:1px solid rgba(255,144,77,0.3)}
+    .t-pr{background:rgba(180,100,255,0.15);color:var(--mira-purple);border:1px solid rgba(180,100,255,0.3)}
+    .t-r{background:rgba(255,100,100,0.15);color:var(--mira-error);border:1px solid rgba(255,100,100,0.3)}
+    .d3-wrap{width:100%;border-radius:1rem;overflow:hidden;background:rgba(255,255,255,0.02)}
+    table{width:100%;border-collapse:collapse}
+    th{background:rgba(255,213,77,0.1);color:var(--mira-warning);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:0.7rem 1rem;text-align:left}
+    td{padding:0.65rem 1rem;font-size:0.83rem;border-bottom:1px solid rgba(255,255,255,0.05);color:rgba(255,255,255,0.8)}
+    tr:last-child td{border-bottom:none}
+    tr.hl td{color:var(--mira-warning)!important;font-weight:700}
+    .alert-y{background:rgba(255,213,77,0.07);border:1px solid rgba(255,213,77,0.2);border-left:4px solid var(--mira-warning);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-b{background:rgba(77,180,255,0.07);border:1px solid rgba(77,180,255,0.2);border-left:4px solid var(--mira-blue);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-g{background:rgba(77,255,180,0.07);border:1px solid rgba(77,255,180,0.2);border-left:4px solid var(--mira-success);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .alert-r{background:rgba(255,100,100,0.07);border:1px solid rgba(255,100,100,0.2);border-left:4px solid var(--mira-error);border-radius:0.875rem;padding:1.1rem 1.4rem}
+    .accent-bar{width:2.5rem;height:3px;background:var(--mira-warning);border-radius:2px}
+    hr.div{border:none;border-top:1px solid rgba(255,255,255,0.07)}
+    .step-item{display:flex;gap:1rem;align-items:flex-start;margin-bottom:0.85rem}
+    .step-num{width:26px;height:26px;border-radius:50%;background:rgba(255,213,77,0.12);border:1px solid rgba(255,213,77,0.38);color:var(--mira-warning);font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .dec-node{background:rgba(255,255,255,0.04);border:1px solid rgba(255,213,77,0.2);border-radius:0.75rem;padding:0.9rem 1.2rem;font-size:0.83rem}
+    .dec-node.answer{background:rgba(255,213,77,0.07);border-color:rgba(255,213,77,0.3);color:var(--mira-warning);font-weight:700}
+    .dec-connector{text-align:center;color:rgba(255,255,255,0.3);font-size:0.75rem;padding:0.2rem 0}
+  </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 1 — CAPA
-═══════════════════════════════════════════════ -->
-<section class="slide slide-capa">
-  <div class="slide-inner">
-    <div data-aos="fade-down" data-aos-duration="700">
-      <span class="modulo-badge">Módulo 12 · GraphRAG</span>
+<div id="progress-bar"></div>
+<button id="back-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<!-- SLIDE 1 · CAPA -->
+<div class="slide slide-hero" id="slide-1">
+  <div class="card" style="border-color:rgba(255,213,77,0.22);max-width:960px">
+    <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="module-badge mb-6">Módulo 12 · RAG Studio</div>
+      <h1 class="hero-title mb-4">Graph<span class="hero-accent">RAG</span><br><span style="font-size:clamp(1.6rem,4vw,2.8rem);font-weight:700;color:rgba(255,255,255,0.5)">Quando o Grafo Supera — e Quando Perde</span></h1>
+      <p style="color:rgba(255,255,255,0.5);font-size:1rem" class="mb-8">Construção eficiente de grafos de conhecimento, recuperação híbrida e os cenários onde a estrutura relacional vence o vetor — com evidências de 4 papers de 2025-2026</p>
     </div>
-    <h1 class="capa-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <span class="accent">GraphRAG:</span><br>
-      Quando o Grafo<br>Supera o Vetor
-    </h1>
-    <p class="capa-sub" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      Construção eficiente de grafos de conhecimento, recuperação híbrida e os cenários onde a estrutura relacional ganha do vetor — e onde perde.
-    </p>
-    <div class="stats-row" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
-      <div class="stat-item"><span class="stat-num">4</span><span class="stat-label">Artigos</span></div>
-      <div class="stat-item"><span class="stat-num">22</span><span class="stat-label">Slides</span></div>
-      <div class="stat-item"><span class="stat-num">6</span><span class="stat-label">Animações D3</span></div>
-      <div class="stat-item"><span class="stat-num">3</span><span class="stat-label">Metáforas</span></div>
+    <hr class="div mb-8" />
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-error)">−13.4%</div><div class="stat-lbl">GraphRAG vs. vetorial em Fact Retrieval (ICLR 2026)</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">+15%</div><div class="stat-lbl">SAP GraphRAG vs. vetorial — domínio enterprise</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning)">14.6×</div><div class="stat-lbl">TagRAG mais eficiente que GraphRAG original</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-purple)">78.36%</div><div class="stat-lbl">win rate médio TagRAG em 4 domínios UltraDomain</div></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <span class="tag t-y">When to Use Graphs · ICLR 2026</span>
+      <span class="tag t-b">SAP Practical GraphRAG · Dez 2025</span>
+      <span class="tag t-g">TagRAG · ECNU · Mai 2026</span>
+      <span class="tag t-pr">ROGRAG · Shanghai AI Lab · Jun 2025</span>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 2 — METÁFORA 1: MAPA DE METRÔ VS. GPS
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="lightbulb"></i> Metáfora de Abertura
+<!-- SLIDE 2 · O PARADOXO GRAPHRAG -->
+<div class="slide" id="slide-2">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Xiang et al. · ICLR 2026 · GraphRAG-Bench</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">O <span style="color:var(--mira-warning)">Paradoxo</span> GraphRAG</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">GraphRAG frequentemente <em>perde</em> para RAG vetorial em tarefas do mundo real — e o campo ignorou isso</p>
     </div>
-    <div class="metaphor-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <div class="metaphor-icon">🗺️</div>
-      <div class="metaphor-title">Mapa de Metrô vs. GPS</div>
-      <p class="metaphor-text">
-        O RAG vetorial é um GPS: você faz uma pergunta, ele encontra o ponto mais próximo e entrega a rota mais direta. Rápido, eficiente, preciso para destinos simples.<br><br>
-        O GraphRAG é o mapa de metrô da cidade: revela <strong style="color:var(--mira-warning)">conexões que o GPS ignora</strong> — "para ir de A a D, transborde em B e passe por C". Mais lento, mais caro, mas indispensável quando o destino exige entender a rede completa de relações.<br><br>
-        A questão não é qual é melhor. É <strong style="color:var(--mira-warning)">saber qual usar para cada viagem</strong>.
-      </p>
+    <div style="background:rgba(255,213,77,0.05);border:1px solid rgba(255,213,77,0.2);border-radius:0.875rem;padding:1.1rem 1.4rem;border-left:4px solid var(--mira-warning);margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.9rem;font-style:italic;color:rgba(255,255,255,0.85);line-height:1.65">"GraphRAG achieves 13.4% lower accuracy on Natural Question compared to vanilla RAG, with particularly poor performance on time-sensitive queries — 16.6% accuracy drop."</p>
+      <p style="font-size:0.74rem;color:var(--mira-warning);margin-top:0.5rem;font-weight:700">— Xiang et al., When to Use Graphs in RAG, ICLR 2026</p>
     </div>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item">
-        <div class="grid-item-icon"><i data-lucide="navigation" style="width:20px;height:20px;color:var(--mira-blue)"></i></div>
-        <div class="grid-item-title" style="color:var(--mira-blue)">RAG Vetorial — GPS</div>
-        <div class="grid-item-text">Rota direta, busca semântica, baixa latência. Excelente para recuperação de fatos isolados e dados temporais.</div>
-      </div>
-      <div class="grid-item">
-        <div class="grid-item-icon"><i data-lucide="git-branch" style="width:20px;height:20px;color:var(--mira-warning)"></i></div>
-        <div class="grid-item-title" style="color:var(--mira-warning)">GraphRAG — Mapa de Metrô</div>
-        <div class="grid-item-text">Navega conexões entre entidades. Indispensável para raciocínio multi-hop e síntese hierárquica de contexto.</div>
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="border-color:rgba(255,100,100,0.25)"><div style="font-weight:700;color:var(--mira-error);margin-bottom:0.4rem">Onde GraphRAG Falha</div><div style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.55">• −13.4% NaturalQuestion vs. RAG vetorial (baseline)<br>• −16.6% em queries temporais e dinâmicas<br>• 2.3× mais latência média que RAG vetorial<br>• Corpora sem hierarquias explícitas entre entidades</div></div>
+      <div class="gi" style="border-color:rgba(255,213,77,0.25)"><div style="font-weight:700;color:var(--mira-warning);margin-bottom:0.4rem">Onde GraphRAG Vence</div><div style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.55">• +4.5% em raciocínio multi-hop (HotpotQA)<br>• Síntese com dependências hierárquicas<br>• Geração criativa e sumarização contextual profunda<br>• Domínios knowledge-intensive (CS, Direito, Medicina)</div></div>
     </div>
+    <div class="d3-wrap" id="anim-paradox" style="height:260px" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 3 — O PARADOXO GRAPHRAG (ICLR 2026)
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="alert-triangle"></i> Xiang et al. · ICLR 2026
+<!-- SLIDE 3 · METÁFORA 1 — GPS vs. MAPA DE METRÔ -->
+<div class="slide" id="slide-3">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora de Abertura · RAG Vetorial vs. GraphRAG</div>
     </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      O <span class="accent">Paradoxo</span> GraphRAG
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      GraphRAG frequentemente <em>perde</em> para o RAG vetorial em tarefas do mundo real — e o campo ignorou isso.
-    </p>
-    <div class="quote-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="quote-text">"GraphRAG achieves 13.4% lower accuracy on Natural Question compared to vanilla RAG, with particularly poor performance on time-sensitive queries — 16.6% accuracy drop."</div>
-      <div class="quote-source">— Xiang et al., When to Use Graphs in RAG, ICLR 2026</div>
-    </div>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-error)">❌ Onde GraphRAG Falha</div>
-        <div class="grid-item-text" style="margin-top:8px">
-          • −13.4% em NaturalQuestion vs. RAG vetorial<br>
-          • −16.6% em queries temporais / dinâmicas<br>
-          • 2.3× mais latência média que RAG vetorial<br>
-          • Corpora sem hierarquias explícitas entre entidades
-        </div>
-      </div>
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-warning)">✓ Onde GraphRAG Vence</div>
-        <div class="grid-item-text" style="margin-top:8px">
-          • +4.5% em raciocínio multi-hop (HotpotQA)<br>
-          • Síntese de contexto com dependências hierárquicas<br>
-          • Geração criativa e sumarização contextual<br>
-          • Knowledge-intensive domains (CS, Direito, Medicina)
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 4 — D3: COMPLEXIDADE × VANTAGEM DO GRAFO
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="bar-chart-2"></i> Visualização Animada
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      Complexidade da Tarefa × <span class="accent">Ganho do Grafo</span>
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      GraphRAG começa negativo e vai ganhando conforme a tarefa exige mais raciocínio relacional.
-    </p>
-    <div id="anim-paradox" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:280px"></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 5 — GRAPHRAG-BENCH: 4 NÍVEIS
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="layers"></i> GraphRAG-Bench · ICLR 2026
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      4 Níveis de <span class="accent">Complexidade de Raciocínio</span>
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      Benchmark cobrindo desde recuperação de fato até geração criativa — com avaliação holística do pipeline completo.
-    </p>
-    <div id="anim-bench" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:300px"></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 6 — QUANDO O GRAPHRAG VENCE
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="check-circle"></i> Condições de Vitória do Grafo
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      3 Cenários Onde o <span class="accent">Grafo Domina</span>
-    </h2>
-    <div class="grid-3" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item" style="border-top:2px solid var(--mira-warning)">
-        <div style="font-size:1.6rem;margin-bottom:8px">🔗</div>
-        <div class="grid-item-title">Raciocínio Multi-Hop</div>
-        <div class="grid-item-text">Perguntas que encadeiam múltiplos fatos via entidades conectadas. +4.5% no HotpotQA vs. RAG vetorial.</div>
-      </div>
-      <div class="grid-item" style="border-top:2px solid var(--mira-warning)">
-        <div style="font-size:1.6rem;margin-bottom:8px">🏛️</div>
-        <div class="grid-item-title">Hierarquia de Conceitos</div>
-        <div class="grid-item-text">Corpus com dependências hierárquicas explícitas: domínio → subdomínio → entidade. GraphRAG navega essa estrutura nativamente.</div>
-      </div>
-      <div class="grid-item" style="border-top:2px solid var(--mira-warning)">
-        <div style="font-size:1.6rem;margin-bottom:8px">✍️</div>
-        <div class="grid-item-title">Síntese Contextual Profunda</div>
-        <div class="grid-item-text">Sumarização temática e geração criativa onde relações implícitas e contexto disperso importam mais que fatos isolados.</div>
-      </div>
-    </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
-      <div style="font-size:0.86rem;color:var(--mira-text-muted)">
-        <strong style="color:var(--mira-warning)">Regra de ouro (ICLR 2026):</strong> Se a resposta está em um único parágrafo, use RAG vetorial. Se a resposta requer <em>sintetizar informação dispersa com dependências lógicas entre entidades</em>, considere GraphRAG — mas avalie latência e custo.
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 7 — METÁFORA 2: ROBÔ MECÂNICO VS ARQUEÓLOGO
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="lightbulb"></i> Metáfora · Construção de KG
-    </div>
-    <div class="metaphor-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <div class="metaphor-icon">⛏️</div>
-      <div class="metaphor-title">Robô Mecânico vs. Arqueólogo Especializado</div>
-      <p class="metaphor-text">
-        Construir um Grafo de Conhecimento com LLM é como contratar um arqueólogo especializado: o resultado é rico e preciso, mas cada análise custa caro e leva tempo. Para 1 milhão de documentos, o orçamento explode.<br><br>
-        O <strong style="color:var(--mira-warning)">Dependency Parsing</strong> — análise sintática automática da gramática da frase — é o robô mecânico da escavação: extrai triplas ⟨sujeito, verbo, objeto⟩ sem LLM, em escala industrial. E alcança <strong style="color:var(--mira-warning)">94% da qualidade do arqueólogo</strong> a uma fração mínima do custo.<br><br>
-        Para enterprise com corpora gigantes, o robô mecânico é a única opção viável.
-      </p>
-    </div>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-error)">LLM-based Extraction</div>
-        <div class="grid-item-text" style="margin-top:6px">Alta qualidade semântica. Custo ~50-100× maior. Latência proibitiva. Impraticável para corpora enterprise de grande porte.</div>
-      </div>
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-warning)">Dependency Parsing (SpaCy)</div>
-        <div class="grid-item-text" style="margin-top:6px">94% da qualidade LLM. Custo ~3-5×. Paralelo, escalável. Passive voice handling + phrasal merging incluídos.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 8 — SAP PRACTICAL GRAPHRAG: PIPELINE
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="settings"></i> Min et al. · SAP Palo Alto · Dez 2025
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      GraphRAG Enterprise: <span class="accent">Sem LLM</span> na Construção
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      Pipeline de dupla extração para deploy em produção — foco em legado ABAP/SAP S/4HANA.
-    </p>
-    <ol class="steps" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <li class="step-item">
-        <span class="step-num">1</span>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">🗺️</div>
         <div>
-          <div class="step-content-title">Pré-processamento (Docling + SpaCy)</div>
-          <div class="step-content-text">PDF/HTML/XLSX → parser Docling → chunking hierárquico (2048 chars, 200 overlap) → segmentação de frases → filtro de frases sem verbo para reduzir ruído.</div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-warning)">O GPS e o Mapa de Metrô</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">O RAG vetorial é um GPS: você faz uma pergunta, ele encontra o ponto mais próximo no espaço semântico e entrega a rota mais direta. Rápido, eficiente, preciso para destinos simples. O <strong style="color:var(--mira-warning)">GraphRAG é o mapa de metrô</strong> da cidade: revela conexões que o GPS ignora — "para ir de A a D, transborde em B e passe por C". Mais lento, mais caro, mas indispensável quando o destino exige entender a rede completa de relações. <strong style="color:var(--mira-warning)">A questão não é qual é melhor — é saber qual usar para cada viagem.</strong> O paper ICLR 2026 mede exatamente onde a viagem de metrô compensa e onde o GPS ainda vence.</p>
         </div>
-      </li>
-      <li class="step-item">
-        <span class="step-num">2</span>
-        <div>
-          <div class="step-content-title">Extração de Triplas por Dependency Parsing</div>
-          <div class="step-content-text">SpaCy extrai ⟨sujeito, relação, objeto⟩ via árvore de dependência gramatical. Passive voice handling normaliza construções passivas → ativas. Phrasal merging une entidades multi-token.</div>
-        </div>
-      </li>
-      <li class="step-item">
-        <span class="step-num">3</span>
-        <div>
-          <div class="step-content-title">Fusão e Normalização em Graph DB</div>
-          <div class="step-content-text">Grafo unificado com embeddings <em>separados</em> para entidades, chunks e relações — três vetores por granularidade.</div>
-        </div>
-      </li>
-      <li class="step-item">
-        <span class="step-num">4</span>
-        <div>
-          <div class="step-content-title">Hybrid Retrieval via RRF</div>
-          <div class="step-content-text">Reciprocal Rank Fusion funde similaridade vetorial + traversal de grafo. Multi-granular: entidades, chunks e relações recuperados e fundidos por score de rank.</div>
-        </div>
-      </li>
-    </ol>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 9 — D3: PIPELINE DE CONSTRUÇÃO DE KG
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="cpu"></i> Visualização Animada
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      Pipeline de KG <span class="accent">Sem LLM</span>
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      Dual extraction: dependency parsing (rápido, barato) + LLM opcional (preciso, caro) → fusão.
-    </p>
-    <div id="anim-construction" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:280px"></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 10 — HYBRID RETRIEVAL COM RRF
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="zap"></i> Recuperação Híbrida
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <span class="accent">RRF</span>: Vetor + Grafo em 3 Granularidades
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      A chave é manter embeddings separados por tipo — entidade, chunk e relação — para buscas multi-granulares.
-    </p>
-    <div class="grid-3" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item" style="text-align:center">
-        <div style="font-size:1.7rem;margin-bottom:8px">🔷</div>
-        <div class="grid-item-title" style="color:var(--mira-blue)">Entidades</div>
-        <div class="grid-item-text">Embedding de cada nó do grafo. Matching fuzzy via similaridade coseno no espaço de entidades.</div>
-      </div>
-      <div class="grid-item" style="text-align:center">
-        <div style="font-size:1.7rem;margin-bottom:8px">📄</div>
-        <div class="grid-item-title" style="color:var(--mira-warning)">Chunks</div>
-        <div class="grid-item-text">Embedding dos fragmentos de texto. Recuperação semântica densa — camada RAG vetorial tradicional.</div>
-      </div>
-      <div class="grid-item" style="text-align:center">
-        <div style="font-size:1.7rem;margin-bottom:8px">🔗</div>
-        <div class="grid-item-title" style="color:var(--mira-success)">Relações</div>
-        <div class="grid-item-text">Embedding das triplas ⟨subj, rel, obj⟩. Permite busca por tipo de relação entre entidades do grafo.</div>
       </div>
     </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px;text-align:center">
-      <div style="font-size:0.88rem;color:var(--mira-text-muted)">
-        Reciprocal Rank Fusion (k=60):&nbsp;&nbsp;
-        <span style="color:var(--mira-warning);font-size:1.05rem;font-weight:700">score(d) = Σ 1/(k + rank<sub>i</sub>(d))</span>
-      </div>
-      <div style="font-size:0.78rem;color:var(--mira-text-muted);margin-top:6px">Funde rankings de múltiplas listas sem normalização de score — robusto a distribuições diferentes.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="border-color:rgba(77,180,255,0.25)"><div style="font-weight:700;color:var(--mira-blue);margin-bottom:0.4rem">RAG Vetorial — GPS</div><p style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.5">Rota direta, busca semântica, baixa latência. Fact retrieval e dados temporais. −13.4% HotpotQA, mas ainda +13.4% NaturalQuestion vs. GraphRAG.</p></div>
+      <div class="gi" style="border-color:rgba(255,213,77,0.25)"><div style="font-weight:700;color:var(--mira-warning);margin-bottom:0.4rem">GraphRAG — Mapa de Metrô</div><p style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.5">Navega conexões entre entidades. Indispensável para multi-hop e síntese hierárquica. +4.5% HotpotQA. Latência 2.3× maior — viagem mais longa, mas chega onde o GPS não vai.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 11 — RESULTADOS SAP
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="trending-up"></i> Resultados · SAP Practical GraphRAG
+<!-- SLIDE 4 · D3 CONCEITUAL ÚNICO — O Espectro de Raciocínio -->
+<div class="slide" id="slide-4">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Animação Conceitual · A Escolha que a Tarefa Impõe</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">O <span style="color:var(--mira-warning)">Espectro de Raciocínio</span> RAG</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Não é grafo vs. vetor — é a complexidade da tarefa que decide. Cada ponto do espectro tem um vencedor diferente, com evidência quantitativa do GraphRAG-Bench</p>
     </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      94% da Qualidade LLM a <span class="accent">Fração do Custo</span>
-    </h2>
-    <div class="results-grid" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="result-card">
-        <div class="result-big">+15%</div>
-        <div class="result-label">sobre RAG vetorial puro — dataset de migração de código legado</div>
-      </div>
-      <div class="result-card">
-        <div class="result-big">94%</div>
-        <div class="result-label">qualidade do LLM-based extraction — dependency parsing apenas</div>
-      </div>
-      <div class="result-card">
-        <div class="result-big">+4.35%</div>
-        <div class="result-label">melhoria consistente em 2 datasets enterprise (avaliação LLM-as-Judge)</div>
+    <div class="d3-wrap mb-5" id="anim-spectrum" style="height:240px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="border-color:rgba(77,180,255,0.25)"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-blue);margin-bottom:0.3rem">Zona Vetorial (L1)</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.5">Fact Retrieval, queries temporais. Busca semântica densa é suficiente. GraphRAG perde −13.4% NQ e −16.6% queries temporais.</p></div>
+      <div class="gi" style="border-color:rgba(255,213,77,0.25)"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-warning);margin-bottom:0.3rem">Zona de Transição (L2)</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.5">Complex Reasoning: multi-hop começa a vantagem do grafo. +4.5% HotpotQA. Custo 2.3× — a viagem de metrô vale pela primeira vez.</p></div>
+      <div class="gi" style="border-color:rgba(77,255,180,0.25)"><div style="font-size:0.82rem;font-weight:700;color:var(--mira-success);margin-bottom:0.3rem">Zona Grafo (L3-L4)</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.5">Contextual Summarize e Creative Generation: dependências hierárquicas dispersas fazem o grafo dominar claramente. RAG vetorial perde contexto global.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5 · GraphRAG-Bench 4 Níveis -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Xiang et al. · ICLR 2026 · Benchmark</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">GraphRAG-Bench: 4 Níveis de <span style="color:var(--mira-warning)">Complexidade</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Avaliação holística do pipeline completo — do fato mais simples à geração criativa</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-bench" style="height:280px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div class="alert-y" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-warning)">Regra de ouro (ICLR 2026):</strong> Se a resposta está em um único parágrafo, use RAG vetorial. Se a resposta requer sintetizar informação dispersa com dependências lógicas entre entidades, considere GraphRAG — mas avalie latência (2.3×) e custo antes de decidir.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6 · METÁFORA 2 — ROBÔ MECÂNICO vs. ARQUEÓLOGO (SAP) -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · Construção de KG · SAP Practical GraphRAG</div>
+    </div>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon">⛏️</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-warning)">Robô Mecânico vs. Arqueólogo Especializado</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Construir um Grafo de Conhecimento com LLM é como contratar um arqueólogo especializado: o resultado é rico e preciso, mas cada análise custa caro e leva tempo. Para 1 milhão de documentos enterprise, o orçamento explode. O <strong style="color:var(--mira-warning)">Dependency Parsing</strong> — análise sintática automática via SpaCy — é o robô mecânico da escavação: extrai triplas ⟨sujeito, verbo, objeto⟩ sem LLM, em escala industrial. Custo ~3-5× (vs. 50-100× do LLM). E alcança <strong style="color:var(--mira-warning)">94% da qualidade do arqueólogo</strong> num domínio real (migração legado ABAP → SAP S/4HANA). Para enterprise com corpora gigantes, o robô mecânico é a única opção viável — e é praticamente tão bom.</p>
+        </div>
       </div>
     </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning)">+15%</div><div class="stat-lbl">vs. RAG vetorial puro — dataset migração de código legado ABAP</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning)">94%</div><div class="stat-lbl">qualidade LLM-extraction alcançada só com Dependency Parsing</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-warning)">3-5×</div><div class="stat-lbl">custo relativo vs. 50-100× do LLM-based extraction</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7 · PIPELINE SAP SEM LLM -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Min et al. · SAP Palo Alto · Dez 2025</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">GraphRAG Enterprise: <span style="color:var(--mira-warning)">Sem LLM</span> na Construção</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Pipeline de dupla extração para deploy em produção — Docling + SpaCy + RRF multi-granular</p>
+    </div>
+    <div class="d3-wrap mb-5" id="anim-construction" style="height:270px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="step-item"><span class="step-num">1</span><div><div style="font-weight:700;font-size:0.88rem;margin-bottom:0.22rem">Pré-processamento (Docling + SpaCy)</div><p style="font-size:0.8rem;color:rgba(255,255,255,0.55);line-height:1.5">PDF/HTML/XLSX → Docling → chunking hierárquico (2048 chars, 200 overlap) → segmentação → filtro de frases sem verbo</p></div></div>
+      <div class="step-item"><span class="step-num">2</span><div><div style="font-weight:700;font-size:0.88rem;margin-bottom:0.22rem">Extração de Triplas por Dependency Parsing</div><p style="font-size:0.8rem;color:rgba(255,255,255,0.55);line-height:1.5">SpaCy extrai ⟨sujeito, relação, objeto⟩ via árvore de dependência. Passive voice handling normaliza construções passivas. Phrasal merging une entidades multi-token</p></div></div>
+      <div class="step-item"><span class="step-num">3</span><div><div style="font-weight:700;font-size:0.88rem;margin-bottom:0.22rem">Fusão Multi-Granular + RRF</div><p style="font-size:0.8rem;color:rgba(255,255,255,0.55);line-height:1.5">3 embeddings separados: entidades, chunks, relações. Reciprocal Rank Fusion (k=60): score(d) = Σ 1/(k + rankᵢ(d)) — funde sem normalização de score</p></div></div>
+    </div>
+    <div class="alert-y mt-4" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-warning)">+4.35% consistente em 2 datasets enterprise</strong> — avaliação LLM-as-Judge (GPT-4). Ressalva: NLP clássico pode perder relações semânticas complexas não detectadas por árvore de dependência gramatical.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8 · O DEBATE — TagRAG vs. ROGRAG -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Tensão Conceitual · O Debate</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem"><span style="color:var(--mira-warning)">Hierarquia Clara</span> vs. <span style="color:var(--mira-purple)">Flexibilidade Total</span></h2>
+      <div class="accent-bar mb-5"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="background:rgba(255,213,77,0.06);border:1px solid rgba(255,213,77,0.2);border-radius:1rem;padding:1.4rem">
+        <div style="font-weight:700;margin-bottom:0.5rem;color:var(--mira-warning);font-size:0.9rem">📚 TagRAG (ECNU 2026) — Hierarquia Explícita</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.55">Tese: o problema do GraphRAG original é a falta de estrutura hierárquica pré-definida. Com domain tag chains (Root → Domain → Object), a inserção de novos docs é incremental. 14.6× mais rápido na construção, 1.9× no retrieval. A eficiência vem de conhecer o domínio antecipadamente.</p>
+        <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(255,213,77,0.1);border-radius:0.5rem;font-size:0.75rem;color:var(--mira-warning)">Melhor quando: domínio well-defined (Agro, Direito, CS)</div>
+      </div>
+      <div style="background:rgba(180,100,255,0.06);border:1px solid rgba(180,100,255,0.2);border-radius:1rem;padding:1.4rem">
+        <div style="font-weight:700;margin-bottom:0.5rem;color:var(--mira-purple);font-size:0.9rem">⚙️ ROGRAG (Shanghai AI Lab 2025) — Fusão Adaptativa</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.55">Tese: o problema do GraphRAG é a estratégia de retrieval única. Fusão de 4 frameworks (DB-GPT + LightRAG + KAG + HuixiangDou) com Logic Form + Dual-Level Fuzzy. Retrieval Verifier decide qual caminho usar por query. Funciona em corpora heterogêneos sem hierarquia clara.</p>
+        <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(180,100,255,0.1);border-radius:0.5rem;font-size:0.75rem;color:var(--mira-purple)">Melhor quando: corpus heterogêneo, multi-domínio</div>
+      </div>
+    </div>
+    <div class="alert-g" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-success)">Síntese:</strong> TagRAG e ROGRAG resolvem o mesmo problema por ângulos opostos — TagRAG impõe estrutura de fora (taxonomia pré-definida), ROGRAG adapta a estratégia de dentro (routing dinâmico). Para corpora com domínios claros e crescimento incremental, TagRAG é a escolha de eficiência. Para corpora heterogêneos sem hierarquia definida, ROGRAG é mais robusto. Os dois são complementares: TagRAG dentro dos domínios, ROGRAG nas fronteiras.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9 · METÁFORA 3 — TAXONOMIA DE BIBLIOTECA (TagRAG) -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-5">Metáfora · TagRAG · ECNU 2026</div>
+    </div>
+    <div class="metaphor-box mb-5" style="border-color:rgba(77,255,180,0.18)" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:flex;gap:1rem;align-items:flex-start">
+        <div class="metaphor-icon" style="background:rgba(77,255,180,0.14);border-color:rgba(77,255,180,0.3)">📚</div>
+        <div>
+          <div style="font-weight:900;font-size:1.25rem;margin-bottom:0.5rem;color:var(--mira-success)">A Biblioteca com Etiquetas Hierárquicas</div>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.92rem;line-height:1.65">Imagine uma biblioteca com etiquetas pré-definidas em cascata: "Ciência da Computação" → "Banco de Dados" → "Indexação" → obra específica. Cada documento carrega essas etiquetas como herança. O GraphRAG original <em>reconstrói toda a biblioteca</em> a cada novo livro adicionado — caro e lento. O <strong style="color:var(--mira-success)">TagRAG</strong> pré-organiza as prateleiras com <em>domain tag chains</em>, permitindo inserção incremental: novo livro, nova etiqueta, sem demolir e reconstruir. A busca navega as etiquetas como um índice de assuntos. Resultado: <strong style="color:var(--mira-success)">14.6× mais rápido na construção, 1.9× mais rápido na busca</strong>, 78.36% win rate em 4 domínios diferentes.</p>
+        </div>
+      </div>
+    </div>
+    <div class="d3-wrap" id="anim-tagchain" style="height:290px" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+  </div>
+</div>
+
+<!-- SLIDE 10 · TAGRAG RESULTADOS -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Tao et al. · ECNU · Mai 2026 · UltraDomain</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem"><span style="color:var(--mira-success)">78.36%</span> Win Rate em 4 Domínios</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">TagRAG supera GraphRAG original, LightRAG e KET-RAG em todos os domínios testados</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.85rem;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">78.36%</div><div class="stat-lbl">win rate médio vs. todos os baselines (Qwen2.5-7B)</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">14.6×</div><div class="stat-lbl">construção mais eficiente vs. GraphRAG original Microsoft</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-success)">1.9×</div><div class="stat-lbl">retrieval mais eficiente vs. GraphRAG original</div></div>
+    </div>
+    <div style="overflow-x:auto;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
       <table>
-        <thead>
-          <tr><th>Método</th><th>Qualidade</th><th>Custo Relativo</th></tr>
-        </thead>
+        <thead><tr><th>Domínio</th><th>LLM Win Rate</th><th>Length Ratio</th><th>vs. Baseline</th></tr></thead>
         <tbody>
-          <tr><td>Vanilla Vector RAG</td><td>Baseline</td><td>1×</td></tr>
-          <tr><td>LLM-based GraphRAG</td><td>+15% ~ +20%</td><td>~50-100×</td></tr>
-          <tr class="highlight-row"><td>Dependency-based GraphRAG (SAP)</td><td>+4.35% ~ +15%</td><td>~3-5×</td></tr>
+          <tr><td>Agriculture</td><td style="color:var(--mira-success)">0.97</td><td>9.25</td><td><span class="tag t-g">+97%</span></td></tr>
+          <tr><td>Computer Science</td><td style="color:var(--mira-success)">0.97</td><td>10.77</td><td><span class="tag t-g">+97%</span></td></tr>
+          <tr><td>Law</td><td style="color:var(--mira-warning)">0.82</td><td>7.69</td><td><span class="tag t-y">+82%</span></td></tr>
+          <tr class="hl"><td>Cross-domain Mix</td><td>0.88</td><td>7.70</td><td><span class="tag t-y">+88%</span></td></tr>
         </tbody>
       </table>
-      <div style="font-size:0.76rem;color:var(--mira-text-muted);margin-top:10px">Domínio: migração ABAP → SAP S/4HANA. Avaliação: LLM-as-Judge (GPT-4). Cuidado: NLP clássico pode perder relações semânticas complexas.</div>
+    </div>
+    <div class="alert-g" data-aos="fade-up" data-aos-delay="300" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.8)"><strong style="color:var(--mira-success)">Win Rate de 97%</strong> em Agriculture e CS significa que o LLM juiz (Kimi API) preferiu as respostas do TagRAG em 97 de cada 100 pares avaliados — eliminando praticamente qualquer competição nesses domínios hierárquicos.</p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 12 — METÁFORA 3: TAXONOMIA DE BIBLIOTECA
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="lightbulb"></i> Metáfora · TagRAG
+<!-- SLIDE 11 · ROGRAG 4 Frameworks -->
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Wang et al. · Shanghai AI Lab · Jun 2025</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">ROGRAG: <span style="color:var(--mira-purple)">4 Frameworks</span> em 1 Pipeline Robusto</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Funde os melhores de DB-GPT + LightRAG + KAG + HuixiangDou com ablação rigorosa de cada componente</p>
     </div>
-    <div class="metaphor-box" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <div class="metaphor-icon">📚</div>
-      <div class="metaphor-title">Taxonomia de Biblioteca — Do Prateleiro ao Livro</div>
-      <p class="metaphor-text">
-        Imagine uma biblioteca com <strong style="color:var(--mira-warning)">etiquetas hierárquicas</strong> pré-definidas: "Ciência da Computação" → "Banco de Dados" → "Indexação" → obra específica. Cada documento carrega essas etiquetas como herança.<br><br>
-        O GraphRAG tradicional <em>reconstrói toda a biblioteca</em> a cada novo livro adicionado — caro e lento. O <strong style="color:var(--mira-warning)">TagRAG</strong> pré-organiza as prateleiras com <em>domain tag chains</em>, permitindo inserção incremental: novo livro, nova etiqueta, sem demolir e reconstruir a taxonomia.<br><br>
-        A busca navega as etiquetas como um índice de assuntos. Resultado: <strong style="color:var(--mira-warning)">14.6× mais rápido na construção, 1.9× mais rápido na busca</strong>.
-      </p>
+    <div class="d3-wrap mb-5" id="anim-rograg" style="height:270px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="font-weight:700;color:var(--mira-purple);margin-bottom:0.3rem">Logic Form Retrieval</div><p style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.5">LLM decompõe query em operadores estruturados (filtrar, agregar, ordenar) → traversal estruturado do grafo. Melhor para raciocínio que requer ordem lógica explícita.</p></div>
+      <div class="gi"><div style="font-weight:700;color:var(--mira-purple);margin-bottom:0.3rem">Dual-Level Fuzzy Match</div><p style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.5">Low-level (entidades) + High-level (relações) → fuzzy matching simultâneo. <strong>Retrieval Verifier</strong>: se contexto for insuficiente, degrada automaticamente para Dual-Level.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 13 — TAGRAG: ARQUITETURA
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="tag"></i> Tao et al. · ECNU · Mai 2026
+<!-- SLIDE 12 · ROGRAG RESULTADOS -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Ablation Study · ROGRAG · SeedBench</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">De <span style="color:var(--mira-warning)">0.57</span> para <span style="color:var(--mira-success)">0.75</span> — Cada Otimização Conta</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Baseline Vanilla sem RAG = 0.57; LangChain RAG = 0.68; BM25 = 0.65; ROGRAG = 0.75 em QA-1</p>
     </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      TagRAG: Hierarquia de <span class="accent">Etiquetas de Domínio</span>
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      Tag Knowledge Graph Construction + Tag-Guided RAG em dois estágios complementares.
-    </p>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="card" style="padding:22px">
-        <div class="grid-item-title" style="color:var(--mira-warning);margin-bottom:10px">① Construção do Tag KG</div>
-        <ol class="steps">
-          <li class="step-item" style="margin-bottom:10px">
-            <span class="step-num" style="width:20px;height:20px;font-size:0.68rem">1</span>
-            <div class="step-content-text"><strong>Object Tag Extraction</strong>: LLM extrai palavras-chave de domínio dos chunks → object tags (V<sub>o</sub>, E<sub>o</sub>) com descrições</div>
-          </li>
-          <li class="step-item" style="margin-bottom:10px">
-            <span class="step-num" style="width:20px;height:20px;font-size:0.68rem">2</span>
-            <div class="step-content-text"><strong>Domain Tag Chains</strong>: Associa tags ao root domain (v̂) → cadeias hierárquicas organizadas em DAG acíclico</div>
-          </li>
-          <li class="step-item">
-            <span class="step-num" style="width:20px;height:20px;font-size:0.68rem">3</span>
-            <div class="step-content-text"><strong>Knowledge Fusion</strong>: s = LLM(Chain(v<sub>d</sub>), Nei(v<sub>d</sub>)) — sumarização funde informação nas domain tags</div>
-          </li>
-        </ol>
-      </div>
-      <div class="card" style="padding:22px">
-        <div class="grid-item-title" style="color:var(--mira-warning);margin-bottom:10px">② Tag-Guided RAG</div>
-        <ol class="steps">
-          <li class="step-item" style="margin-bottom:10px">
-            <span class="step-num" style="width:20px;height:20px;font-size:0.68rem">1</span>
-            <div class="step-content-text"><strong>Domain Tag Retrieval</strong>: Query → recupera domain tags mais relevantes via similaridade</div>
-          </li>
-          <li class="step-item" style="margin-bottom:10px">
-            <span class="step-num" style="width:20px;height:20px;font-size:0.68rem">2</span>
-            <div class="step-content-text"><strong>Hierarchical Chain Integration</strong>: Cadeias hierárquicas coletadas → contexto global sintetizado</div>
-          </li>
-          <li class="step-item">
-            <span class="step-num" style="width:20px;height:20px;font-size:0.68rem">3</span>
-            <div class="step-content-text"><strong>Fused Generation</strong>: LLM gera resposta com visão domain-centric — local e global integrados</div>
-          </li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 14 — D3: TAG KNOWLEDGE GRAPH
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="git-branch"></i> Visualização Animada
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <span class="accent">Tag Knowledge Graph</span> Hierárquico
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      Root Domain → Domain Tags → Object Tags → Chunks. Inserção incremental sem reconstrução.
-    </p>
-    <div id="anim-tagchain" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:320px"></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 15 — TAGRAG EM NÚMEROS
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="bar-chart"></i> Resultados · TagRAG
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <span class="accent">78.36%</span> Win Rate — 4 Domínios
-    </h2>
-    <div class="results-grid" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="result-card">
-        <div class="result-big">78.36%</div>
-        <div class="result-label">win rate médio vs. todos os baselines (UltraDomain)</div>
-      </div>
-      <div class="result-card">
-        <div class="result-big">14.6×</div>
-        <div class="result-label">construção mais eficiente vs. GraphRAG original</div>
-      </div>
-      <div class="result-card">
-        <div class="result-big">1.9×</div>
-        <div class="result-label">retrieval mais eficiente vs. GraphRAG original</div>
-      </div>
-    </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
+    <div style="overflow-x:auto;margin-bottom:1.25rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
       <table>
-        <thead>
-          <tr><th>Domínio</th><th>LLM Win Rate</th><th>Length Ratio</th></tr>
-        </thead>
+        <thead><tr><th>Método</th><th>QA-1 Acc.</th><th>QA-2 F1</th><th>QA-3 Rouge</th><th>QA-4 Rouge</th></tr></thead>
         <tbody>
-          <tr><td>Agriculture</td><td>0.97</td><td>9.25</td></tr>
-          <tr><td>Computer Science</td><td>0.97</td><td>10.77</td></tr>
-          <tr><td>Law</td><td>0.82</td><td>7.69</td></tr>
-          <tr class="highlight-row"><td>Cross-domain Mix</td><td>0.88</td><td>7.70</td></tr>
-        </tbody>
-      </table>
-      <div style="font-size:0.75rem;color:var(--mira-text-muted);margin-top:8px">Avaliado em UltraDomain com Qwen2.5-7B-Instruct. Juiz: Kimi API. TagRAG supera GraphRAG, LightRAG e KET-RAG em todos os domínios.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 16 — ROGRAG: 4 FRAMEWORKS EM 1
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="layers"></i> Wang et al. · Shanghai AI Lab · Jun 2025
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      ROGRAG: <span class="accent">4 Frameworks</span> em 1 Pipeline Robusto
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      Funde os melhores de DB-GPT, LightRAG, KAG e HuixiangDou com ablação rigorosa de cada componente.
-    </p>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-warning)">4 Frameworks Fundidos</div>
-        <div style="margin-top:8px">
-          <span class="tag tag-warn" style="margin:2px">DB-GPT</span>
-          <span class="tag tag-blue" style="margin:2px">LightRAG</span>
-          <span class="tag tag-green" style="margin:2px">KAG</span>
-          <span class="tag tag-purple" style="margin:2px">HuixiangDou</span>
-        </div>
-        <div class="grid-item-text" style="margin-top:10px">Escalabilidade (DB-GPT) + implementação leve (LightRAG) + raciocínio (KAG) + robustez a refusals (HuixiangDou).</div>
-      </div>
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-warning)">2 Estratégias de Retrieval</div>
-        <div class="grid-item-text" style="margin-top:8px">
-          <strong style="color:var(--mira-text)">Logic Form Retrieval</strong>: LLM decompõe query em operadores estruturados (filtrar, agregar, ordenar) → traversal estruturado do grafo.<br><br>
-          <strong style="color:var(--mira-text)">Dual-Level Fuzzy Match</strong>: Low-level (entidades) + High-level (relações) → fuzzy matching simultâneo no grafo.
-        </div>
-      </div>
-    </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
-      <div style="font-size:0.85rem;color:var(--mira-text-muted)">
-        <strong style="color:var(--mira-warning)">Retrieval Verifier</strong>: LLM verifica se o contexto recuperado é suficiente. Se não, degrada automaticamente para Dual-Level Fuzzy — garantindo cobertura sem custo desnecessário de LLM.
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 17 — D3: PIPELINE MULTI-STAGE ROGRAG
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="git-merge"></i> Visualização Animada
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      ROGRAG: Recuperação <span class="accent">Multi-Stage</span>
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      Query → Logic Form + Dual-Level → Verificação → Degradação inteligente → Geração.
-    </p>
-    <div id="anim-rograg" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:280px"></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 18 — ROGRAG: ABLATION E RESULTADOS
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="trending-up"></i> Ablation Study · ROGRAG · SeedBench
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      De <span class="accent">60%</span> para <span class="accent">75%</span> — Cada Otimização Conta
-    </h2>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <table>
-        <thead>
-          <tr><th>Método</th><th>QA-1 (Acc.)</th><th>QA-2 (F1)</th><th>QA-3 (Rouge)</th><th>QA-4 (Rouge)</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Vanilla (w/o RAG)</td><td>0.57</td><td>0.71</td><td>0.16</td><td>0.35</td></tr>
-          <tr><td>LangChain</td><td>0.68</td><td>0.68</td><td>0.15</td><td>0.04</td></tr>
+          <tr><td>Vanilla (sem RAG)</td><td>0.57</td><td>0.71</td><td>0.16</td><td>0.35</td></tr>
+          <tr><td>LangChain RAG</td><td>0.68</td><td>0.68</td><td>0.15</td><td>0.04</td></tr>
           <tr><td>BM25</td><td>0.65</td><td>0.69</td><td>0.23</td><td>0.03</td></tr>
           <tr><td>RQ-RAG</td><td>0.59</td><td>0.62</td><td>0.17</td><td>0.33</td></tr>
-          <tr class="highlight-row"><td>ROGRAG (Ours)</td><td>0.75</td><td>0.79</td><td>0.36</td><td>0.38</td></tr>
+          <tr class="hl"><td>ROGRAG</td><td>0.75</td><td>0.79</td><td>0.36</td><td>0.38</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px">
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-warning)">Descoberta Principal</div>
-        <div class="grid-item-text" style="margin-top:4px">Dual-level melhora fuzzy matching; Logic Form melhora raciocínio estruturado. As duas estratégias são complementares — nenhuma sozinha domina todos os tipos de query.</div>
-      </div>
-      <div class="grid-item">
-        <div class="grid-item-title" style="color:var(--mira-warning)">Construção Incremental</div>
-        <div class="grid-item-text" style="margin-top:4px">Database incremental: novos documentos expandem o grafo sem reconstrução completa. Viabiliza deploy em produção com conteúdo dinâmico — sem os custos do batch rebuilding.</div>
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi"><div style="font-weight:700;color:var(--mira-success);margin-bottom:0.3rem">Descoberta Principal da Ablation</div><p style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.5">Dual-level melhora fuzzy matching; Logic Form melhora raciocínio estruturado. As duas estratégias são complementares — nenhuma domina todos os tipos de query sozinha.</p></div>
+      <div class="gi"><div style="font-weight:700;color:var(--mira-success);margin-bottom:0.3rem">Construção Incremental</div><p style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.5">Novos documentos expandem o grafo sem reconstrução completa. Viabiliza deploy em produção com conteúdo dinâmico — sem custo de batch rebuilding.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 19 — D3: LANDSCAPE 4 PAPERS
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="map"></i> Comparativo Visual
+<!-- SLIDE 13 · LANDSCAPE 4 PAPERS -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Síntese · Landscape GraphRAG 2025-2026</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">4 Abordagens: <span style="color:var(--mira-warning)">Custo × Qualidade</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.875rem" class="mb-5">Onde cada paper se posiciona no trade-off entre custo de construção de KG e qualidade de recuperação</p>
     </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      Landscape GraphRAG: <span class="accent">4 Abordagens</span>
-    </h2>
-    <p class="slide-desc" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      Custo de construção × qualidade de recuperação — onde cada paper se posiciona.
-    </p>
-    <div id="anim-compare12" class="d3-container" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200" style="min-height:300px"></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     SLIDE 20 — SÍNTESE: 5 LIÇÕES
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="book-open"></i> Síntese do Módulo 12
-    </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      5 Lições sobre <span class="accent">GraphRAG em 2026</span>
-    </h2>
-    <div class="card card-accent" data-aos="fade-up" data-aos-duration="700" data-aos-delay="150">
-      <ol class="steps">
-        <li class="step-item">
-          <span class="step-num">1</span>
-          <div>
-            <div class="step-content-title">GraphRAG não é universalmente superior</div>
-            <div class="step-content-text">Em fact retrieval, perde −13.4% para RAG vetorial. Escolha o paradigma pela complexidade da tarefa, não pela novidade da técnica.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">2</span>
-          <div>
-            <div class="step-content-title">Construção sem LLM é prática e eficaz</div>
-            <div class="step-content-text">Dependency parsing (SpaCy) alcança 94% da qualidade LLM-based com fração do custo. Para corpora enterprise, é a única opção escalável.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">3</span>
-          <div>
-            <div class="step-content-title">Hierarquia de etiquetas supera grafos monolíticos</div>
-            <div class="step-content-text">TagRAG: 14.6× construção mais eficiente, inserção incremental nativa. Evita reconstrução total ao adicionar novos documentos.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">4</span>
-          <div>
-            <div class="step-content-title">Fusão de estratégias > estratégia única</div>
-            <div class="step-content-text">ROGRAG: Logic Form + Dual-Level Fuzzy são complementares. Verificação automática com degradação inteligente garante cobertura sem custo excessivo.</div>
-          </div>
-        </li>
-        <li class="step-item">
-          <span class="step-num">5</span>
-          <div>
-            <div class="step-content-title">RRF com embeddings multi-granulares é o padrão</div>
-            <div class="step-content-text">Embeddings separados para entidade, chunk e relação + Reciprocal Rank Fusion consistentemente supera qualquer retrieval isolado.</div>
-          </div>
-        </li>
-      </ol>
+    <div class="d3-wrap mb-5" id="anim-compare12" style="height:290px" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55"></div>
+    <div style="overflow-x:auto" data-aos="fade-up" data-aos-delay="200" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <table>
+        <thead><tr><th>Paper</th><th>Contribuição</th><th>Métrica Chave</th><th>Cenário Ideal</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--mira-warning)">ICLR 2026 (Xiang)</td><td>Benchmark + análise crítica</td><td>−13.4% NQ, +4.5% HotpotQA</td><td>Diagnóstico de quando usar</td></tr>
+          <tr><td style="color:var(--mira-blue)">SAP (Min)</td><td>Pipeline sem LLM (SpaCy)</td><td>+15% vs. vetorial; 94% LLM</td><td>Enterprise legado, custo</td></tr>
+          <tr><td style="color:var(--mira-success)">TagRAG (Tao)</td><td>Domain tag chains hierárquicas</td><td>78.36% win rate; 14.6×</td><td>Domínios com taxonomia clara</td></tr>
+          <tr class="hl"><td>ROGRAG (Wang)</td><td>Fusão 4 frameworks + routing</td><td>0.75 QA-1 vs. 0.68 LangChain</td><td>Corpora heterogêneos</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 21 — GUIA DE DECISÃO
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner">
-    <div class="section-label" data-aos="fade-right" data-aos-duration="700">
-      <i data-lucide="compass"></i> Guia de Decisão Prático
+<!-- SLIDE 14 · QUANDO USAR -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Guia Prático · Quando Usar Cada Abordagem</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:0.5rem">Grafo vs. Vetor: <span style="color:var(--mira-warning)">A Tarefa Decide</span></h2>
+      <div class="accent-bar mb-5"></div>
     </div>
-    <h2 class="slide-title" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      Quando Usar <span class="accent">Grafo vs. Vetor</span>?
-    </h2>
-    <div class="grid-2" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="card" style="border-top:3px solid var(--mira-blue)">
-        <div style="font-size:1.4rem;margin-bottom:8px">🔵</div>
-        <div style="font-weight:700;color:var(--mira-blue);margin-bottom:10px">Use RAG Vetorial quando...</div>
-        <ul style="list-style:none;font-size:0.85rem;color:var(--mira-text-muted)">
-          <li style="padding:5px 0;border-bottom:1px solid var(--mira-border)">✓ Recuperação de fato direto e isolado</li>
-          <li style="padding:5px 0;border-bottom:1px solid var(--mira-border)">✓ Dados temporais ou atualizações frequentes</li>
-          <li style="padding:5px 0;border-bottom:1px solid var(--mira-border)">✓ Latência &lt;100ms é requisito crítico</li>
-          <li style="padding:5px 0">✓ Corpus sem hierarquias relacionais explícitas</li>
-        </ul>
-      </div>
-      <div class="card" style="border-top:3px solid var(--mira-warning)">
-        <div style="font-size:1.4rem;margin-bottom:8px">🟡</div>
-        <div style="font-weight:700;color:var(--mira-warning);margin-bottom:10px">Use GraphRAG quando...</div>
-        <ul style="list-style:none;font-size:0.85rem;color:var(--mira-text-muted)">
-          <li style="padding:5px 0;border-bottom:1px solid var(--mira-border)">✓ Multi-hop reasoning é obrigatório</li>
-          <li style="padding:5px 0;border-bottom:1px solid var(--mira-border)">✓ Corpus com hierarquias domain-rich densas</li>
-          <li style="padding:5px 0;border-bottom:1px solid var(--mira-border)">✓ Síntese de contexto global importa</li>
-          <li style="padding:5px 0">✓ Dependências entre entidades são cruciais</li>
-        </ul>
-      </div>
-    </div>
-    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300" style="margin-top:14px;text-align:center">
-      <div style="font-size:0.88rem;color:var(--mira-warning);font-weight:700">Padrão Recomendado — Abordagem Incremental</div>
-      <div style="font-size:0.83rem;color:var(--mira-text-muted);margin-top:6px">
-        Começar com RAG Vetorial. Adicionar camada de grafo (via RRF) apenas quando benchmarks mostrarem gap em tarefas de raciocínio relacional. Usar TagRAG para inserção incremental sem custo de reconstrução.
-      </div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="dec-node">🔍 <strong>Minha tarefa principal é recuperar fatos isolados ou dados com atualização frequente?</strong></div>
+      <div class="dec-connector">↓ sim (NQ, TriviaQA, queries temporais)</div>
+      <div class="dec-node answer">→ <strong>RAG Vetorial</strong> — GraphRAG perde −13.4% NQ e −16.6% temporais (ICLR 2026). Não adicionar grafo aqui.</div>
+      <div class="dec-node">🔗 <strong>Preciso de multi-hop reasoning ou síntese com dependências entre entidades?</strong></div>
+      <div class="dec-connector">↓ sim (L2-L4 do GraphRAG-Bench)</div>
+      <div class="dec-node">📦 <strong>Meu corpus tem taxonomia de domínio clara (Agro, Direito, CS, Medicina)?</strong></div>
+      <div class="dec-connector">↓ sim → TagRAG (ECNU 2026): 14.6× mais eficiente, inserção incremental. Win rate 97% em CS e Agriculture | ↓ não → ROGRAG (Shanghai 2025): fusão adaptativa para corpus heterogêneo, 0.75 vs. 0.68 LangChain</div>
+      <div class="dec-node">⚙️ <strong>Tenho restrição severa de custo ou corpus enterprise muito grande?</strong></div>
+      <div class="dec-connector">↓ sim</div>
+      <div class="dec-node answer">→ <strong>SAP Practical GraphRAG</strong> — Dependency Parsing (SpaCy) sem LLM. 94% da qualidade LLM-based a custo 3-5× (vs. 50-100×). +15% sobre RAG vetorial em domínio legado.</div>
+      <div class="dec-node">📊 <strong>Não sei se GraphRAG vale para meu caso de uso?</strong></div>
+      <div class="dec-connector">↓ use o benchmark</div>
+      <div class="dec-node answer">→ <strong>GraphRAG-Bench (ICLR 2026)</strong> — Classifique suas queries nos 4 níveis (L1→L4). Se maioria é L1, não vale; se maioria é L3-L4, vale. Meça latência 2.3× no seu contexto de produção.</div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SLIDE 22 — PRÓXIMO MÓDULO
-═══════════════════════════════════════════════ -->
-<section class="slide">
-  <div class="slide-inner" style="text-align:center">
-    <div class="section-label" style="justify-content:center" data-aos="fade-down" data-aos-duration="700">
-      <i data-lucide="arrow-right-circle"></i> Próxima Parada
+<!-- SLIDE 15 · PRINCÍPIOS + 3 METÁFORAS FECHADAS -->
+<div class="slide" id="slide-15">
+  <div class="card">
+    <div data-aos="fade-right" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="sec-label mb-2">Módulo 12 · Princípios Destilados</div>
+      <h2 style="font-size:1.75rem;font-weight:900;margin-bottom:1.25rem">O GPS, o Robô e a <span style="color:var(--mira-warning)">Bibliotecária em Acordo</span></h2>
     </div>
-    <div class="next-module" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
-      <div class="next-label">Módulo 13</div>
-      <div class="next-title">Otimização de Pipeline RAG</div>
-      <p class="next-desc" style="margin-top:8px">
-        Compressão de contexto, caching semântico, pipeline paralelo e técnicas de engenharia que tornam RAG mais rápido, mais barato e mais preciso — sem sacrificar qualidade de resposta.
-      </p>
+    <div class="metaphor-box mb-5" data-aos="fade-up" data-aos-delay="80" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <p style="font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:1.7"><strong style="color:var(--mira-warning)">Lembram das 3 metáforas?</strong> O GPS provou que ainda existe — foi o ICLR 2026 que mediu onde ele vence (fact retrieval, −13.4% para GraphRAG) e onde perde (+4.5% multi-hop). O Robô Mecânico (SAP Practical) descobriu que 94% da qualidade do arqueólogo especializado (LLM-based) vem de análise sintática automática — e que para enterprise, o robô é a única opção viável em escala. A Bibliotecária (TagRAG) provou que organizar as prateleiras com etiquetas hierárquicas antes de adicionar livros é 14.6× mais eficiente do que reconstruir a biblioteca a cada novo título. <strong style="color:var(--mira-warning)">Conclusão: construir grafos de conhecimento virou praticável em 2026 — desde que você saiba quando usar o metrô, quanto custa a escavação, e se sua biblioteca já tem prateleiras.</strong></p>
     </div>
-    <div class="stats-row" style="margin-top:32px" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
-      <div class="stat-item">
-        <span class="stat-num" style="color:var(--mira-purple)">12</span>
-        <span class="stat-label">Módulos Completos</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" style="color:var(--mira-purple)">317</span>
-        <span class="stat-label">Slides Totais</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" style="color:var(--mira-purple)">125</span>
-        <span class="stat-label">Animações D3</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" style="color:var(--mira-purple)">64</span>
-        <span class="stat-label">Artigos Científicos</span>
-      </div>
+    <div style="display:flex;flex-direction:column;gap:0.6rem" data-aos="fade-up" data-aos-delay="160" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-y" style="flex-shrink:0">P1</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>GraphRAG não é universalmente superior</strong> — Em fact retrieval perde −13.4% para RAG vetorial. Escolha o paradigma pela complexidade da tarefa (L1-L4), não pela novidade da técnica.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-b" style="flex-shrink:0">P2</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Construção sem LLM é prática e eficaz</strong> — Dependency Parsing (SpaCy) alcança 94% da qualidade LLM-based com custo 3-5× (vs. 50-100×). Para corpora enterprise, é a única opção escalável.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-g" style="flex-shrink:0">P3</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>Hierarquia de etiquetas supera grafos monolíticos</strong> — TagRAG: 14.6× mais eficiente na construção, inserção incremental nativa. Evita reconstrução total ao adicionar novos documentos.</p></div>
+      <div class="gi" style="display:flex;gap:0.75rem;align-items:flex-start"><span class="tag t-pr" style="flex-shrink:0">P4</span><p style="font-size:0.84rem;color:rgba(255,255,255,0.8)"><strong>RRF multi-granular é o padrão de retrieval híbrido</strong> — Embeddings separados para entidade, chunk e relação + Reciprocal Rank Fusion consistentemente supera qualquer retrieval isolado. Custo de implementação justificado pelo ganho.</p></div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ═══════════════════════════════════════════════
-     SCRIPTS
-═══════════════════════════════════════════════ -->
+<!-- SLIDE 16 · PRÓXIMO MÓDULO -->
+<div class="slide" id="slide-16" style="background:radial-gradient(ellipse 60% 50% at 80% 50%,rgba(255,100,100,0.09) 0%,transparent 55%),var(--mira-bg)">
+  <div class="card" style="border-color:rgba(255,100,100,0.18)">
+    <div data-aos="fade-up" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.25);border-radius:2rem;padding:0.35rem 0.9rem;font-size:0.7rem;color:var(--mira-error);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1.5rem">A Seguir · Módulo 15</div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.05;margin-bottom:1rem"><span style="color:var(--mira-error)">RAG Multimodal</span></h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.95rem;margin-bottom:2rem">Quando texto não é suficiente — RAG que raciocina sobre imagens, tabelas, áudios e diagramas. Pipelines de visão computacional integrados ao retrieval semântico e o estado da arte de 2025-2026.</p>
+    </div>
+    <hr class="div mb-6" />
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem" data-aos="fade-up" data-aos-delay="100" data-aos-duration="700" data-aos-once="true" data-aos-offset="55">
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-error)">4+</div><div class="stat-lbl">artigos científicos</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-error)">Vision</div><div class="stat-lbl">imagem + texto + tabela</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--mira-error)">VLM</div><div class="stat-lbl">modelos de linguagem visual</div></div>
+    </div>
+    <a href="../index.html" style="display:inline-flex;align-items:center;gap:0.5rem;color:var(--mira-warning);font-weight:600;font-size:0.9rem;text-decoration:none;border:1px solid rgba(255,213,77,0.3);border-radius:0.75rem;padding:0.6rem 1.2rem;background:rgba(255,213,77,0.08)">← Voltar ao Portal</a>
+  </div>
+</div>
+
 <script>
-AOS.init({ duration: 700, once: true, offset: 55 });
-lucide.createIcons();
-</script>
+AOS.init({duration:700,once:true,offset:55});
+(function(){
+  var bar=document.getElementById('progress-bar'),btn=document.getElementById('back-btn');
+  window.addEventListener('scroll',function(){
+    bar.style.width=Math.min(100,(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100)+'%';
+    btn.classList.toggle('visible',window.scrollY>300);
+  });
+})();
 
-<!-- D3: anim-paradox — Complexidade × Ganho do Grafo -->
-<script>
+/* ═══ ANIM 1 — Paradox Scatter (S2) ═══ */
 (function(){
   window.__paradoxGen=(window.__paradoxGen||0)+1; var myG=window.__paradoxGen;
-  var el=document.getElementById('anim-paradox'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=280;
-  var m={top:30,right:40,bottom:50,left:65};
-  var iw=W-m.left-m.right, ih=H-m.top-m.bottom;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+  var el=document.getElementById('anim-paradox'); if(!el) return; el.innerHTML='';
+  var W=860,H=260;
+  var m={top:28,right:48,bottom:48,left:70};
+  var iw=W-m.left-m.right,ih=H-m.top-m.bottom;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
-
-  var tasks=[
-    {x:1,y:-13.4,label:'Fact Retrieval',col:'#FF6464'},
-    {x:1.6,y:-8,label:'Queries Temporais',col:'#FF6464'},
-    {x:2.4,y:-2,label:'Simple Reasoning',col:'#FFD54D'},
-    {x:3,y:2.5,label:'Complex Reasoning',col:'#FFD54D'},
-    {x:3.6,y:4.5,label:'Multi-hop QA',col:'#4DFFB4'},
-    {x:4.1,y:8,label:'Context Synthesis',col:'#4DFFB4'},
-    {x:4.6,y:11,label:'Creative Gen.',col:'#4DFFB4'},
-  ];
-
+  var tasks=[{x:1,y:-13.4,label:'Fact Retrieval\n(NQ)',col:'#FF6464'},{x:1.6,y:-8,label:'Queries Temp.',col:'#FF6464'},{x:2.4,y:-2,label:'Simple Reasoning',col:'#FFD54D'},{x:3,y:2.5,label:'Complex Reasoning',col:'#FFD54D'},{x:3.6,y:4.5,label:'Multi-hop QA',col:'#4DFFB4'},{x:4.1,y:8,label:'Context Synthesis',col:'#4DFFB4'},{x:4.6,y:11,label:'Creative Gen.',col:'#4DFFB4'}];
   var xSc=d3.scaleLinear().domain([0.5,5.2]).range([0,iw]);
   var ySc=d3.scaleLinear().domain([-18,15]).range([ih,0]);
-
-  g.append('line').attr('x1',0).attr('x2',iw).attr('y1',ySc(0)).attr('y2',ySc(0))
-    .attr('stroke','rgba(255,255,255,0.18)').attr('stroke-dasharray','5 4');
-  g.append('text').attr('x',iw+4).attr('y',ySc(0)+3).style('fill','rgba(255,255,255,0.3)').style('font-size','8px').text('baseline');
-
-  g.append('g').attr('transform','translate(0,'+ih+')')
-    .call(d3.axisBottom(xSc).ticks(4).tickFormat(d=>({1:'Baixa',2:'Média',3:'Alta',4:'Muito Alta'}[Math.round(d)]||'')))
-    .selectAll('text').style('fill','rgba(255,255,255,0.45)').style('font-size','9px');
-  g.append('g').call(d3.axisLeft(ySc).ticks(6).tickFormat(d=>d+'%'))
-    .selectAll('text').style('fill','rgba(255,255,255,0.45)').style('font-size','9px');
-  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,0.12)');
-
-  g.append('text').attr('x',iw/2).attr('y',ih+44).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.35)').style('font-size','9px').text('Complexidade da Tarefa →');
-  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-50).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.35)').style('font-size','9px').text('Δ GraphRAG vs RAG (%)');
-
-  // Trend line
-  g.append('line').attr('x1',xSc(0.8)).attr('y1',ySc(-16)).attr('x2',xSc(5)).attr('y2',ySc(14))
-    .attr('stroke','rgba(255,213,77,0.25)').attr('stroke-width',1.5).attr('stroke-dasharray','6 4');
-
+  g.append('line').attr('x1',0).attr('x2',iw).attr('y1',ySc(0)).attr('y2',ySc(0)).attr('stroke','rgba(255,255,255,.18)').attr('stroke-dasharray','5,4');
+  g.append('text').attr('x',iw+4).attr('y',ySc(0)+4).style('fill','rgba(255,255,255,.3)').style('font-size','8px').text('baseline');
+  g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(xSc).ticks(4).tickFormat(function(d){var t={1:'Baixa',2:'Média',3:'Alta',4:'Muito Alta'};return t[Math.round(d)]||'';})).selectAll('text').style('fill','rgba(255,255,255,.4)').style('font-size','8.5px');
+  g.append('g').call(d3.axisLeft(ySc).ticks(6).tickFormat(function(d){return d+'%';})).selectAll('text').style('fill','rgba(255,255,255,.4)').style('font-size','8.5px');
+  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,.1)');
+  g.append('text').attr('x',iw/2).attr('y',ih+40).attr('text-anchor','middle').style('fill','rgba(255,255,255,.3)').style('font-size','8.5px').text('Complexidade da Tarefa →');
+  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-55).attr('text-anchor','middle').style('fill','rgba(255,255,255,.3)').style('font-size','8.5px').text('Δ GraphRAG vs. RAG Vetorial (%)');
+  g.append('line').attr('x1',xSc(0.8)).attr('y1',ySc(-16)).attr('x2',xSc(5)).attr('y2',ySc(14)).attr('stroke','rgba(255,213,77,.2)').attr('stroke-width',1.5).attr('stroke-dasharray','6,4');
   var dg=g.selectAll('.dt').data(tasks).enter().append('g').attr('class','dt');
-  dg.append('circle')
-    .attr('cx',d=>xSc(d.x)).attr('cy',d=>ySc(d.y))
-    .attr('r',0).attr('fill',d=>d.col).attr('fill-opacity',0.85)
-    .attr('stroke',d=>d.col).attr('stroke-width',1.5)
-    .transition().delay((d,i)=>400+i*130).duration(500).attr('r',8);
-  dg.append('text')
-    .attr('x',d=>xSc(d.x)+12).attr('y',d=>ySc(d.y)+4)
-    .style('fill','rgba(255,255,255,0.65)').style('font-size','8.5px').style('opacity',0)
-    .text(d=>d.label)
-    .transition().delay((d,i)=>700+i*130).duration(400).style('opacity',1);
-
-  function pulse(){
-    if(window.__paradoxGen!==myG) return;
-    dg.selectAll('circle').transition().duration(600).attr('r',11).attr('fill-opacity',1)
-      .transition().duration(600).attr('r',8).attr('fill-opacity',0.85);
-    setTimeout(pulse,2800);
-  }
+  dg.append('circle').attr('cx',function(d){return xSc(d.x);}).attr('cy',function(d){return ySc(d.y);}).attr('r',0).attr('fill',function(d){return d.col;}).attr('fill-opacity',0.85).attr('stroke',function(d){return d.col;}).attr('stroke-width',1.5).transition().delay(function(d,i){return 400+i*130;}).duration(500).attr('r',8);
+  dg.each(function(d,i){var grp=d3.select(this); d.label.split('\n').forEach(function(ln,li,a){grp.append('text').attr('x',xSc(d.x)+12).attr('y',ySc(d.y)+(li-a.length/2+0.55)*11).style('fill','rgba(255,255,255,.6)').style('font-size','8px').style('opacity',0).text(ln).transition().delay(700+i*130).duration(400).style('opacity',1);});});
+  function pulse(){if(window.__paradoxGen!==myG) return; dg.selectAll('circle').transition().duration(600).attr('r',11).attr('fill-opacity',1).transition().duration(600).attr('r',8).attr('fill-opacity',0.85); setTimeout(pulse,2800);}
   setTimeout(pulse,1900);
 })();
-</script>
 
-<!-- D3: anim-bench — GraphRAG-Bench 4 Níveis -->
-<script>
+/* ═══ ANIM 2 — D3 CONCEITUAL: O Espectro de Raciocínio RAG (S4) ═══ */
+(function(){
+  window.__specGen=(window.__specGen||0)+1; var myG=window.__specGen;
+  var el=document.getElementById('anim-spectrum'); if(!el) return; el.innerHTML='';
+  var W=860,H=240;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var ml=50,mr=50,mt=40,mb=50;
+  var cw=W-ml-mr,cy=H/2;
+  var zones=[{x:0,w:0.30,col:'#4DB4FF',label:'L1 — Vetorial Vence\nFact Retrieval, Temporal'},{x:0.30,w:0.22,col:'#FFD54D',label:'L2 — Zona de Transição\nComplex Reasoning'},{x:0.52,w:0.48,col:'#4DFFB4',label:'L3-L4 — Grafo Vence\nSíntese, Creative Gen.'}];
+  svg.append('text').attr('x',W/2).attr('y',18).attr('text-anchor','middle').style('fill','rgba(255,255,255,.2)').style('font-size',9).text('Espectro de Complexidade de Raciocínio → Qual Paradigma RAG Vence?');
+  zones.forEach(function(z,i){
+    var x=ml+z.x*cw,w=z.w*cw,barH=38;
+    var r=svg.append('rect').attr('x',x).attr('y',cy-barH/2).attr('width',0).attr('height',barH).attr('fill','rgba(0,0,0,0)').attr('stroke',z.col).attr('stroke-width',1.5).attr('rx',6);
+    r.transition().delay(200+i*250).duration(500).attr('width',w).attr('fill','rgba('+hexRgb(z.col)+',0.07)');
+    z.label.split('\n').forEach(function(ln,li,a){svg.append('text').attr('x',x+w/2).attr('y',cy+(li-a.length/2+0.55)*13).attr('text-anchor','middle').style('fill',z.col).style('font-size',li===0?9.5:8).style('font-weight',li===0?700:400).style('opacity',0).text(ln).transition().delay(450+i*250).duration(300).style('opacity',1);});
+  });
+  function hexRgb(h){return parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16);}
+  var dataPoints=[{x:0.08,label:'−13.4%\nNQ',col:'#FF6464'},{x:0.12,label:'−16.6%\nTemporal',col:'#FF6464'},{x:0.41,label:'+4.5%\nHotpotQA',col:'#FFD54D'},{x:0.63,label:'78.36%\nTagRAG WR',col:'#4DFFB4'},{x:0.78,label:'+15%\nSAP GraphRAG',col:'#4DFFB4'},{x:0.90,label:'14.6×\nTagRAG Eff.',col:'#4DFFB4'}];
+  dataPoints.forEach(function(d,i){var px=ml+d.x*cw; svg.append('circle').attr('cx',px).attr('cy',cy).attr('r',0).attr('fill',d.col).attr('opacity',0.9).transition().delay(900+i*120).duration(350).attr('r',5); d.label.split('\n').forEach(function(ln,li,a){svg.append('text').attr('x',px).attr('y',cy-20+(li-a.length/2+0.55)*11).attr('text-anchor','middle').style('fill',d.col).style('font-size',li===0?9:7.5).style('font-weight',li===0?700:400).style('opacity',0).text(ln).transition().delay(1050+i*120).duration(300).style('opacity',1);});});
+  var sliderX=[ml];
+  var sliderDir=[1];
+  function slideMarker(){if(window.__specGen!==myG) return; sliderX[0]+=sliderDir[0]*2; if(sliderX[0]>ml+cw-20||sliderX[0]<ml+20) sliderDir[0]*=-1; svg.selectAll('.slider-marker').attr('x',sliderX[0]-1); setTimeout(slideMarker,30);}
+  setTimeout(function(){svg.append('rect').attr('class','slider-marker').attr('x',ml-1).attr('y',cy-25).attr('width',2).attr('height',50).attr('fill','rgba(255,255,255,0.5)').attr('rx',1); slideMarker();},1600);
+})();
+
+/* ═══ ANIM 3 — GraphRAG-Bench 4 Níveis (S5) ═══ */
 (function(){
   window.__benchGen=(window.__benchGen||0)+1; var myG=window.__benchGen;
-  var el=document.getElementById('anim-bench'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=300;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
-  var levels=[
-    {num:'L1',name:'Fact Retrieval',desc:'Recuperar fato isolado via keyword matching',graph:false,col:'#FF6464',winner:'RAG Vetorial vence'},
-    {num:'L2',name:'Complex Reasoning',desc:'Encadear múltiplos fatos via conexões lógicas',graph:true,col:'#FFD54D',winner:'GraphRAG vence'},
-    {num:'L3',name:'Contextual Summarize',desc:'Sintetizar fragmentos dispersos em resposta coerente',graph:true,col:'#4DB4FF',winner:'GraphRAG vence'},
-    {num:'L4',name:'Creative Generation',desc:'Inferir além dos dados — hipotético ou criativo',graph:true,col:'#4DFFB4',winner:'GraphRAG vence'},
-  ];
-
-  var rH=62, pad=18;
-  levels.forEach((d,i)=>{
+  var el=document.getElementById('anim-bench'); if(!el) return; el.innerHTML='';
+  var W=860,H=280;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var levels=[{num:'L1',name:'Fact Retrieval',desc:'Recuperar fato isolado via keyword matching',col:'#FF6464',winner:'RAG Vetorial vence (−13.4% GraphRAG)'},{num:'L2',name:'Complex Reasoning',desc:'Encadear múltiplos fatos via conexões lógicas (+4.5% HotpotQA)',col:'#FFD54D',winner:'GraphRAG começa a vencer'},{num:'L3',name:'Contextual Summarize',desc:'Sintetizar fragmentos dispersos em resposta coerente',col:'#4DB4FF',winner:'GraphRAG vence claramente'},{num:'L4',name:'Creative Generation',desc:'Inferir além dos dados — hipotético ou criativo; dependências implícitas',col:'#4DFFB4',winner:'GraphRAG domina'}];
+  var rH=58,pad=18;
+  levels.forEach(function(d,i){
     var gy=svg.append('g').attr('transform','translate('+pad+','+(pad+i*rH)+')');
-    gy.append('rect').attr('width',0).attr('height',rH-8).attr('rx',8)
-      .attr('fill','rgba('+hexRgb(d.col)+',0.07)')
-      .attr('stroke',d.col).attr('stroke-opacity',0.22).attr('stroke-width',1)
-      .transition().delay(300+i*160).duration(600).attr('width',W-pad*2-8);
-    gy.append('text').attr('x',14).attr('y',(rH-8)/2-4)
-      .style('fill',d.col).style('font-size','11px').style('font-weight','800')
-      .style('opacity',0).text(d.num)
-      .transition().delay(500+i*160).duration(400).style('opacity',1);
-    gy.append('text').attr('x',42).attr('y',(rH-8)/2-8)
-      .style('fill','#ffffff').style('font-size','11px').style('font-weight','700')
-      .style('opacity',0).text(d.name)
-      .transition().delay(550+i*160).duration(400).style('opacity',1);
-    gy.append('text').attr('x',42).attr('y',(rH-8)/2+8)
-      .style('fill','rgba(255,255,255,0.45)').style('font-size','8.5px')
-      .style('opacity',0).text(d.desc)
-      .transition().delay(600+i*160).duration(400).style('opacity',1);
-    gy.append('text').attr('x',W-pad*2-14).attr('y',(rH-8)/2)
-      .attr('text-anchor','end')
-      .style('fill',d.graph?d.col:'rgba(255,100,100,0.8)').style('font-size','8.5px').style('font-weight','700')
-      .style('opacity',0).text((d.graph?'✓ ':'✗ ')+d.winner)
-      .transition().delay(700+i*160).duration(400).style('opacity',1);
+    gy.append('rect').attr('width',0).attr('height',rH-8).attr('rx',8).attr('fill','rgba(0,0,0,0.05)').attr('stroke',d.col).attr('stroke-opacity',0.22).attr('stroke-width',1).transition().delay(300+i*160).duration(600).attr('width',W-pad*2-8);
+    gy.append('text').attr('x',14).attr('y',(rH-8)/2-3).style('fill',d.col).style('font-size','12px').style('font-weight','800').style('opacity',0).text(d.num).transition().delay(500+i*160).duration(400).style('opacity',1);
+    gy.append('text').attr('x',44).attr('y',(rH-8)/2-7).style('fill','#ffffff').style('font-size','11px').style('font-weight','700').style('opacity',0).text(d.name).transition().delay(550+i*160).duration(400).style('opacity',1);
+    gy.append('text').attr('x',44).attr('y',(rH-8)/2+8).style('fill','rgba(255,255,255,.45)').style('font-size','8.5px').style('opacity',0).text(d.desc).transition().delay(600+i*160).duration(400).style('opacity',1);
+    gy.append('text').attr('x',W-pad*2-14).attr('y',(rH-8)/2+2).attr('text-anchor','end').style('fill',d.col).style('font-size','8.5px').style('font-weight','700').style('opacity',0).text(d.winner).transition().delay(700+i*160).duration(400).style('opacity',1);
   });
-
-  function hexRgb(h){
-    return parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16);
-  }
-
-  function glow(){
-    if(window.__benchGen!==myG) return;
-    svg.selectAll('rect').transition().duration(800).attr('stroke-opacity',0.55)
-      .transition().duration(800).attr('stroke-opacity',0.22);
-    setTimeout(glow,2600);
-  }
+  function glow(){if(window.__benchGen!==myG) return; svg.selectAll('rect').transition().duration(800).attr('stroke-opacity',0.55).transition().duration(800).attr('stroke-opacity',0.22); setTimeout(glow,2600);}
   setTimeout(glow,2200);
 })();
-</script>
 
-<!-- D3: anim-construction — KG Construction Pipeline -->
-<script>
+/* ═══ ANIM 4 — Construction Pipeline SAP (S7) ═══ */
 (function(){
   window.__constrGen=(window.__constrGen||0)+1; var myG=window.__constrGen;
-  var el=document.getElementById('anim-construction'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=280;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
-  var nodes=[
-    {id:'docs',label:'Documentos',sub:'PDF/HTML/XLSX',x:0.09,y:0.5,col:'#4DB4FF'},
-    {id:'dep',label:'Dependency\nParser',sub:'SpaCy NLP',x:0.32,y:0.26,col:'#FFD54D'},
-    {id:'llm',label:'LLM\nExtractor',sub:'opcional',x:0.32,y:0.74,col:'rgba(255,255,255,0.25)'},
-    {id:'fus',label:'Fusão &\nNorm.',sub:'Triplas unificadas',x:0.61,y:0.5,col:'#FFD54D'},
-    {id:'kg',label:'Knowledge\nGraph',sub:'Graph DB',x:0.88,y:0.5,col:'#4DFFB4'},
-  ];
+  var el=document.getElementById('anim-construction'); if(!el) return; el.innerHTML='';
+  var W=860,H=270;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var nodes=[{id:'docs',label:'Docs\nEntrada',sub:'PDF/XLSX/HTML',x:0.08,y:0.5,col:'#4DB4FF'},{id:'dep',label:'Dependency\nParser',sub:'SpaCy NLP',x:0.3,y:0.24,col:'#FFD54D'},{id:'llm',label:'LLM\nExtractor',sub:'opcional',x:0.3,y:0.76,col:'rgba(255,255,255,.2)'},{id:'fus',label:'Fusão +\nNorm.',sub:'Triplas unificadas',x:0.6,y:0.5,col:'#FFD54D'},{id:'kg',label:'Knowledge\nGraph + RRF',sub:'3 embeddings',x:0.88,y:0.5,col:'#4DFFB4'}];
   var edges=[{s:'docs',t:'dep'},{s:'docs',t:'llm'},{s:'dep',t:'fus'},{s:'llm',t:'fus'},{s:'fus',t:'kg'}];
-  var nm={}; nodes.forEach(d=>{nm[d.id]=d;});
+  var nm={}; nodes.forEach(function(d){nm[d.id]=d;});
   var nW=W,nH=H;
   function nx(d){return d.x*nW;} function ny(d){return d.y*nH;}
-
-  edges.forEach((e,i)=>{
-    var s=nm[e.s],t=nm[e.t];
-    svg.append('line').attr('x1',nx(s)).attr('y1',ny(s)).attr('x2',nx(t)).attr('y2',ny(t))
-      .attr('stroke','rgba(255,213,77,0.18)').attr('stroke-width',1.5).attr('stroke-dasharray','4 4')
-      .style('opacity',0).transition().delay(700+i*130).duration(400).style('opacity',1);
-  });
-
+  edges.forEach(function(e,i){var s=nm[e.s],t=nm[e.t]; svg.append('line').attr('x1',nx(s)).attr('y1',ny(s)).attr('x2',nx(t)).attr('y2',ny(t)).attr('stroke','rgba(255,213,77,.18)').attr('stroke-width',1.5).attr('stroke-dasharray','4,4').style('opacity',0).transition().delay(700+i*130).duration(400).style('opacity',1);});
   var pG=svg.append('g');
-  function animP(e,delay){
-    var s=nm[e.s],t=nm[e.t];
-    pG.append('circle').attr('r',3.5).attr('fill','rgba(255,213,77,0.9)')
-      .attr('cx',nx(s)).attr('cy',ny(s)).style('opacity',0)
-      .transition().delay(delay).duration(0).style('opacity',1)
-      .transition().duration(850).attr('cx',nx(t)).attr('cy',ny(t))
-      .transition().duration(0).style('opacity',0).remove();
-  }
-  function loopP(){
-    if(window.__constrGen!==myG) return;
-    edges.forEach((e,i)=>setTimeout(()=>animP(e,0),i*190));
-    setTimeout(loopP,2500);
-  }
+  function animP(e,delay){var s=nm[e.s],t=nm[e.t]; pG.append('circle').attr('r',4).attr('fill','rgba(255,213,77,.9)').attr('cx',nx(s)).attr('cy',ny(s)).style('opacity',0).transition().delay(delay).duration(0).style('opacity',1).transition().duration(850).attr('cx',nx(t)).attr('cy',ny(t)).transition().duration(0).style('opacity',0).remove();}
+  function loopP(){if(window.__constrGen!==myG) return; edges.forEach(function(e,i){setTimeout(function(){animP(e,0);},i*190);}); setTimeout(loopP,2500);}
   setTimeout(loopP,1500);
-
-  nodes.forEach((d,i)=>{
-    var g2=svg.append('g').attr('transform','translate('+nx(d)+','+ny(d)+')').style('opacity',0);
-    g2.append('rect').attr('x',-48).attr('y',-27).attr('width',96).attr('height',54).attr('rx',8)
-      .attr('fill','rgba(0,0,0,0.75)').attr('stroke',d.col).attr('stroke-width',1.5);
-    d.label.split('\n').forEach((ln,li,a)=>{
-      g2.append('text').attr('text-anchor','middle').attr('y',(li-a.length/2+0.55)*13)
-        .style('fill',d.col).style('font-size','9.5px').style('font-weight','700').text(ln);
-    });
-    g2.append('text').attr('text-anchor','middle').attr('y',21)
-      .style('fill','rgba(255,255,255,0.38)').style('font-size','7.5px').text(d.sub);
-    g2.transition().delay(250+i*150).duration(500).style('opacity',1);
-  });
-
-  svg.append('text').attr('x',W*0.32).attr('y',H-10).attr('text-anchor','middle')
-    .style('fill','rgba(255,213,77,0.65)').style('font-size','8.5px').style('opacity',0)
-    .text('94% da qualidade LLM · custo ~3-5%')
-    .transition().delay(1300).duration(500).style('opacity',1);
+  nodes.forEach(function(d,i){var g2=svg.append('g').attr('transform','translate('+nx(d)+','+ny(d)+')').style('opacity',0); g2.append('rect').attr('x',-50).attr('y',-28).attr('width',100).attr('height',56).attr('rx',8).attr('fill','rgba(0,0,0,.75)').attr('stroke',d.col).attr('stroke-width',1.5); d.label.split('\n').forEach(function(ln,li,a){g2.append('text').attr('text-anchor','middle').attr('y',(li-a.length/2+0.55)*13).style('fill',d.col).style('font-size','9.5px').style('font-weight','700').text(ln);}); g2.append('text').attr('text-anchor','middle').attr('y',22).style('fill','rgba(255,255,255,.35)').style('font-size','7.5px').text(d.sub); g2.transition().delay(250+i*150).duration(500).style('opacity',1);});
+  svg.append('text').attr('x',W*0.3).attr('y',H-10).attr('text-anchor','middle').style('fill','rgba(255,213,77,.65)').style('font-size','8.5px').style('opacity',0).text('94% da qualidade LLM · custo 3-5×').transition().delay(1300).duration(500).style('opacity',1);
 })();
-</script>
 
-<!-- D3: anim-tagchain — Tag Knowledge Graph Tree -->
-<script>
+/* ═══ ANIM 5 — Tag Knowledge Graph (S9) ═══ */
 (function(){
   window.__tagGen=(window.__tagGen||0)+1; var myG=window.__tagGen;
-  var el=document.getElementById('anim-tagchain'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=320;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
-  var tree={id:'root',label:'Root Domain',col:'#FFD54D',x:W/2,y:38,
-    ch:[
-      {id:'cs',label:'CS',col:'#4DB4FF',x:W*0.24,y:118,ch:[
-        {id:'db',label:'Banco de Dados',col:'#4DFFB4',x:W*0.13,y:208,ch:[
-          {id:'idx',label:'Indexação',col:'rgba(77,255,180,0.7)',x:W*0.07,y:290},
-          {id:'sql',label:'Query',col:'rgba(77,255,180,0.7)',x:W*0.19,y:290}
-        ]},
-        {id:'ml',label:'Machine Learning',col:'#4DFFB4',x:W*0.33,y:208,ch:[
-          {id:'vec',label:'Vetores',col:'rgba(77,255,180,0.7)',x:W*0.26,y:290},
-          {id:'emb',label:'Embeddings',col:'rgba(77,255,180,0.7)',x:W*0.38,y:290}
-        ]},
-      ]},
-      {id:'law',label:'Law',col:'#B464FF',x:W*0.76,y:118,ch:[
-        {id:'civ',label:'Direito Civil',col:'#4DFFB4',x:W*0.62,y:208,ch:[
-          {id:'con',label:'Contratos',col:'rgba(77,255,180,0.7)',x:W*0.55,y:290},
-          {id:'pro',label:'Propriedade',col:'rgba(77,255,180,0.7)',x:W*0.67,y:290}
-        ]},
-        {id:'cri',label:'Direito Penal',col:'#4DFFB4',x:W*0.84,y:208,ch:[
-          {id:'pen',label:'Penas',col:'rgba(77,255,180,0.7)',x:W*0.78,y:290},
-          {id:'prc',label:'Processo',col:'rgba(77,255,180,0.7)',x:W*0.90,y:290}
-        ]},
-      ]}
-    ]
-  };
-
-  function flatten(n,a){a.push(n);if(n.ch)n.ch.forEach(c=>flatten(c,a));return a;}
-  function edges(n,a){if(n.ch)n.ch.forEach(c=>{a.push({sx:n.x,sy:n.y,tx:c.x,ty:c.y,col:n.col});edges(c,a);});return a;}
-  var allN=flatten(tree,[]), allE=edges(tree,[]);
-
-  allE.forEach((e,i)=>{
-    svg.append('line').attr('x1',e.sx).attr('y1',e.sy).attr('x2',e.tx).attr('y2',e.ty)
-      .attr('stroke',e.col).attr('stroke-opacity',0.22).attr('stroke-width',1.5)
-      .style('opacity',0).transition().delay(280+i*70).duration(400).style('opacity',1);
-  });
-
-  allN.forEach((d,i)=>{
-    var g2=svg.append('g').attr('transform','translate('+d.x+','+d.y+')').style('opacity',0);
-    var r=d.id==='root'?22:12;
-    g2.append('circle').attr('r',r).attr('fill','rgba(0,0,0,0.8)').attr('stroke',d.col).attr('stroke-width',1.5);
-    var short=d.label.length>9?d.label.slice(0,9)+'…':d.label;
-    g2.append('text').attr('text-anchor','middle').attr('dy',3)
-      .style('fill',d.col).style('font-size',d.id==='root'?'8px':'7px').style('font-weight','700')
-      .text(short);
-    g2.transition().delay(180+i*90).duration(500).style('opacity',1);
-  });
-
+  var el=document.getElementById('anim-tagchain'); if(!el) return; el.innerHTML='';
+  var W=860,H=290;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var tree={id:'root',label:'Root Domain',col:'#FFD54D',x:W/2,y:36,ch:[{id:'cs',label:'CS',col:'#4DB4FF',x:W*0.24,y:110,ch:[{id:'db',label:'Banco de Dados',col:'#4DFFB4',x:W*0.13,y:192,ch:[{id:'idx',label:'Indexação',col:'rgba(77,255,180,.7)',x:W*0.07,y:268},{id:'sql',label:'Query',col:'rgba(77,255,180,.7)',x:W*0.19,y:268}]},{id:'ml',label:'ML',col:'#4DFFB4',x:W*0.33,y:192,ch:[{id:'vec',label:'Vetores',col:'rgba(77,255,180,.7)',x:W*0.26,y:268},{id:'emb',label:'Embeddings',col:'rgba(77,255,180,.7)',x:W*0.38,y:268}]}]},{id:'law',label:'Direito',col:'#B464FF',x:W*0.76,y:110,ch:[{id:'civ',label:'Civil',col:'#4DFFB4',x:W*0.62,y:192,ch:[{id:'con',label:'Contratos',col:'rgba(77,255,180,.7)',x:W*0.55,y:268},{id:'pro',label:'Propriedade',col:'rgba(77,255,180,.7)',x:W*0.67,y:268}]},{id:'cri',label:'Penal',col:'#4DFFB4',x:W*0.84,y:192,ch:[{id:'pen',label:'Penas',col:'rgba(77,255,180,.7)',x:W*0.78,y:268},{id:'prc',label:'Processo',col:'rgba(77,255,180,.7)',x:W*0.90,y:268}]}]}]};
+  function flatten(n,a){a.push(n);if(n.ch)n.ch.forEach(function(c){flatten(c,a);});return a;}
+  function edgesOf(n,a){if(n.ch)n.ch.forEach(function(c){a.push({sx:n.x,sy:n.y,tx:c.x,ty:c.y,col:n.col});edgesOf(c,a);});return a;}
+  var allN=flatten(tree,[]),allE=edgesOf(tree,[]);
+  allE.forEach(function(e,i){svg.append('line').attr('x1',e.sx).attr('y1',e.sy).attr('x2',e.tx).attr('y2',e.ty).attr('stroke',e.col).attr('stroke-opacity',0.22).attr('stroke-width',1.5).style('opacity',0).transition().delay(280+i*70).duration(400).style('opacity',1);});
+  allN.forEach(function(d,i){var g2=svg.append('g').attr('transform','translate('+d.x+','+d.y+')').style('opacity',0); var r=d.id==='root'?22:13; g2.append('circle').attr('r',r).attr('fill','rgba(0,0,0,.8)').attr('stroke',d.col).attr('stroke-width',1.5); var short=d.label.length>9?d.label.slice(0,9)+'…':d.label; g2.append('text').attr('text-anchor','middle').attr('dy',3).style('fill',d.col).style('font-size',d.id==='root'?'8px':'7.5px').style('font-weight','700').text(short); g2.transition().delay(180+i*90).duration(500).style('opacity',1);});
   var hlPath=['root','cs','db','idx'];
-  function highlight(){
-    if(window.__tagGen!==myG) return;
-    allN.filter(d=>hlPath.includes(d.id)).forEach(d=>{
-      svg.selectAll('circle')._groups[0].forEach(c=>{
-        var t=d3.select(c.parentNode).attr('transform');
-        if(t==='translate('+d.x+','+d.y+')'){
-          d3.select(c).transition().duration(400).attr('stroke-width',3).attr('fill','rgba(255,213,77,0.15)')
-            .transition().duration(400).attr('stroke-width',1.5).attr('fill','rgba(0,0,0,0.8)');
-        }
-      });
-    });
-    setTimeout(highlight,2800);
-  }
+  function highlight(){if(window.__tagGen!==myG) return; allN.filter(function(d){return hlPath.includes(d.id);}).forEach(function(d){svg.selectAll('circle').each(function(){var c=d3.select(this); var t=d3.select(this.parentNode).attr('transform'); if(t==='translate('+d.x+','+d.y+')'){c.transition().duration(400).attr('stroke-width',3).attr('fill','rgba(255,213,77,.15)').transition().duration(400).attr('stroke-width',1.5).attr('fill','rgba(0,0,0,.8)');}}); }); setTimeout(highlight,2800);}
   setTimeout(highlight,1700);
 })();
-</script>
 
-<!-- D3: anim-rograg — ROGRAG Multi-Stage Pipeline -->
-<script>
+/* ═══ ANIM 6 — ROGRAG Multi-Stage (S11) ═══ */
 (function(){
   window.__rogGen=(window.__rogGen||0)+1; var myG=window.__rogGen;
-  var el=document.getElementById('anim-rograg'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=280;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
-
-  var stages=[
-    {id:'query',label:'Query\nInput',sub:'Intenção\nIdentificada',x:0.07,y:0.5,col:'#4DB4FF'},
-    {id:'logic',label:'Logic Form\nRetrieval',sub:'Operadores\nEstruturados',x:0.28,y:0.26,col:'#FFD54D'},
-    {id:'dual',label:'Dual-Level\nFuzzy Match',sub:'High+Low\nLevel Words',x:0.28,y:0.74,col:'#FFD54D'},
-    {id:'verify',label:'Retrieval\nVerifier',sub:'Contexto\nSuficiente?',x:0.57,y:0.5,col:'#B464FF'},
-    {id:'gen',label:'Context\nGeneration',sub:'LLM\nResposta',x:0.86,y:0.5,col:'#4DFFB4'},
-  ];
+  var el=document.getElementById('anim-rograg'); if(!el) return; el.innerHTML='';
+  var W=860,H=270;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
+  var stages=[{id:'query',label:'Query\nInput',sub:'Intent\nDetected',x:0.07,y:0.5,col:'#4DB4FF'},{id:'logic',label:'Logic Form\nRetrieval',sub:'Structured\nOperators',x:0.28,y:0.26,col:'#FFD54D'},{id:'dual',label:'Dual-Level\nFuzzy',sub:'High+Low\nLevel',x:0.28,y:0.74,col:'#FFD54D'},{id:'verify',label:'Retrieval\nVerifier',sub:'Contexto\nSuficiente?',x:0.57,y:0.5,col:'#B464FF'},{id:'gen',label:'Context\nGeneration',sub:'LLM\nResposta',x:0.88,y:0.5,col:'#4DFFB4'}];
   var edges=[{s:'query',t:'logic'},{s:'query',t:'dual'},{s:'logic',t:'verify'},{s:'dual',t:'verify'},{s:'verify',t:'gen'}];
-  var sm={}; stages.forEach(d=>{sm[d.id]=d;});
+  var sm={}; stages.forEach(function(d){sm[d.id]=d;});
   var nW=W,nH=H;
   function nx(d){return d.x*nW;} function ny(d){return d.y*nH;}
-
-  edges.forEach((e,i)=>{
-    var s=sm[e.s],t=sm[e.t];
-    svg.append('line').attr('x1',nx(s)).attr('y1',ny(s)).attr('x2',nx(t)).attr('y2',ny(t))
-      .attr('stroke','rgba(255,213,77,0.2)').attr('stroke-width',1.5)
-      .style('opacity',0).transition().delay(500+i*120).duration(400).style('opacity',1);
-  });
-
-  // Fallback arc
-  svg.append('path')
-    .attr('d','M'+nx(sm.verify)+','+ny(sm.verify)+' Q'+(nx(sm.verify)-20)+','+(ny(sm.verify)+70)+' '+nx(sm.dual)+','+(ny(sm.dual)+30))
-    .attr('fill','none').attr('stroke','rgba(180,100,255,0.4)').attr('stroke-width',1.5).attr('stroke-dasharray','4 4')
-    .style('opacity',0).transition().delay(950).duration(400).style('opacity',1);
-  svg.append('text').attr('x',nx(sm.verify)-20).attr('y',ny(sm.verify)+58).attr('text-anchor','middle')
-    .style('fill','rgba(180,100,255,0.6)').style('font-size','7.5px')
-    .style('opacity',0).text('fallback').transition().delay(1100).duration(400).style('opacity',1);
-
-  stages.forEach((d,i)=>{
-    var g2=svg.append('g').attr('transform','translate('+nx(d)+','+ny(d)+')').style('opacity',0);
-    var h=54,w2=82;
-    g2.append('rect').attr('x',-w2/2).attr('y',-h/2).attr('width',w2).attr('height',h).attr('rx',8)
-      .attr('fill','rgba(0,0,0,0.8)').attr('stroke',d.col).attr('stroke-width',1.5);
-    d.label.split('\n').forEach((ln,li,a)=>{
-      g2.append('text').attr('text-anchor','middle').attr('y',(li-a.length/2+0.55)*11)
-        .style('fill',d.col).style('font-size','8.5px').style('font-weight','700').text(ln);
-    });
-    d.sub.split('\n').forEach((ln,li)=>{
-      g2.append('text').attr('text-anchor','middle').attr('y',17+li*9.5)
-        .style('fill','rgba(255,255,255,0.38)').style('font-size','7px').text(ln);
-    });
-    g2.transition().delay(200+i*150).duration(500).style('opacity',1);
-  });
-
-  function animPkt(){
-    if(window.__rogGen!==myG) return;
-    var path=[sm.query,sm.logic,sm.verify,sm.gen];
-    var step=0;
-    function mv(){
-      if(window.__rogGen!==myG||step>=path.length-1) return;
-      var s=path[step],t=path[step+1];
-      svg.append('circle').attr('r',5).attr('fill','rgba(255,213,77,0.9)')
-        .attr('cx',nx(s)).attr('cy',ny(s))
-        .transition().duration(700).attr('cx',nx(t)).attr('cy',ny(t))
-        .transition().duration(0).remove();
-      step++; setTimeout(mv,750);
-    }
-    mv();
-    setTimeout(animPkt,3400);
-  }
+  edges.forEach(function(e,i){var s=sm[e.s],t=sm[e.t]; svg.append('line').attr('x1',nx(s)).attr('y1',ny(s)).attr('x2',nx(t)).attr('y2',ny(t)).attr('stroke','rgba(255,213,77,.2)').attr('stroke-width',1.5).style('opacity',0).transition().delay(500+i*120).duration(400).style('opacity',1);});
+  svg.append('path').attr('d','M'+nx(sm.verify)+','+ny(sm.verify)+' Q'+(nx(sm.verify)-20)+','+(ny(sm.verify)+70)+' '+nx(sm.dual)+','+(ny(sm.dual)+30)).attr('fill','none').attr('stroke','rgba(180,100,255,.4)').attr('stroke-width',1.5).attr('stroke-dasharray','4,4').style('opacity',0).transition().delay(950).duration(400).style('opacity',1);
+  svg.append('text').attr('x',nx(sm.verify)-24).attr('y',ny(sm.verify)+60).attr('text-anchor','middle').style('fill','rgba(180,100,255,.6)').style('font-size','8px').style('opacity',0).text('fallback').transition().delay(1100).duration(400).style('opacity',1);
+  stages.forEach(function(d,i){var g2=svg.append('g').attr('transform','translate('+nx(d)+','+ny(d)+')').style('opacity',0); g2.append('rect').attr('x',-42).attr('y',-28).attr('width',84).attr('height',56).attr('rx',8).attr('fill','rgba(0,0,0,.8)').attr('stroke',d.col).attr('stroke-width',1.5); d.label.split('\n').forEach(function(ln,li,a){g2.append('text').attr('text-anchor','middle').attr('y',(li-a.length/2+0.55)*11).style('fill',d.col).style('font-size','8.5px').style('font-weight','700').text(ln);}); d.sub.split('\n').forEach(function(ln,li){g2.append('text').attr('text-anchor','middle').attr('y',17+li*9.5).style('fill','rgba(255,255,255,.35)').style('font-size','7px').text(ln);}); g2.transition().delay(200+i*150).duration(500).style('opacity',1);});
+  function animPkt(){if(window.__rogGen!==myG) return; var path=[sm.query,sm.logic,sm.verify,sm.gen]; var step=0; function mv(){if(window.__rogGen!==myG||step>=path.length-1) return; var s=path[step],t=path[step+1]; svg.append('circle').attr('r',5).attr('fill','rgba(255,213,77,.9)').attr('cx',nx(s)).attr('cy',ny(s)).transition().duration(700).attr('cx',nx(t)).attr('cy',ny(t)).transition().duration(0).remove(); step++; setTimeout(mv,750);} mv(); setTimeout(animPkt,3400);}
   setTimeout(animPkt,1700);
 })();
-</script>
 
-<!-- D3: anim-compare12 — Landscape 4 Papers GraphRAG -->
-<script>
+/* ═══ ANIM 7 — Landscape 4 Papers (S13) ═══ */
 (function(){
   window.__comp12Gen=(window.__comp12Gen||0)+1; var myG=window.__comp12Gen;
-  var el=document.getElementById('anim-compare12'); if(!el) return;
-  el.innerHTML='';
-  var W=el.clientWidth||700, H=300;
-  var m={top:40,right:50,bottom:60,left:85};
-  var iw=W-m.left-m.right, ih=H-m.top-m.bottom;
-  var svg=d3.select(el).append('svg')
-    .attr('viewBox','0 0 '+W+' '+H)
-    .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+  var el=document.getElementById('anim-compare12'); if(!el) return; el.innerHTML='';
+  var W=860,H=290;
+  var m={top:40,right:50,bottom:55,left:90};
+  var iw=W-m.left-m.right,ih=H-m.top-m.bottom;
+  var svg=d3.select(el).append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height',H+'px');
   var g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
-
-  var papers=[
-    {name:'When to Use\nGraphs (ICLR)',x:0.82,y:0.18,r:18,col:'#FFD54D',desc:'Análise crítica'},
-    {name:'SAP Practical\nGraphRAG',x:0.32,y:0.72,r:16,col:'#4DB4FF',desc:'+15% enterprise'},
-    {name:'TagRAG\n(ECNU)',x:0.62,y:0.28,r:21,col:'#4DFFB4',desc:'14.6× eficiência'},
-    {name:'ROGRAG\n(Shanghai)',x:0.52,y:0.58,r:18,col:'#B464FF',desc:'60%→75%'},
-  ];
-
+  var papers=[{name:'ICLR 2026\n(Xiang et al.)',x:0.82,y:0.18,r:16,col:'#FFD54D',desc:'Análise crítica'},{name:'SAP Practical\n(Min et al.)',x:0.32,y:0.72,r:16,col:'#4DB4FF',desc:'+15% enterprise'},{name:'TagRAG\n(ECNU)',x:0.62,y:0.28,r:22,col:'#4DFFB4',desc:'14.6× eficiência'},{name:'ROGRAG\n(Shanghai)',x:0.52,y:0.58,r:18,col:'#B464FF',desc:'0.57→0.75 QA-1'}];
   var xSc=d3.scaleLinear().domain([0,1]).range([0,iw]);
   var ySc=d3.scaleLinear().domain([0,1]).range([ih,0]);
-
-  [0.25,0.5,0.75].forEach(v=>{
-    g.append('line').attr('x1',xSc(v)).attr('y1',0).attr('x2',xSc(v)).attr('y2',ih).attr('stroke','rgba(255,255,255,0.05)');
-    g.append('line').attr('x1',0).attr('y1',ySc(v)).attr('x2',iw).attr('y2',ySc(v)).attr('stroke','rgba(255,255,255,0.05)');
-  });
-
-  g.append('g').attr('transform','translate(0,'+ih+')')
-    .call(d3.axisBottom(xSc).ticks(3).tickFormat(d=>{var t={0:'Custo Baixo',0.5:'Médio',1:'Custo Alto'};return t[d]||'';}))
-    .selectAll('text').style('fill','rgba(255,255,255,0.38)').style('font-size','9px');
-  g.append('g')
-    .call(d3.axisLeft(ySc).ticks(3).tickFormat(d=>{var t={0:'Qualidade Baixa',0.5:'Média',1:'Qualidade Alta'};return t[d]||'';}))
-    .selectAll('text').style('fill','rgba(255,255,255,0.38)').style('font-size','9px');
-  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,0.08)');
-
-  g.append('text').attr('x',iw/2).attr('y',ih+52).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('Custo de Construção de KG →');
-  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-65).attr('text-anchor','middle')
-    .style('fill','rgba(255,255,255,0.3)').style('font-size','9.5px').text('↑ Qualidade de Recuperação');
-
-  papers.forEach((d,i)=>{
-    var pg=g.append('g');
-    pg.append('circle').attr('cx',xSc(d.x)).attr('cy',ySc(d.y))
-      .attr('r',0).attr('fill',d.col).attr('fill-opacity',0.16).attr('stroke',d.col).attr('stroke-width',1.5)
-      .transition().delay(400+i*190).duration(600).attr('r',d.r);
-    d.name.split('\n').forEach((ln,li,a)=>{
-      g.append('text').attr('x',xSc(d.x)).attr('y',ySc(d.y)+(li-a.length/2+0.4)*12)
-        .attr('text-anchor','middle').style('fill',d.col).style('font-size','8px').style('font-weight','700')
-        .style('opacity',0).text(ln).transition().delay(700+i*190).duration(400).style('opacity',1);
-    });
-    g.append('text').attr('x',xSc(d.x)).attr('y',ySc(d.y)+d.r+13)
-      .attr('text-anchor','middle').style('fill','rgba(255,255,255,0.38)').style('font-size','7.5px')
-      .style('opacity',0).text(d.desc).transition().delay(900+i*190).duration(400).style('opacity',1);
-  });
-
-  function pulse(){
-    if(window.__comp12Gen!==myG) return;
-    g.selectAll('circle').transition().duration(700).attr('fill-opacity',0.32).attr('stroke-width',2.5)
-      .transition().duration(700).attr('fill-opacity',0.16).attr('stroke-width',1.5);
-    setTimeout(pulse,2700);
-  }
+  [0.25,0.5,0.75].forEach(function(v){g.append('line').attr('x1',xSc(v)).attr('y1',0).attr('x2',xSc(v)).attr('y2',ih).attr('stroke','rgba(255,255,255,.04)'); g.append('line').attr('x1',0).attr('y1',ySc(v)).attr('x2',iw).attr('y2',ySc(v)).attr('stroke','rgba(255,255,255,.04)');});
+  g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(xSc).ticks(3).tickFormat(function(d){var t={0:'Custo Baixo',0.5:'Médio',1:'Custo Alto'};return t[d]||'';})).selectAll('text').style('fill','rgba(255,255,255,.35)').style('font-size','9px');
+  g.append('g').call(d3.axisLeft(ySc).ticks(3).tickFormat(function(d){var t={0:'Qualidade Baixa',0.5:'Média',1:'Qualidade Alta'};return t[d]||'';})).selectAll('text').style('fill','rgba(255,255,255,.35)').style('font-size','9px');
+  g.selectAll('.domain,.tick line').style('stroke','rgba(255,255,255,.08)');
+  g.append('text').attr('x',iw/2).attr('y',ih+48).attr('text-anchor','middle').style('fill','rgba(255,255,255,.25)').style('font-size','9.5px').text('Custo de Construção de KG →');
+  g.append('text').attr('transform','rotate(-90)').attr('x',-ih/2).attr('y',-70).attr('text-anchor','middle').style('fill','rgba(255,255,255,.25)').style('font-size','9.5px').text('↑ Qualidade de Recuperação');
+  papers.forEach(function(d,i){var pg=g.append('g'); pg.append('circle').attr('cx',xSc(d.x)).attr('cy',ySc(d.y)).attr('r',0).attr('fill',d.col).attr('fill-opacity',0.16).attr('stroke',d.col).attr('stroke-width',1.5).transition().delay(400+i*190).duration(600).attr('r',d.r); d.name.split('\n').forEach(function(ln,li,a){g.append('text').attr('x',xSc(d.x)).attr('y',ySc(d.y)+(li-a.length/2+0.4)*12).attr('text-anchor','middle').style('fill',d.col).style('font-size','8px').style('font-weight','700').style('opacity',0).text(ln).transition().delay(700+i*190).duration(400).style('opacity',1);}); g.append('text').attr('x',xSc(d.x)).attr('y',ySc(d.y)+d.r+13).attr('text-anchor','middle').style('fill','rgba(255,255,255,.35)').style('font-size','7.5px').style('opacity',0).text(d.desc).transition().delay(900+i*190).duration(400).style('opacity',1);});
+  function pulse(){if(window.__comp12Gen!==myG) return; g.selectAll('circle').transition().duration(700).attr('fill-opacity',0.32).attr('stroke-width',2.5).transition().duration(700).attr('fill-opacity',0.16).attr('stroke-width',1.5); setTimeout(pulse,2700);}
   setTimeout(pulse,2100);
 })();
 </script>
-
 </body>
 </html>
