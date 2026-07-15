@@ -587,7 +587,7 @@ body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflo
     <div class="block-header"><span style="color:var(--mira-teal)">■</span> Bloco 5 · Síntese</div>
     <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Como os 4 Papers Se Encaixam</h2>
     <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Cada um resolve um problema diferente do mesmo ecossistema de busca híbrida</p>
-    <div class="anim-box" id="anim-papermap" style="height:310px"></div>
+    <div class="anim-box" id="anim-papermap" style="height:340px"></div>
   </div>
 </section>
 
@@ -1102,14 +1102,14 @@ document.addEventListener('keydown',function(e){
 (function(){
   window.__pmapGen2=(window.__pmapGen2||0)+1;var myG=window.__pmapGen2;
   var el=document.getElementById('anim-papermap');if(!el)return;
-  var W=el.clientWidth||840,H=310;
+  var W=el.clientWidth||840,H=340;
   var svg=d3.select('#anim-papermap').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
   var pnodes=[
-    {id:'hybrid',label:'Busca Híbrida',sub:'BM25+Dense+RRF',x:W*0.5,y:H*0.12,color:'#fff',r:32},
-    {id:'dat',label:'DAT',sub:'Alpha adaptativo',x:W*0.18,y:H*0.45,color:'#4DFFB4',r:28},
-    {id:'live',label:'LiveRAG',sub:'Vocab Alignment',x:W*0.82,y:H*0.45,color:'#FFD54D',r:28},
-    {id:'ev',label:'Evidence-RAG',sub:'Claim Grounding',x:W*0.32,y:H*0.78,color:'#4DB4FF',r:28},
-    {id:'t2',label:'T²-RAGBench',sub:'10 estratégias',x:W*0.68,y:H*0.78,color:'#FF904D',r:28}
+    {id:'hybrid',label:'Busca Híbrida',sub:'BM25+Dense+RRF',x:W*0.5,y:H*0.17,color:'#fff',r:48},
+    {id:'dat',label:'DAT',sub:'Alpha adaptativo',x:W*0.18,y:H*0.48,color:'#4DFFB4',r:28},
+    {id:'live',label:'LiveRAG',sub:'Vocab Alignment',x:W*0.82,y:H*0.48,color:'#FFD54D',r:28},
+    {id:'ev',label:'Evidence-RAG',sub:'Claim Grounding',x:W*0.32,y:H*0.76,color:'#4DB4FF',r:44},
+    {id:'t2',label:'T²-RAGBench',sub:'10 estratégias',x:W*0.68,y:H*0.76,color:'#FF904D',r:42}
   ];
   var pedges=[['hybrid','dat'],['hybrid','live'],['hybrid','ev'],['hybrid','t2'],['dat','ev'],['t2','live']];
   var nm={};pnodes.forEach(function(n){nm[n.id]=n;});
