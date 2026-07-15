@@ -852,9 +852,6 @@ document.addEventListener('keydown',function(e){
     h.label.split('\n').forEach(function(ln,li){g.append('text').attr('x',h.x).attr('y',h.y-4+li*14).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.7)').attr('font-size',9).text(ln);});
     g.append('text').attr('x',h.x).attr('y',h.y+22).attr('text-anchor','middle').attr('fill',h.color).attr('font-size',8).attr('font-weight',700).text(h.match==='Both'?'BM25+Dense':h.match+' ✓');
     g.transition().duration(350).delay(hi*120+600).attr('opacity',1);
-    var fromX=h.match==='BM25'?bx:h.match==='Dense'?dx:qx;
-    var fromY=h.match==='Both'?midY:midY+22;
-    svg.append('line').attr('x1',fromX).attr('y1',fromY).attr('x2',h.x).attr('y2',h.y-18).attr('stroke',h.color).attr('stroke-opacity',0.18).attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',0).transition().duration(300).delay(hi*120+700).attr('opacity',1);
   });
   var pi2=[0];
   function pulseLoop(){
