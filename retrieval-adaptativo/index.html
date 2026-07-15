@@ -521,8 +521,8 @@ body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflo
 <button id="next-card" onclick="nextSlide()"><i data-lucide="chevron-down" style="width:22px;height:22px"></i></button>
 
 <script>
-AOS.init({duration:700,once:true,offset:55});
-lucide.createIcons();
+try{AOS.init({duration:700,once:true,offset:55});}catch(e){}
+try{lucide.createIcons();}catch(e){}
 window.addEventListener('scroll',function(){
   var pct=window.scrollY/(document.body.scrollHeight-window.innerHeight);
   document.getElementById('progress-bar').style.width=(pct*100)+'%';

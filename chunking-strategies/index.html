@@ -2142,8 +2142,8 @@ function r27(){
 </footer>
 
 <script>
-AOS.init({duration:800,once:true,offset:100});
-lucide.createIcons();
+try{AOS.init({duration:800,once:true,offset:100});}catch(e){}
+try{lucide.createIcons();}catch(e){}
 const cardSections=[];
 function buildCardSections(){
   cardSections.length=0;

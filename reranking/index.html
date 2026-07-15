@@ -585,7 +585,7 @@
 
 <!-- D3 SCRIPTS -->
 <script>
-AOS.init({ duration: 700, once: true, offset: 55 });
+try{AOS.init({ duration: 700, once: true, offset: 55 });}catch(e){}
 (function(){
   var bar = document.getElementById('progress-bar');
   var btn = document.getElementById('back-btn');
