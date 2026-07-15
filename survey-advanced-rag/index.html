@@ -1041,7 +1041,7 @@ body{font-family:'Inter',sans-serif;background:var(--mira-bg);color:#fff;overflo
     <div class="chapter-strip">Bloco 9 · Speculative RAG — K-Means Sampling</div>
     <h2 style="font-size:1.55rem;font-weight:900;margin-bottom:.4rem">Por Que K-Means? A Magia das Perspectivas Diversas</h2>
     <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:.5rem">Em vez de pegar os top-5 mais similares (redundantes), divide os docs em 5 clusters — cada um com uma perspectiva diferente</p>
-    <div class="anim-box" id="anim-kmeans" style="height:300px"></div>
+    <div class="anim-box" id="anim-kmeans" style="height:350px"></div>
     <div style="background:rgba(255,100,100,.07);border:1px solid rgba(255,100,100,.18);border-radius:.85rem;padding:1rem;margin-top:1rem;font-size:.84rem;color:rgba(255,255,255,.7);line-height:1.55">
       <strong style="color:var(--mira-error)">O problema do naive top-k:</strong> se você pega os 5 documentos mais similares à query, provavelmente pega 5 documentos quase idênticos — e o LLM não aprende nada novo do 2º ao 5º. O K-Means garante <em>diversidade de perspectiva</em>: cada cluster representa um ângulo diferente sobre o mesmo tema.
     </div>
@@ -1704,14 +1704,14 @@ document.addEventListener('keydown',function(e){
 (function(){
   window.__kmGen=(window.__kmGen||0)+1; var myG=window.__kmGen;
   var el=document.getElementById('anim-kmeans'); if(!el)return;
-  var W=el.clientWidth||760,H=300;
+  var W=el.clientWidth||760,H=350;
   var svg=d3.select('#anim-kmeans').append('svg').attr('viewBox','0 0 '+W+' '+H).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','100%');
   var clusters=[
-    {color:'#FF904D',cx:W*0.22,cy:H*0.4,label:'Cluster A'},
-    {color:'#4DFFB4',cx:W*0.22,cy:H*0.55,label:'Cluster B'},
-    {color:'#4DB4FF',cx:W*0.22,cy:H*0.7,label:'Cluster C'},
-    {color:'#B464FF',cx:W*0.22,cy:H*0.25,label:'Cluster D'},
-    {color:'#FFD54D',cx:W*0.22,cy:H*0.85,label:'Cluster E'}
+    {color:'#FF904D',cx:W*0.22,cy:H*0.245,label:'Cluster A'},
+    {color:'#4DFFB4',cx:W*0.22,cy:H*0.375,label:'Cluster B'},
+    {color:'#4DB4FF',cx:W*0.22,cy:H*0.505,label:'Cluster C'},
+    {color:'#B464FF',cx:W*0.22,cy:H*0.115,label:'Cluster D'},
+    {color:'#FFD54D',cx:W*0.22,cy:H*0.635,label:'Cluster E'}
   ];
   // Docs cloud
   var cloudDocs=Array.from({length:30},function(_,i){
@@ -1735,13 +1735,15 @@ document.addEventListener('keydown',function(e){
     // Line from cloud to cluster
     svg.append('line').attr('x1',W*0.44).attr('y1',H/2).attr('x2',W*0.08+90).attr('y2',c.cy).attr('stroke',c.color).attr('stroke-opacity',0.2).attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',0).transition().duration(300).delay(ci*150+800).attr('opacity',1);
   });
-  // Verifier
-  var vx=W*0.09+90,vy=H*0.56;
-  // All to verifier arrow
+  // Verifier — abaixo de toda a coluna de clusters, sem sobrepor nenhuma caixa
+  var vx=W*0.08,vy=H*0.78;
+  clusters.forEach(function(c){
+    svg.append('line').attr('x1',vx+45).attr('y1',c.cy+12).attr('x2',vx+45).attr('y2',vy).attr('stroke','#FF6464').attr('stroke-opacity',0.15).attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',0).transition().duration(300).delay(1400).attr('opacity',1);
+  });
   var vg=svg.append('g').attr('opacity',0);
-  vg.append('rect').attr('x',W*0.02).attr('y',vy).attr('width',90).attr('height',36).attr('rx',10).attr('fill','rgba(255,100,100,0.1)').attr('stroke','#FF6464').attr('stroke-opacity',0.5).attr('stroke-width',1.5);
-  vg.append('text').attr('x',W*0.02+45).attr('y',vy+14).attr('text-anchor','middle').attr('fill','#FF6464').attr('font-size',10).attr('font-weight',700).text('Verifier');
-  vg.append('text').attr('x',W*0.02+45).attr('y',vy+27).attr('text-anchor','middle').attr('fill','rgba(255,100,100,0.6)').attr('font-size',9).text('escolhe melhor');
+  vg.append('rect').attr('x',vx).attr('y',vy).attr('width',90).attr('height',36).attr('rx',10).attr('fill','rgba(255,100,100,0.1)').attr('stroke','#FF6464').attr('stroke-opacity',0.5).attr('stroke-width',1.5);
+  vg.append('text').attr('x',vx+45).attr('y',vy+14).attr('text-anchor','middle').attr('fill','#FF6464').attr('font-size',10).attr('font-weight',700).text('Verifier');
+  vg.append('text').attr('x',vx+45).attr('y',vy+27).attr('text-anchor','middle').attr('fill','rgba(255,100,100,0.6)').attr('font-size',9).text('escolhe melhor');
   vg.transition().duration(400).delay(1600).attr('opacity',1);
   new IntersectionObserver(function(es){if(!es[0].isIntersecting)return;},{threshold:0.3}).observe(el);
 })();
