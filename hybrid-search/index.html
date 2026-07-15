@@ -827,12 +827,12 @@ document.addEventListener('keydown',function(e){
   var qx=W*0.5,qy=H*0.12;
   var bx=W*0.22,dx=W*0.78,midY=H*0.5;
   var hits=[
-    {x:W*0.08,y:H*0.72,label:'"COVID-19\nprotocol"',match:'BM25',color:'#4DB4FF'},
-    {x:W*0.22,y:H*0.88,label:'"SARS-CoV-2\ninfection"',match:'Dense',color:'#B464FF'},
-    {x:W*0.38,y:H*0.72,label:'"flu\nsymptoms"',match:'Dense',color:'#B464FF'},
-    {x:W*0.62,y:H*0.72,label:'"viral pneumonia\ntreatment"',match:'Both',color:'#4DFFB4'},
-    {x:W*0.78,y:H*0.88,label:'"pandemic\nguidelines"',match:'Dense',color:'#B464FF'},
-    {x:W*0.92,y:H*0.72,label:'"ICD-10\ncode U07.1"',match:'BM25',color:'#4DB4FF'}
+    {x:W*0.07,y:H*0.70,label:'"COVID-19\nprotocol"',match:'BM25',color:'#4DB4FF'},
+    {x:W*0.24,y:H*0.88,label:'"ICD-10\ncode U07.1"',match:'BM25',color:'#4DB4FF'},
+    {x:W*0.5,y:H*0.72,label:'"viral pneumonia\ntreatment"',match:'Both',color:'#4DFFB4'},
+    {x:W*0.63,y:H*0.88,label:'"SARS-CoV-2\ninfection"',match:'Dense',color:'#B464FF'},
+    {x:W*0.78,y:H*0.70,label:'"flu\nsymptoms"',match:'Dense',color:'#B464FF'},
+    {x:W*0.92,y:H*0.88,label:'"pandemic\nguidelines"',match:'Dense',color:'#B464FF'}
   ];
   svg.append('rect').attr('x',bx-56).attr('y',midY-22).attr('width',112).attr('height',44).attr('rx',10).attr('fill','rgba(77,180,255,0.1)').attr('stroke','rgba(77,180,255,0.4)').attr('stroke-width',2);
   svg.append('text').attr('x',bx).attr('y',midY-4).attr('text-anchor','middle').attr('fill','#4DB4FF').attr('font-size',12).attr('font-weight',700).text('BM25');
@@ -852,6 +852,9 @@ document.addEventListener('keydown',function(e){
     h.label.split('\n').forEach(function(ln,li){g.append('text').attr('x',h.x).attr('y',h.y-4+li*14).attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.7)').attr('font-size',9).text(ln);});
     g.append('text').attr('x',h.x).attr('y',h.y+22).attr('text-anchor','middle').attr('fill',h.color).attr('font-size',8).attr('font-weight',700).text(h.match==='Both'?'BM25+Dense':h.match+' ✓');
     g.transition().duration(350).delay(hi*120+600).attr('opacity',1);
+    var fromX=h.match==='BM25'?bx:h.match==='Dense'?dx:qx;
+    var fromY=h.match==='Both'?midY:midY+22;
+    svg.append('line').attr('x1',fromX).attr('y1',fromY).attr('x2',h.x).attr('y2',h.y-18).attr('stroke',h.color).attr('stroke-opacity',0.22).attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',0).transition().duration(300).delay(hi*120+700).attr('opacity',1);
   });
   var pi2=[0];
   function pulseLoop(){
